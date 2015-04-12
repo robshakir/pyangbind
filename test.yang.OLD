@@ -1,0 +1,71 @@
+module test {
+
+    yang-version "1";
+    namespace "http://rob.sh/yang/test";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container bar {
+        description
+            "A container";
+
+        leaf fish {
+            type boolean;
+            description
+                "Protein";
+        }
+
+        leaf chips {
+            type boolean;
+            default false;
+            description
+                "Carbohydrates";
+        }
+
+        leaf elephant {
+            type uint8;
+            description
+                "Some uint";
+        }
+
+
+        container condiments {
+            leaf ketchup {
+                type string;
+            }
+
+            uses other-gr;
+
+        }
+    }
+
+    container state {}
+
+    augment "/state" {
+        container fishhat {
+            leaf hats-for-fish {
+                type uint8;
+                default 10;
+                config false;
+            }
+        }
+    }
+
+    grouping other-gr {
+        leaf-list other {
+            type string;
+        }
+    }
+}
+
+
+
+  
