@@ -27,27 +27,6 @@ USED_TYPES = []
 # this is a hack solution, we need to fix this to have
 # dynamic learning of types
 
-
-## TODO:
-## every datatype actually needs to be able to be undef or a value - default values should not exist
-## so need to wrap each class in a wrapper that lets undef be set.
-## this is to ensure that when we serialise the object to send over NETCONF or protobuf then we
-## do not need 
-
-## TODO:
-## Rules can be implemented by having all _set* methods call a generic _obj_validate - this can
-## be defined on a per-container basis, or just at the base of the module.
-## When defined at the base of the module, then we need to call parent validate() methods for
-## all sub-objects.
-
-## TODO:
-## we need to define dynamic types - so read through typedefs and then define new types.
-
-## TODO:
-## we have to handle unsafe names other than those with "-" in them -- which might mean that we
-## rename some of the YANG module variables. for instance, we need to change 'global' which exists
-## in the BGP model.
-
 class_bool_map = {
   'false':  False,
   'False':  False,
@@ -56,7 +35,7 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':        ("NullBoolean", class_bool_map),
+  'boolean':        ("int", class_bool_map),
   'uint8':        ("np.uint8", False),
   'uint16':        ("np.uint16", False),
   'uint32':        ("np.uint32", False),
@@ -94,22 +73,13 @@ def build_btclass(ctx, modules, fd):
 
   fd.write("""import collections
 
-class YANGBool(int):
-  __v = None
-  def __init__(self):
-    self.__v = None
-
-  def __init__(self, v):
-    if v not in [True, False, None]:
-      raise TypeError, v
-    self.__v = v
 
 
-class YANGStr(string):
-  __v = 
-
-# using solution from http://stackoverflow.com/questions/3487434/overriding-append-method-after-inheriting-from-a-python-list
-# to create a list type that can be restricted to a certain type - to support leaf-list.
+# using solution from
+# http://stackoverflow.com/questions/3487434/overriding-append-method\
+# -after-inheriting-from-a-python-list
+# to create a list type that can be restricted to a certain type - to support\
+# leaf-list.
 class TypedList(collections.MutableSequence):
   def __init__(self, allowed_types, *args):
     self.allowed_types = type
@@ -137,6 +107,35 @@ class TypedList(collections.MutableSequence):
   def __str__(self):
     return str(self.list)
 
+def defineYANGDynClass(*args, **kwargs):
+  base_type = kwargs.pop("base",int)
+  class YANGDynClass(base_type):
+    _changed = False
+
+    def yang_set(self):
+      return self._changed
+
+    def __new__(self, *args, **kwargs):
+      default = kwargs.pop("default", None)
+      try:
+        value = args[0]
+      except IndexError:
+        value = None
+
+      obj = base_type.__new__(self, *args, **kwargs)
+      if default == None:
+        if value == None or value == base_type():
+          obj._changed = False
+        else:
+          obj._changed = True
+      else:
+        if value == default:
+          obj._changed = False
+        else:
+          obj._changed = True
+
+      return obj
+  return YANGDynClass(*args,**kwargs)
 """)
 
   # we need to parse each module
@@ -148,16 +147,11 @@ class TypedList(collections.MutableSequence):
       if subm is not None:
         mods.append(subm)
 
-    # now walk the module+submodule list
-    #for m in mods:
-    #  # ignore augments, rpcs and notifications for the moment
-    
-    module_code = {}
     for m in mods:
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
 
-      #root = YANGContainer(m.arg)
+
       get_children(fd, children, m, m)
 
 
@@ -166,7 +160,7 @@ def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
   for ch in i_children:
     elements += get_element(fd, ch, module, parent, path+"/"+ch.arg)
-  
+
   #for element in elements:
     #print element
   #  if element["class"] == "leaf" and not element["type"] in used_types:
@@ -189,9 +183,19 @@ def get_children(fd, i_children, module, parent, path=str()):
   else:
     for i in elements:
       if type(i["type"]) == type((1,1)):
-        fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"], i["type"][0], i["type"][1]))
+        fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"],
+                                          i["type"][0], i["type"][1]))
       else:
-        fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"], i["type"], i["default"] if "default" in i.keys() and not i["default"] == None else ""))
+        #fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"],
+        #                                  i["type"], i["default"] if "default" \
+        #                                  in i.keys() and not i["default"] == \
+        #                                  None else ""))
+        class_str = "  %s%s" % ("" if i["config"] else "__", i["name"])
+        class_str += " = defineYANGDynClass("
+        class_str += "base=%s" % i["type"]
+        class_str += "%s)\n" % (", default=%s" % (i["default"]) if "default" in \
+                              i.keys() and not i["default"] == None else "")
+        fd.write(class_str)
       #if i["config"] == False:
       #  elem_getter_required.append(i["name"])
 
@@ -206,16 +210,28 @@ def get_children(fd, i_children, module, parent, path=str()):
           ntype = i["type"]
         fd.write("""
   def _get_%s(self):
+    \"\"\"
+      Getter method for %s, mapped from YANG variable %s (%s)
+    \"\"\"
     return self.__%s
+
   def _set_%s(self,v):
-      if not isinstance(v, %s):
-        raise TypeError("%s must be of type %s")
-      self.__%s = v\n""" % (i["name"], i["name"], i["name"], ntype, i["name"], ntype, i["name"]))
+    \"\"\"
+      Setter method for %s, mapped from YANG variable %s (%s)
+    \"\"\"
+    if not isinstance(v, %s):
+      raise TypeError("%s must be of type %s")
+    self.__%s = v\n""" % (i["name"], i["name"], i["path"], i["origtype"],
+                          i["name"], i["name"], i["name"], i["path"],
+                          i["origtype"], ntype, i["name"], ntype, i["name"]))
+    fd.write("\n")
     for i in elements:
       if i["config"]:
-        fd.write("""  %s = property(_get_%s, _set_%s)\n""" % (i["name"], i["name"], i["name"]))
+        fd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
+                          (i["name"], i["name"], i["name"]))
       else:
-        fd.write("""  %s = property(attrgetter("%s"))\n""" % (re.sub("^_","",i["name"]), i["name"]))
+        fd.write("""  %s = property(attrgetter("%s"))\n""" % \
+                          (re.sub("^_","",i["name"]), i["name"]))
 
   fd.write("\n")
   return True
@@ -241,16 +257,22 @@ def get_element(fd, element, module, parent, path):
       #print "class yc_%s(YANGContainer):" % element.arg
       get_children(fd, chs, module, element, path)
       #print child_code
-      this_object.append({"name": element.arg, "type": "yc_%s_%s" % (element.arg, path.replace("/", "_")), "class": "container", "config": True})
+      this_object.append({"name": element.arg, "origtype": element.keyword,
+                          "type": "yc_%s_%s" % (element.arg,
+                          path.replace("/", "_")), "class": "container",
+                          "path": path, "config": True})
       p = True
   if not p:
     #print dir(element)
     elemtype = class_map[element.search_one('type').arg]
-    elemdefault = element.search_one('default').arg if element.search_one('default') else None
-    # This maps a 'default' specified in the YANG file to a to a default of the Python type specified
+    elemdefault = element.search_one('default').arg if \
+                                        element.search_one('default') else None
+    # This maps a 'default' specified in the YANG file to a to a default of the
+    # Python type specified
     if elemtype[1] and elemdefault:
       elemdefault = elemtype[1][elemdefault]
-    elemconfig = class_bool_map[element.search_one('config').arg] if element.search_one('config') else True
+    elemconfig = class_bool_map[element.search_one('config').arg] if \
+                                  element.search_one('config') else True
     if not elemconfig:
       elemname = "_%s" % safe_name(element.arg)
     else:
@@ -260,6 +282,9 @@ def get_element(fd, element, module, parent, path):
       elemtype = ("TypedList", elemtype[0])
     else:
       elemtype = elemtype[0]
-    this_object.append({"name": elemname, "type": elemtype, "class": "leaf", "default": elemdefault, "config": elemconfig})
+    this_object.append({"name": elemname, "type": elemtype,
+                        "origtype": element.search_one('type').arg, "path": path,
+                        "class": "leaf", "default": elemdefault,
+                        "config": elemconfig})
   return this_object
 
