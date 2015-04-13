@@ -71,7 +71,7 @@ class yc_condiments__bar_condiments(object):
    Each member element of the container is represented as a class
    variable - with a specific YANG type.
   """
-  ketchup = defineYANGDynClass(base=str)
+  __ketchup = defineYANGDynClass(base=str)
   __other = TypedList(str)
 
   def _get_ketchup(self):
@@ -112,10 +112,10 @@ class yc_bar__bar(object):
    Each member element of the container is represented as a class
    variable - with a specific YANG type.
   """
-  fish = defineYANGDynClass(base=int)
-  chips = defineYANGDynClass(base=int, default=False)
-  elephant = defineYANGDynClass(base=np.uint8)
-  condiments = defineYANGDynClass(base=yc_condiments__bar_condiments)
+  __fish = defineYANGDynClass(base=int)
+  __chips = defineYANGDynClass(base=int, default=False)
+  __elephant = defineYANGDynClass(base=np.uint8)
+  __condiments = defineYANGDynClass(base=yc_condiments__bar_condiments)
 
   def _get_fish(self):
     """
@@ -196,7 +196,7 @@ class yc_state__state(object):
    Each member element of the container is represented as a class
    variable - with a specific YANG type.
   """
-  fishhat = defineYANGDynClass(base=yc_fishhat__state_fishhat)
+  __fishhat = defineYANGDynClass(base=yc_fishhat__state_fishhat)
 
   def _get_fishhat(self):
     """
@@ -221,8 +221,8 @@ class test(object):
    Each member element of the container is represented as a class
    variable - with a specific YANG type.
   """
-  bar = defineYANGDynClass(base=yc_bar__bar)
-  state = defineYANGDynClass(base=yc_state__state)
+  __bar = defineYANGDynClass(base=yc_bar__bar)
+  __state = defineYANGDynClass(base=yc_state__state)
 
   def _get_bar(self):
     """
