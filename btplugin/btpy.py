@@ -73,37 +73,34 @@ def build_btclass(ctx, modules, fd):
 
   fd.write("""import collections
 
-# using solution from
-# http://stackoverflow.com/questions/3487434/overriding-append-method\
-# -after-inheriting-from-a-python-list
-# to create a list type that can be restricted to a certain type - to support\
-# leaf-list.
-class TypedList(collections.MutableSequence):
-  def __init__(self, allowed_types, *args):
-    self.allowed_types = type
-    self.list = list()
-    self.extend(list(args))
+def TypedListType(*args, **kwargs):
+  allowed_type = kwargs.pop("allowed_type", str)
+  # this was from collections.MutableSequence
+  class TypedList(collections.MutableSequence):
+    _list = list()
+    _allowed_type = allowed_type
 
-  def check(self, v):
-    if not isinstance(self, allowed_types):
-      raise TypeError, v
+    def __init__(self, *args, **kwargs):
+      self._list.extend(list(args))
 
-  def __len__(self): return len(self.list)
+    def check(self,v):
+      if not isinstance(v, self._allowed_type):
+        raise TypeError("Cannot add %s to TypedList (accepts only %s)" % (v, self._allowed_type))
 
-  def __getitem__(self,i): return self.list[i]
+    def __len__(self): return len(self._list)
+    def __getitem__(self,i): return self._list[i]
+    def __delitem__(self): del self._list[i]
+    def __setitem__(self, i, v):
+      self.check(v)
+      self._list.insert(i,v)
 
-  def __delitem__(self,i): del self.list[i]
+    def insert(self, i, v):
+      self.check(v)
+      self._list.insert(i,v)
 
-  def __setitem__(self, i, v):
-    self.check(v)
-    self.list[i] = v
-
-  def insert(self, i, v):
-    self.check(v)
-    self.list.insert(i,v)
-
-  def __str__(self):
-    return str(self.list)
+    def __str__(self):
+      return str(self._list)
+  return type(TypedList(*args,**kwargs))
 
 class YANGBool(int):
   __v = 0
@@ -124,37 +121,56 @@ def defineYANGDynClass(*args, **kwargs):
     def yang_set(self):
       return self._changed
 
-    def __repr__(self):
-      #print self._default
-      ####
-      #
-      # if a variable is not set in YANG, then if we print it, it should
-      # still show the default value.
-      # but, when doing a comparison, then it should not be equal (it should)
-      # rather be equal to the unset value
-      #
-      ###
+    def __setitem__(self, *args, **kwargs):
+      self._changed = True
+      super(YANGDynClass, self).__setitem__(key, value)
+
+    def append(self, *args, **kwargs):
+      if not hasattr(super(YANGDynClass,self), "append"):
+        raise AttributeError("%s object has no attribute append" % base_type)
+      self._changed = True
+      super(YANGDynClass, self).append(*args,**kwargs)
+
+    def pop(self, *args, **kwargs):
+      if not hasattr(super(YANGDynClass, self), "pop"):
+        raise AttributeError("%s object has no attribute pop" % base_type)
+      self._changed = True
+      super(YANGDynClass, self).pop(*args, **kwargs)
+
+    def remove(self, *args, **kwargs):
+      if not hasattr(super(YANGDynClass, self), "remove"):
+        raise AttributeError("%s object has no attribute remove" % base_type)
+      self._changed = True
+      super(YANGDynClass, self).remove(*args, **kwargs)
+
+    def extend(self, *args, **kwargs):
+      if not hasattr(super(YANGDynClass, self), "extend"):
+        raise AttributeError("%s object has no attribute extend" % base_type)
+      self._changed = True
+      super(YANGDynClass, self).extend(*args, **kwargs)
+
+    def insert(self, *args, **kwargs):
+      if not hasattr(super(YANGDynClass,self), "insert"):
+        raise AttributeError("%s object has no attribute insert" % base_type)
+      self._changed = True
+      super(YANGDynClass, self).insert(*args, **kwargs)
+
+    def __repr__(self, *args, **kwargs):
       if self._default and not self._changed:
         return repr(self._default)
       else:
         return super(YANGDynClass, self).__repr__()
 
-    def __str__(self):
-      return self.__repr__()
-
     def __init__(self, *args, **kwargs):
-      #print "__init__ was called with %s and %s" % (args, kwargs)
       pass
 
     def __new__(self, *args, **kwargs):
-      #print "__new__ was called with %s and %s" % (args, kwargs)
       default = kwargs.pop("default", None)
       try:
         value = args[0]
       except IndexError:
         value = None
 
-      #print "args: %s, kwargs: %s" % (args,kwargs)
       obj = base_type.__new__(self, *args, **kwargs)
       if default == None:
         if value == None or value == base_type():
@@ -198,8 +214,6 @@ def defineYANGDynClass(*args, **kwargs):
 
       get_children(fd, children, m, m)
 
-
-
 def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
   for ch in i_children:
@@ -211,9 +225,9 @@ def get_children(fd, i_children, module, parent, path=str()):
   #    used_types.append(element["type"])
 
   if not path == "":
-    fd.write("class yc_%s_%s(object):\n" % (parent.arg, path.replace("/", "_")))
+    fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), safe_name(path.replace("/", "_"))))
   else:
-    fd.write("class %s(object):\n" % parent.arg)
+    fd.write("class %s(object):\n" % safe_name(parent.arg))
   fd.write("""  \"\"\"
    This class was auto-generated by the PythonClass plugin for PYANG
    from YANG module %s - based on the path %s.
@@ -227,8 +241,14 @@ def get_children(fd, i_children, module, parent, path=str()):
   else:
     for i in elements:
       if type(i["type"]) == type((1,1)):
-        fd.write("  __%s = %s(%s)\n" % (i["name"],
-                                        i["type"][0], i["type"][1]))
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base="
+        class_str += "%s(allowed_type=%s)" % i["type"]
+        class_str += "%s)\n" % (", default=\"%s\"" % i["default"] if "default" in \
+                            i.keys() and not i["default"] == None else "")
+        fd.write(class_str)
+        #fd.write("  __%s = %s(%s)\n" % (i["name"],
+        #                                i["type"][0], i["type"][1]))
       else:
         #fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"],
         #                                  i["type"], i["default"] if "default" \
@@ -237,7 +257,7 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass("
         class_str += "base=%s" % i["type"]
-        class_str += "%s)\n" % (", default=%s" % (i["default"]) if "default" in \
+        class_str += "%s)\n" % (", default=\"%s\"" % (i["default"]) if "default" in \
                               i.keys() and not i["default"] == None else "")
         fd.write(class_str)
       #if i["config"] == False:
@@ -307,10 +327,11 @@ def get_element(fd, element, module, parent, path):
       #print "class yc_%s(YANGContainer):" % element.arg
       get_children(fd, chs, module, element, path)
       #print child_code
-      this_object.append({"name": element.arg, "origtype": element.keyword,
-                          "type": "yc_%s_%s" % (element.arg,
-                          path.replace("/", "_")), "class": "container",
-                          "path": path, "config": True})
+      #print safe_name(element.arg)
+      this_object.append({"name": safe_name(element.arg), "origtype": safe_name(element.keyword),
+                          "type": "yc_%s_%s" % (safe_name(element.arg),
+                          safe_name(path.replace("/", "_"))), "class": "container",
+                          "path": safe_name(path), "config": True})
       p = True
   if not p:
     #print dir(element)
@@ -327,11 +348,11 @@ def get_element(fd, element, module, parent, path):
     elemname = safe_name(element.arg)
     #print "Appending %s" % element.arg
     if create_list:
-      elemtype = ("TypedList", elemtype[0])
+      elemtype = ("TypedListType", safe_name(elemtype[0]))
     else:
-      elemtype = elemtype[0]
-    this_object.append({"name": elemname, "type": elemtype,
-                        "origtype": element.search_one('type').arg, "path": path,
+      elemtype = safe_name(elemtype[0])
+    this_object.append({"name": elemname, "type": safe_name(elemtype),
+                        "origtype": safe_name(element.search_one('type').arg), "path": safe_name(path),
                         "class": "leaf", "default": elemdefault,
                         "config": elemconfig})
   return this_object

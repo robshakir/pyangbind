@@ -6,32 +6,31 @@ import collections
 # using solution from
 # http://stackoverflow.com/questions/3487434/overriding-append-method# -after-inheriting-from-a-python-list
 # to create a list type that can be restricted to a certain type - to support# leaf-list.
-class TypedList(collections.MutableSequence):
-  def __init__(self, allowed_types, *args):
-    self.allowed_types = type
-    self.list = list()
-    self.extend(list(args))
+def TypedListType(*args, **kwargs):
+  class TypedList(collections.MutableSequence):
+    _list = list()
+    _allowed_type = str
 
-  def check(self, v):
-    if not isinstance(self, allowed_types):
-      raise TypeError, v
+    def __init__(self, *args, **kwargs):
+      self._allowed_type = kwargs.pop("allowed_type", str)
+      self._list.extend(list(args))
 
-  def __len__(self): return len(self.list)
+    def check(self,v):
+      if not isinstance(v, str):
+        raise TypeError, v
 
-  def __getitem__(self,i): return self.list[i]
-
-  def __delitem__(self,i): del self.list[i]
-
-  def __setitem__(self, i, v):
-    self.check(v)
-    self.list[i] = v
-
-  def insert(self, i, v):
-    self.check(v)
-    self.list.insert(i,v)
-
-  def __str__(self):
-    return str(self.list)
+    def __len__(self): return len(self._list)
+    def __getitem__(self,i): return self._list[i]
+    def __delitem__(self,i): del self._list[i]
+    def __setitem__(self, i, v):
+      self.check(v)
+      self._list.insert(i,v)
+    def insert(self, i, v):
+      self.check(v)
+      self._list.insert(i,v)
+    def __str__(self):
+      return str(self._list)
+  return type(TypedList(*args,**kwargs))
 
 class YANGBool(int):
   __v = 0
@@ -116,7 +115,7 @@ class yc_condiments__bar_condiments(object):
    variable - with a specific YANG type.
   """
   __ketchup = defineYANGDynClass(base=str)
-  __other = TypedList(str)
+  __other = defineYANGDynClass(base=TypedListType(allowed_type=str))
 
   def _get_ketchup(self):
     """
@@ -153,9 +152,9 @@ class yc_condiments__bar_condiments(object):
       do so via calling thisObj._set_other() directly.
     """
     try:
-      t = defineYANGDynClass(v,base=TypedList)
+      t = defineYANGDynClass(v,base=TypedListType)
     except (TypeError, ValueError):
-      raise TypeError("other must be of a type compatible with TypedList")
+      raise TypeError("other must be of a type compatible with TypedListType")
     self.__other = t
 
   ketchup = property(_get_ketchup, _set_ketchup)

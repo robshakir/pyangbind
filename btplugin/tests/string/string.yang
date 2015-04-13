@@ -1,0 +1,32 @@
+module string {
+    yang-version "1";
+    namespace "http://rob.sh/yang/string";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container string-container {
+        description
+            "A container";
+
+        leaf string-leaf {
+            type string;
+            description
+              "A test leaf for a string test";
+        }
+
+        leaf string-default-leaf {
+            type string;
+            default "string";
+            description
+              "A string that has a default value";
+        }
+    }
+}
