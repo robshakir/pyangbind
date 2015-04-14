@@ -1,0 +1,41 @@
+module list {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/list";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container list-container {
+        description
+            "A container";
+
+        list list-element {
+            key "keyval";
+
+            leaf keyval {
+                type uint8;
+                description 
+                    "a key value for the list";
+            }
+
+            leaf another-value {
+                type string;
+                description
+                    "a string value within the list";
+                default
+                    "defaultValue";
+            }
+
+            description
+                "A test list.";
+        }
+
+    }
+}

@@ -35,6 +35,58 @@ def TypedListType(*args, **kwargs):
       return str(self._list)
   return type(TypedList(*args,**kwargs))
 
+def YANGListType(*args,**kwargs):
+  keyname = args[0]
+  listclass = args[1]
+  class YANGList(object):
+    _keyval = keyname
+    _members = {}
+    _contained_class = listclass
+
+    def __init__(self, keyname, contained_class):
+      self._keyval = keyname
+      if not type(contained_class) == type(int):
+        raise ValueError, "contained class of a YANGList must be a class"
+      self._contained_class = contained_class
+
+    def __str__(self):
+      return self._members.__str__()
+
+    def __repr__(self):
+      return self._members.__repr__()
+
+    def __check__(self, v):
+      if self._contained_class == None:
+        return False
+      if not type(v) == type(self._contained_class):
+        return False
+      return True
+
+    def __getitem__(self, k):
+      return self._members[k]
+
+    def __setitem__(self, k, v):
+      if self.__check__(v):
+        self._members[k] = v
+      raise ValueError, "value must be set to an instance of %s" % (self._contained_class)
+
+
+    def __delitem__(self, k):
+      del self._members[k]
+
+    def __len__(self): return len(self._members)
+
+    def add(self, k):
+      if k in self._members.keys():
+        raise IndexError, "%s already contains a key with value %s" % (self, k)
+      self._members[k] = self._contained_class()
+      setattr(self._members[k], self._keyval, k)
+  return type(YANGList(*args,**kwargs))
+
+class fooListItem(object):
+  k = str()
+
+
 class YANGBool(int):
   __v = 0
   def __init__(self,v=False):
@@ -56,7 +108,7 @@ def defineYANGDynClass(*args, **kwargs):
 
     def __setitem__(self, *args, **kwargs):
       self._changed = True
-      super(YANGDynClass, self).__setitem__(key, value)
+      super(YANGDynClass, self).__setitem__(*args, **kwargs)
 
     def append(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass,self), "append"):
@@ -129,6 +181,17 @@ def defineYANGDynClass(*args, **kwargs):
       return obj
 
   return YANGDynClass(*args,**kwargs)
+
+
+
+p = defineYANGDynClass(base=YANGListType("k", fooListItem))
+p.add("1.1.1.1")
+
+print p
+print p["1.1.1.1"].k
+p["2.2.2.2"] = False
+sys.exit(127)
+
 
 
 t = defineYANGDynClass(base=TypedListType(allowed_type=str))

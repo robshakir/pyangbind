@@ -1,6 +1,6 @@
 module string {
     yang-version "1";
-    namespace "http://rob.sh/yang/string";
+    namespace "http://rob.sh/yang/test/string";
     prefix "foo";
     organization "BugReports Inc";
     contact "A bug reporter";

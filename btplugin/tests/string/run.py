@@ -25,27 +25,42 @@ def main():
   test_instance = string()
   assert hasattr(test_instance, "string_container"), \
         "string_container does not exist"
+
   assert hasattr(test_instance.string_container, \
         "string_leaf"), "string_leaf does not exist"
+
   assert hasattr(test_instance.string_container, "string_default_leaf"), \
         "string_default_leaf does not exist"
+
   assert test_instance.string_container.string_leaf.yang_set() == False, \
-        "string_leaf erroneously set to changed (value: %s)" % test_instance.string_container.string_leaf.yang_set()
+        "string_leaf erroneously set to changed (value: %s)" % \
+          test_instance.string_container.string_leaf.yang_set()
+
   test_instance.string_container.string_leaf = "TestValue"
   assert test_instance.string_container.string_leaf == "TestValue", \
-        "string_leaf not set correctly (value: %s)" % test_instance.string_container.string_leaf
+        "string_leaf not set correctly (value: %s)" % \
+          test_instance.string_container.string_leaf
+
   assert test_instance.string_container.string_leaf.yang_set() == True, \
-        "string_leaf did not change to changed (value: %s)" % test_instance.string_container.string_leaf.yang_set()
+        "string_leaf did not change to changed (value: %s)" % \
+          test_instance.string_container.string_leaf.yang_set()
+
   test_instance.string_container.string_leaf += "Addition"
   assert test_instance.string_container.string_leaf == "TestValueAddition", \
-        "string_leaf did not have correct addition (value: %s)" % test_instance.string_container.string_leaf
+        "string_leaf did not have correct addition (value: %s)" % \
+          test_instance.string_container.string_leaf
 
   assert test_instance.string_container.string_default_leaf == "", \
-        "string_default_leaf did not have the correct empty default value (value: %s)" % test_instance.string_container.string_default_leaf
+        "string_default_leaf did not have the correct empty default value (value: %s)" % \
+          test_instance.string_container.string_default_leaf
+
   assert test_instance.string_container.string_default_leaf._default == "string", \
-        "string_default_leaf did not have the correct hidden default value (value: %s)" % test_instance.string_container.string_default_leaf._default
+        "string_default_leaf did not have the correct hidden default value (value: %s)" % \
+          test_instance.string_container.string_default_leaf._default
+
   assert test_instance.string_container.string_default_leaf.yang_set() == False, \
-        "string_default_leaf erroneously reports having been changed (value: %s)" % tesT_instance.string_container.string_default_leaf.yang_set()
+        "string_default_leaf erroneously reports having been changed (value: %s)" % \
+          test_instance.string_container.string_default_leaf.yang_set()
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
