@@ -1,9 +1,3 @@
-## TODO: every datatype actually needs to be able to be undef or a value -
-## default values should not exist so need to wrap each class in a wrapper that
-## lets undef be set. this is to ensure that when we serialise the object to
-## send over NETCONF or protobuf then we do not need to send all elements unless
-## we have explicitly set the variable.
-
 ## TODO: Rules can be implemented by having all _set* methods call a generic
 ## _obj_validate - this can be defined on a per-container basis, or just at the
 ## base of the module. When defined at the base of the module, then we need to
@@ -15,3 +9,7 @@
 ## TODO: we have to handle unsafe names other than those with "-" in them --
 ## which might mean that we rename some of the YANG module variables. for
 ## instance, we need to change 'global' which exists in the BGP model.
+
+
+## description statements should be included as a __doc__ strings within the
+## derived classes

@@ -1,0 +1,30 @@
+module nested {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/nested";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+        description
+            "A container";
+
+        container subcontainer {
+            description
+                "A nested container";
+
+            leaf a-leaf {
+                type uint8;
+                description
+                    "A test leaf";
+            }
+        }
+    }
+}

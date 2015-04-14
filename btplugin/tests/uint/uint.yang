@@ -1,0 +1,76 @@
+module uint {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/uint";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container uint-container {
+        description
+            "A container";
+
+        leaf eight {
+            type uint8;
+            description
+              "A test leaf for uint8";
+        }
+
+        leaf eightdefault {
+            type uint8;
+            default 255;
+            description
+              "A test leaf for uint8 with a default";
+        }
+
+        leaf eightresult {
+            type uint8;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf sixteen {
+            type uint16;
+            description
+              "A test leaf for uint16";
+        }
+
+        leaf sixteendefault {
+            type uint16;
+            default 65535;
+            description
+              "A test leaf for uint16 with a default";
+        }
+
+        leaf sixteenresult {
+            type uint16;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf thirtytwo {
+            type uint32;
+            description
+              "A test leaf for uint32";
+        }
+
+        leaf thirtytwodefault {
+            type uint32;
+            default 4294967295;
+            description
+              "A test leaf for uint32 with a default";
+        }
+
+        leaf thirtytworesult {
+            type uint32;
+            description
+              "A test leaf that stores results of operations";
+        }
+    }
+}

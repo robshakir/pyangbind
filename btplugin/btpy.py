@@ -37,8 +37,8 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':        ("YANGBool", class_bool_map),
-  'uint8':        ("np.uint8", False),
+  'boolean':       ("YANGBool", class_bool_map),
+  'uint8':         ("np.uint8", False),
   'uint16':        ("np.uint16", False),
   'uint32':        ("np.uint32", False),
   'string':        ("str", False),
@@ -92,8 +92,8 @@ def TypedListType(*args, **kwargs):
         raise TypeError("Cannot add %s to TypedList (accepts only %s)" % (v, self._allowed_type))
 
     def __len__(self): return len(self._list)
-    def __getitem__(self,i): return self._list[i]
-    def __delitem__(self): del self._list[i]
+    def __getitem__(self, i): return self._list[i]
+    def __delitem__(self, i): del self._list[i]
     def __setitem__(self, i, v):
       self.check(v)
       self._list.insert(i,v)
@@ -104,6 +104,9 @@ def TypedListType(*args, **kwargs):
 
     def __str__(self):
       return str(self._list)
+
+    def get(self):
+      return self._list
   return type(TypedList(*args,**kwargs))
 
 def YANGListType(*args,**kwargs):
@@ -139,12 +142,11 @@ def YANGListType(*args,**kwargs):
     def __setitem__(self, k, v):
       if self.__check__(v):
         try:
-          self._members[k] = v
+          self._members[k] = defineYANGDynClass(v,base=self._contained_class)
         except TypeError, m:
           raise ValueError, "key value must be valid, %s" % m
       else:
         raise ValueError, "value must be set to an instance of %s" % (self._contained_class)
-
 
     def __delitem__(self, k):
       del self._members[k]
@@ -152,14 +154,21 @@ def YANGListType(*args,**kwargs):
     def __len__(self): return len(self._members)
 
     def add(self, k):
-      if k in self._members.keys():
-        raise IndexError, "%s already contains a key with value %s" % (self, k)
       try:
-        self._members[k] = self._contained_class()
+        self._members[k] = defineYANGDynClass(base=self._contained_class)
         setattr(self._members[k], self._keyval, k)
       except TypeError, m:
         del self._members[k]
         raise ValueError, "key value must be valid, %s" % m
+
+    def get(self):
+      d = {}
+      for i in self._members:
+        if hasattr(self._members[i], "get"):
+          d[i] = self._members[i].get()
+        else:
+          d[i] = self._members[i]
+      return d
 
   return type(YANGList(*args,**kwargs))
 
@@ -173,14 +182,22 @@ class YANGBool(int):
   def __repr__(self):
     return str(True if self.__v else False)
 
+
 def defineYANGDynClass(*args, **kwargs):
   base_type = kwargs.pop("base",int)
   class YANGDynClass(base_type):
     _changed = False
     _default = False
 
-    def yang_set(self):
+    def changed(self):
       return self._changed
+
+    def set(self):
+      self._changed = True
+      # DEBUG
+
+    def child_set(self):
+      self.set()
 
     def __setitem__(self, *args, **kwargs):
       self._changed = True
@@ -189,41 +206,41 @@ def defineYANGDynClass(*args, **kwargs):
     def append(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass,self), "append"):
         raise AttributeError("%s object has no attribute append" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).append(*args,**kwargs)
 
     def pop(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).pop(*args, **kwargs)
 
     def remove(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).remove(*args, **kwargs)
 
     def extend(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "extend"):
         raise AttributeError("%s object has no attribute extend" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).extend(*args, **kwargs)
 
     def insert(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass,self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).insert(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+      pass
 
     def __repr__(self, *args, **kwargs):
       if self._default and not self._changed:
         return repr(self._default)
       else:
         return super(YANGDynClass, self).__repr__()
-
-    def __init__(self, *args, **kwargs):
-      pass
 
     def __new__(self, *args, **kwargs):
       default = kwargs.pop("default", None)
@@ -241,7 +258,8 @@ def defineYANGDynClass(*args, **kwargs):
         else:
           # there was no default, and the value was something other
           # than a default - the object has changed
-          obj._changed = True
+          obj.set()
+          # was obj._changed = True
       else:
         # there is a default - if the value is not the same as that default
         # then we have changed the object.
@@ -249,11 +267,11 @@ def defineYANGDynClass(*args, **kwargs):
           # if the value is none, then we have not changed it
           obj._changed = False
         elif not value == default:
-          obj._changed = True
+          #obj._changed = True
+          obj.set()
         else:
           obj._changed = False
-
-      obj._default = default
+        obj._default = base_type(default)
       return obj
 
   return YANGDynClass(*args,**kwargs)
@@ -307,22 +325,38 @@ def get_children(fd, i_children, module, parent, path=str()):
   if len(elements) == 0:
     fd.write("  pass\n")
   else:
+    # we want to prevent a user from creating new attributes on a class that
+    # are not allowed within the data model
+    e_str = "__elements = {"
+    slots_str = "  __slots__ = ("
     for i in elements:
+      slots_str += "'__%s'," % i["name"]
+      e_str +=  "'%s': %s, " % (i["name"], i["name"])
+    slots_str += ")\n"
+    e_str += "}\n"
+    fd.write(slots_str)
+    fd.write("\n")
+    #fd.write("  def __init__(self, *args, **kwargs):\n")
+    for i in elements:
+      #rint "looping elements"
       if i["class"] == "leaf-list":
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass(base="
-        class_str += "%s(allowed_type=%s)" % i["type"]
-        class_str += "%s)\n" % (", default=\"%s\"" % i["default"] if "default" in \
+        class_str += "%s(allowed_type=%s), " % i["type"]
+        class_str += "%s" % ("default=\"%s\"," % i["default"] if "default" in \
                             i.keys() and not i["default"] == None else "")
+        #class_str += "parent=\"hi\")\n"
+        class_str += ")\n"
         #fd.write(class_str)
         #fd.write("  __%s = %s(%s)\n" % (i["name"],
         #                                i["type"][0], i["type"][1]))
       elif i["class"] == "list":
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass(base=YANGListType("
-        class_str += "\"%s\",yc_%s_%s))" % (i["key"], safe_name(i["name"]), \
+        class_str += "\"%s\",yc_%s_%s), " % (i["key"], safe_name(i["name"]), \
                         safe_name(path.replace("/","_"))+"_"+safe_name(i["name"]))
-        class_str += ""
+        class_str += ")\n"
+        #class_str += "parent=\"hi\")\n"
         #fd.wr
         #print "HIT A LIST"
         #sys.exit(127)
@@ -333,12 +367,15 @@ def get_children(fd, i_children, module, parent, path=str()):
         #                                  None else ""))
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass("
-        class_str += "base=%s" % i["type"]
-        class_str += "%s)\n" % (", default=\"%s\"" % (i["default"]) if "default" in \
+        class_str += "base=%s, " % i["type"]
+        class_str += "%s" % ("default=\"%s\", " % (i["default"]) if "default" in \
                               i.keys() and not i["default"] == None else "")
+        #class_str += "parent=\"hi\")\n"
+        class_str += ")\n"
       fd.write(class_str)
       #if i["config"] == False:
       #  elem_getter_required.append(i["name"])
+    #fd.write("    object.__init__(self)\n")
 
   #for e in elem_getter_required:
   #  fd.write("""  %s = property(attrgetter("%s"))\n""" % (re.sub("^_","",i["name"]), i["name"]))
@@ -372,6 +409,7 @@ def get_children(fd, i_children, module, parent, path=str()):
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],
                           i["origtype"], i["name"], i["name"], \
                           ntype, i["name"], ntype, i["name"]))
+      fd.write("    self.set()\n")
     fd.write("\n")
     for i in elements:
       if i["config"]:
@@ -379,7 +417,39 @@ def get_children(fd, i_children, module, parent, path=str()):
                           (i["name"], i["name"], i["name"]))
       else:
         fd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
+  fd.write("""
 
+  %s
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self, filter=False):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+        if filter == True and not f.changed():
+          del d[i]
+      else:
+        if filter == False and not f.changed():
+          if not f._default == None:
+            d[i] = f._default
+          else:
+            d[i] = f
+        elif f.changed():
+          d[i] = f
+        else:
+          # changed = False, and filter = True
+          pass
+    return d
+  \n""" % e_str)
   fd.write("\n")
   return True
 
@@ -394,6 +464,7 @@ def get_element(fd, element, module, parent, path):
     if element.keyword in ["container", "list"]:
       p = True
     elif element.keyword in ["leaf-list"]:
+      #print "%s was a leaf-list" % element.arg
       create_list = True
     if element.i_children:
       #print dir(element)
@@ -414,6 +485,8 @@ def get_element(fd, element, module, parent, path):
       this_object.append(elemdict)
       p = True
   if not p:
+    if element.keyword in ["leaf-list"]:
+      create_list = True
     cls = "leaf"
     #print dir(element)
     elemtype = class_map[element.search_one('type').arg]

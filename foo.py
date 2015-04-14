@@ -30,7 +30,73 @@ def TypedListType(*args, **kwargs):
 
     def __str__(self):
       return str(self._list)
+
+    def get(self):
+      return self._list
   return type(TypedList(*args,**kwargs))
+
+def YANGListType(*args,**kwargs):
+  keyname = args[0]
+  listclass = args[1]
+  class YANGList(object):
+    _keyval = keyname
+    _members = {}
+    _contained_class = listclass
+
+    def __init__(self, keyname, contained_class):
+      self._keyval = keyname
+      if not type(contained_class) == type(int):
+        raise ValueError, "contained class of a YANGList must be a class"
+      self._contained_class = contained_class
+
+    def __str__(self):
+      return self._members.__str__()
+
+    def __repr__(self):
+      return self._members.__repr__()
+
+    def __check__(self, v):
+      if self._contained_class == None:
+        return False
+      if not type(v) == type(self._contained_class):
+        return False
+      return True
+
+    def __getitem__(self, k):
+      return self._members[k]
+
+    def __setitem__(self, k, v):
+      if self.__check__(v):
+        try:
+          self._members[k] = defineYANGDynClass(v,base=self._contained_class)
+        except TypeError, m:
+          raise ValueError, "key value must be valid, %s" % m
+      else:
+        raise ValueError, "value must be set to an instance of %s" % (self._contained_class)
+
+    def __delitem__(self, k):
+      del self._members[k]
+
+    def __len__(self): return len(self._members)
+
+    def add(self, k):
+      try:
+        self._members[k] = defineYANGDynClass(base=self._contained_class)
+        setattr(self._members[k], self._keyval, k)
+      except TypeError, m:
+        del self._members[k]
+        raise ValueError, "key value must be valid, %s" % m
+
+    def get(self):
+      d = {}
+      for i in self._members:
+        if hasattr(self._members[i], "get"):
+          d[i] = self._members[i].get()
+        else:
+          d[i] = self._members[i]
+      return d
+
+  return type(YANGList(*args,**kwargs))
 
 class YANGBool(int):
   __v = 0
@@ -42,57 +108,65 @@ class YANGBool(int):
   def __repr__(self):
     return str(True if self.__v else False)
 
+
 def defineYANGDynClass(*args, **kwargs):
   base_type = kwargs.pop("base",int)
   class YANGDynClass(base_type):
     _changed = False
     _default = False
 
-    def yang_set(self):
+    def changed(self):
       return self._changed
+
+    def set(self):
+      self._changed = True
+      # DEBUG
+
+    def child_set(self):
+      self.set()
 
     def __setitem__(self, *args, **kwargs):
       self._changed = True
-      super(YANGDynClass, self).__setitem__(key, value)
+      super(YANGDynClass, self).__setitem__(*args, **kwargs)
 
     def append(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass,self), "append"):
         raise AttributeError("%s object has no attribute append" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).append(*args,**kwargs)
 
     def pop(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).pop(*args, **kwargs)
 
     def remove(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).remove(*args, **kwargs)
 
     def extend(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass, self), "extend"):
         raise AttributeError("%s object has no attribute extend" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).extend(*args, **kwargs)
 
     def insert(self, *args, **kwargs):
       if not hasattr(super(YANGDynClass,self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
-      self._changed = True
+      self.set()
       super(YANGDynClass, self).insert(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+      pass
 
     def __repr__(self, *args, **kwargs):
       if self._default and not self._changed:
         return repr(self._default)
       else:
         return super(YANGDynClass, self).__repr__()
-
-    def __init__(self, *args, **kwargs):
-      pass
 
     def __new__(self, *args, **kwargs):
       default = kwargs.pop("default", None)
@@ -110,7 +184,8 @@ def defineYANGDynClass(*args, **kwargs):
         else:
           # there was no default, and the value was something other
           # than a default - the object has changed
-          obj._changed = True
+          obj.set()
+          # was obj._changed = True
       else:
         # there is a default - if the value is not the same as that default
         # then we have changed the object.
@@ -118,23 +193,25 @@ def defineYANGDynClass(*args, **kwargs):
           # if the value is none, then we have not changed it
           obj._changed = False
         elif not value == default:
-          obj._changed = True
+          #obj._changed = True
+          obj.set()
         else:
           obj._changed = False
-
       obj._default = default
       return obj
 
   return YANGDynClass(*args,**kwargs)
 class yc_condiments__bar_condiments(object):
   """
-   This class was auto-generated by the PythonClass plugin for PYANG
-   from YANG module test - based on the path /bar/condiments.
-   Each member element of the container is represented as a class
-   variable - with a specific YANG type.
-  """
-  __ketchup = defineYANGDynClass(base=str)
-  __other = defineYANGDynClass(base=TypedListType(allowed_type=str))
+     This class was auto-generated by the PythonClass plugin for PYANG
+     from YANG module test - based on the path /bar/condiments.
+     Each member element of the container is represented as a class
+     variable - with a specific YANG type.
+    """
+  __slots__ = ('__ketchup','__other',)
+
+  __ketchup = defineYANGDynClass(base=str, )
+  __other = defineYANGDynClass(base=TypedListType(allowed_type=str), )
 
   def _get_ketchup(self):
     """
@@ -179,17 +256,45 @@ class yc_condiments__bar_condiments(object):
   ketchup = property(_get_ketchup, _set_ketchup)
   other = property(_get_other, _set_other)
 
+
+  __elements = {'ketchup': ketchup, 'other': other, }
+
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+      else:
+        if not f.changed() and not f._default == None:
+          d[i] = f._default
+        else:
+          d[i] = f
+    return d
+  
+
 class yc_bar__bar(object):
   """
-   This class was auto-generated by the PythonClass plugin for PYANG
-   from YANG module test - based on the path /bar.
-   Each member element of the container is represented as a class
-   variable - with a specific YANG type.
-  """
-  __fish = defineYANGDynClass(base=YANGBool)
-  __chips = defineYANGDynClass(base=YANGBool, default="False")
-  __elephant = defineYANGDynClass(base=np.uint8)
-  __condiments = defineYANGDynClass(base=yc_condiments__bar_condiments)
+     This class was auto-generated by the PythonClass plugin for PYANG
+     from YANG module test - based on the path /bar.
+     Each member element of the container is represented as a class
+     variable - with a specific YANG type.
+    """
+  __slots__ = ('__fish','__chips','__elephant','__condiments',)
+
+  __fish = defineYANGDynClass(base=YANGBool, )
+  __chips = defineYANGDynClass(base=YANGBool, default="False", )
+  __elephant = defineYANGDynClass(base=np.uint8, )
+  __condiments = defineYANGDynClass(base=yc_condiments__bar_condiments, )
 
   def _get_fish(self):
     """
@@ -276,14 +381,42 @@ class yc_bar__bar(object):
   elephant = property(_get_elephant, _set_elephant)
   condiments = property(_get_condiments, _set_condiments)
 
+
+  __elements = {'fish': fish, 'chips': chips, 'elephant': elephant, 'condiments': condiments, }
+
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+      else:
+        if not f.changed() and not f._default == None:
+          d[i] = f._default
+        else:
+          d[i] = f
+    return d
+  
+
 class yc_fishhat__state_fishhat(object):
   """
-   This class was auto-generated by the PythonClass plugin for PYANG
-   from YANG module test - based on the path /state/fishhat.
-   Each member element of the container is represented as a class
-   variable - with a specific YANG type.
-  """
-  __hats_for_fish = defineYANGDynClass(base=np.uint8, default="10")
+     This class was auto-generated by the PythonClass plugin for PYANG
+     from YANG module test - based on the path /state/fishhat.
+     Each member element of the container is represented as a class
+     variable - with a specific YANG type.
+    """
+  __slots__ = ('__hats_for_fish',)
+
+  __hats_for_fish = defineYANGDynClass(base=np.uint8, default="10", )
 
   def _get_hats_for_fish(self):
     """
@@ -307,14 +440,42 @@ class yc_fishhat__state_fishhat(object):
 
   hats_for_fish = property(_get_hats_for_fish)
 
+
+  __elements = {'hats_for_fish': hats_for_fish, }
+
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+      else:
+        if not f.changed() and not f._default == None:
+          d[i] = f._default
+        else:
+          d[i] = f
+    return d
+  
+
 class yc_state__state(object):
   """
-   This class was auto-generated by the PythonClass plugin for PYANG
-   from YANG module test - based on the path /state.
-   Each member element of the container is represented as a class
-   variable - with a specific YANG type.
-  """
-  __fishhat = defineYANGDynClass(base=yc_fishhat__state_fishhat)
+     This class was auto-generated by the PythonClass plugin for PYANG
+     from YANG module test - based on the path /state.
+     Each member element of the container is represented as a class
+     variable - with a specific YANG type.
+    """
+  __slots__ = ('__fishhat',)
+
+  __fishhat = defineYANGDynClass(base=yc_fishhat__state_fishhat, )
 
   def _get_fishhat(self):
     """
@@ -338,15 +499,43 @@ class yc_state__state(object):
 
   fishhat = property(_get_fishhat, _set_fishhat)
 
+
+  __elements = {'fishhat': fishhat, }
+
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+      else:
+        if not f.changed() and not f._default == None:
+          d[i] = f._default
+        else:
+          d[i] = f
+    return d
+  
+
 class test(object):
   """
-   This class was auto-generated by the PythonClass plugin for PYANG
-   from YANG module test - based on the path /.
-   Each member element of the container is represented as a class
-   variable - with a specific YANG type.
-  """
-  __bar = defineYANGDynClass(base=yc_bar__bar)
-  __state = defineYANGDynClass(base=yc_state__state)
+     This class was auto-generated by the PythonClass plugin for PYANG
+     from YANG module test - based on the path /.
+     Each member element of the container is represented as a class
+     variable - with a specific YANG type.
+    """
+  __slots__ = ('__bar','__state',)
+
+  __bar = defineYANGDynClass(base=yc_bar__bar, )
+  __state = defineYANGDynClass(base=yc_state__state, )
 
   def _get_bar(self):
     """
@@ -390,4 +579,30 @@ class test(object):
 
   bar = property(_get_bar, _set_bar)
   state = property(_get_state, _set_state)
+
+
+  __elements = {'bar': bar, 'state': state, }
+
+
+  def elements(self):
+    return self.__elements
+
+  def __str__(self):
+    return str(self.elements())
+
+  def get(self):
+    def error():
+      return NameError, "element does not exist"
+    d = {}
+    for i in self.__elements.keys():
+      f = getattr(self, i, error)
+      if hasattr(f, "get"):
+        d[i] = f.get()
+      else:
+        if not f.changed() and not f._default == None:
+          d[i] = f._default
+        else:
+          d[i] = f
+    return d
+  
 

@@ -22,6 +22,9 @@ def main():
   os.system("/Users/rjs/Code/pyangbind/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
 
   from bindings import list_ as l
+  from bindings import defineYANGDynClass, YANGListType
+  import numpy
+
   test_instance = l()
 
   assert hasattr(test_instance, "list_container"), \
@@ -35,7 +38,7 @@ def main():
 
   try:
     test_instance.list_container.list_element.add("wrong-key-type")
-  except (IndexError,ValueError), m:
+  except ValueError, m:
     pass
   assert len(test_instance.list_container.list_element) == 0, \
     "list item erroneously added with wrong key type"
@@ -50,6 +53,15 @@ def main():
   assert (not test_instance.list_container.list_element[1].another_value == "defaultValue"), \
     "list value is equal to default value without being set"
 
+  test_instance.list_container.list_element.add(2)
+  test_instance.list_container.list_element[2].another_value == "aSecondDefaultValue"
+
+  assert test_instance.get() == \
+    {'list_container': {'list_element': {1: {'another_value': 'defaultValue', 'keyval': 1}, \
+      2: {'another_value': 'defaultValue', 'keyval': 2}}}}, \
+    "incorrect get() output returned: %s" % test_instance.get()
+  del test_instance.list_container.list_element[2]
+
   test_instance.list_container.list_element[1].another_value = "aTestValue"
   assert test_instance.list_container.list_element[1].another_value == "aTestValue", \
     "list value is not set correctly when specified"
@@ -57,6 +69,14 @@ def main():
   del test_instance.list_container.list_element[1]
   assert len(test_instance.list_container.list_element) == 0, \
     "item was not correctly removed from list when deleted"
+
+  try:
+    test_instance.list_container.list_element[2] = "anInvalidType"
+  except ValueError, m:
+    pass
+  assert len(test_instance.list_container.list_element) == 0, \
+    "item that was invalid was added to the list"
+
 
   ### TODO: need a test for changing keyval and the index in the list changing
 

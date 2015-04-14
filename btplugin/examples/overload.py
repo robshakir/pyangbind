@@ -67,7 +67,7 @@ def YANGListType(*args,**kwargs):
 
     def __setitem__(self, k, v):
       if self.__check__(v):
-        self._members[k] = v
+        self._members[k] = defineYANGDynClass(v, base=self._contained_class)
       raise ValueError, "value must be set to an instance of %s" % (self._contained_class)
 
 
@@ -79,7 +79,7 @@ def YANGListType(*args,**kwargs):
     def add(self, k):
       if k in self._members.keys():
         raise IndexError, "%s already contains a key with value %s" % (self, k)
-      self._members[k] = self._contained_class()
+      self._members[k] = defineYANGDynClass(base=self._contained_class)
       setattr(self._members[k], self._keyval, k)
   return type(YANGList(*args,**kwargs))
 
@@ -102,6 +102,7 @@ def defineYANGDynClass(*args, **kwargs):
   class YANGDynClass(base_type):
     _changed = False
     _default = False
+    _parent = None
 
     def yang_set(self):
       return self._changed
@@ -151,6 +152,7 @@ def defineYANGDynClass(*args, **kwargs):
 
     def __new__(self, *args, **kwargs):
       default = kwargs.pop("default", None)
+      self._parent = kwargs.pop("parent", None)
       try:
         value = args[0]
       except IndexError:
