@@ -42,10 +42,11 @@ class_map = {
   'uint16':        ("np.uint16", False),
   'uint32':        ("np.uint32", False),
   'string':        ("str", False),
+  'decimal64':     ("float", False),
   # we need to look at how to parse typedefs
-  'inet:as-number':     ("int", False),
-  'inet:ipv4-address':   ("str", False),
-  'decimal64':       ("float", False),
+  #'inet:as-number':     ("int", False),
+  #'inet:ipv4-address':   ("str", False),
+  #'decimal64':       ("float", False),
   # more types to be added here
 }
 
@@ -277,12 +278,27 @@ def defineYANGDynClass(*args, **kwargs):
   return YANGDynClass(*args,**kwargs)
 """)
 
+  for module in modules:
+    mods = [module]
+    typedefs = {}
+    print module.arg
+    print module.search('import')
+    for i in module.search('import'):
+      prefix = i.search_one('prefix')
+      mod = ctx.get_module(i.arg)
+      if hasattr(mod, "i_typedefs"):
+        for k,v in mod.i_typedefs.iteritems():
+          typedefs["%s:%s" % (prefix.arg, k)] = v
+
+  print typedefs
+  ### PLACEHOLDER TODO -- now need to parse these typedefs
+
   # we need to parse each module
   for module in modules:
     # we need to parse each sub-module
     mods = [module]
     for i in module.search('include'):
-      subm = crx.get_module(i.arg)
+      subm = ctx.get_module(i.arg)
       if subm is not None:
         mods.append(subm)
 
@@ -489,7 +505,14 @@ def get_element(fd, element, module, parent, path):
       create_list = True
     cls = "leaf"
     #print dir(element)
-    elemtype = class_map[element.search_one('type').arg]
+    try:
+      elemtype = class_map[element.search_one('type').arg]
+    except KeyError:
+      print dir(element)
+      print element.i_typedefs
+      import sys
+      print "FATAL: unmapped type"
+      sys.exit(127)
     elemdefault = element.search_one('default').arg if \
                                         element.search_one('default') else None
     # This maps a 'default' specified in the YANG file to a to a default of the

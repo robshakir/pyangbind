@@ -30,13 +30,26 @@ def main():
       assert hasattr(u.uint_container, "%s%s" % (name, subname)) == True, \
         "missing %s%s from container" % (name, subname)
 
+  # tests default and equality
   for e in [("eight", 2**8-1), ("sixteen", 2**16-1), ("thirtytwo", 2**32-1)]:
     default_v = getattr(u.uint_container, "%sdefault" % e[0])._default
     assert default_v == e[1], \
       "defaults incorrectly set for %s, expected: %d, got %d" % (e[0], e[1], default_v)
 
-  # default, equality, changed
-  # addition, subtraction, multiplication, division for each type
+
+  u.uint_container.eight = 42
+  u.uint_container.sixteen = 42
+  u.uint_container.thirtytwo = 42
+  u.uint_container.eightdefault = 84
+  u.uint_container.sixteendefault = 84
+  u.uint_container.thirtytwodefault = 84
+  for i in ["eight", "sixteen", "thirtytwo"]:
+    v = getattr(u.uint_container, i)
+    assert v == 42, "incorrectly set %s, expected 42, got %d" % (i, v)
+    c = getattr(u.uint_container, "changed")()
+    assert c == True, "incorrect changed flag for %s" % i
+
+  # maybe we need to test math here
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
