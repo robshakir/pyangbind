@@ -19,14 +19,14 @@ def main():
       k = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/Users/rjs/Code/pyangbind/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
+  os.system("/Users/rjs/Code/pyang/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
 
   from bindings import uint
 
   u = uint()
 
   for name in ["eight", "sixteen", "thirtytwo"]:
-    for subname in ["", "default", "result"]:
+    for subname in ["", "default", "result", "restricted"]:
       assert hasattr(u.uint_container, "%s%s" % (name, subname)) == True, \
         "missing %s%s from container" % (name, subname)
 
@@ -50,6 +50,48 @@ def main():
     assert c == True, "incorrect changed flag for %s" % i
 
   # maybe we need to test math here
+
+  e = False
+  try:
+    u.uint_container.eightrestricted = 11
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for eightrestricted (11)"
+
+  e = False
+  try:
+    u.uint_container.eightrestricted = 0
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for eightrestricted (0)"
+
+  e = False
+  try:
+    u.uint_container.sixteenrestricted = 1001
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (1001)"
+
+  e = False
+  try:
+    u.uint_container.sixteenrestricted = 99
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (99)"
+
+  e = False
+  try:
+    u.uint_container.thirtytworestricted = 500001
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (500001)"
+
+  e = False
+  try:
+    u.uint_container.thirtytworestricted = 9999
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (9999)"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

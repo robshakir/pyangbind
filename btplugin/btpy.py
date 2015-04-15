@@ -37,12 +37,12 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':       ("YANGBool", class_bool_map),
-  'uint8':         ("np.uint8", False),
-  'uint16':        ("np.uint16", False),
-  'uint32':        ("np.uint32", False),
-  'string':        ("str", False),
-  'decimal64':     ("float", False),
+  'boolean':          ("YANGBool", class_bool_map),
+  'uint8':            ("np.uint8", False, False),
+  'uint16':           ("np.uint16", False, False),
+  'uint32':           ("np.uint32", False, False),
+  'string':           ("str", False, False),
+  'decimal64':        ("float", False, False),
   # we need to look at how to parse typedefs
   #'inet:as-number':     ("int", False),
   #'inet:ipv4-address':   ("str", False),
@@ -76,7 +76,63 @@ def build_btclass(ctx, modules, fd):
   fd.write("from operator import attrgetter\n")
   fd.write("import numpy as np\n\n")
 
-  fd.write("""import collections
+  fd.write("""import collections, re
+
+def RestrictedClassError(Exception):
+  pass
+
+def RestrictedClassType(*args, **kwargs):
+  base_type = kwargs.pop("base_type", str)
+  restriction_type = kwargs.pop("restriction_type", None)
+  restriction_arg = kwargs.pop("restriction_arg", None)
+
+  class RestrictedClass(base_type):
+    _restriction_type = restriction_type
+    _restriction_arg = restriction_arg
+    _restriction_test = None
+
+    def __init__(self, *args, **kwargs):
+      if self._restriction_type == "pattern":
+        p = re.compile(self._restriction_arg)
+        self._restriction_test = p.match
+      try:
+        self.__check(args[0])
+      except IndexError:
+        pass
+      super(RestrictedClass, self).__init__(*args, **kwargs)
+
+    def __new__(self, *args, **kwargs):
+      if restriction_type == "pattern":
+        p = re.compile(restriction_arg)
+        self._restriction_test = p.match
+        self._restriction_arg = restriction_arg
+        self._restriction_type = restriction_type
+      elif restriction_type == "range":
+        x = [base_type(i) for i in re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", "\g<low>,\g<high>", restriction_arg).split(",")]
+        self._restriction_test = staticmethod(lambda i: i in range(x[0], x[1]))
+        self._restriction_arg = restriction_arg
+        self._restriction_type = restriction_type
+      else:
+        raise RestrictedClassError, "unsupported restriction type"
+      try:
+        if not self._restriction_test(args[0]):
+          raise RestrictedClassError, "did not match restricted type"
+      except IndexError:
+        pass
+      obj = base_type.__new__(self, *args, **kwargs)
+      return obj
+
+    def __check(self, v):
+      if self._restriction_type == "pattern":
+        if not self._restriction_test(v):
+          raise RestrictedClassError, "did not match restricted type"
+        return True
+
+    def __setitem__(self, *args, **kwargs):
+      self.__check(args[0])
+      super(RestrictedClass, self).__setitem__(*args, **kwargs)
+
+  return type(RestrictedClass(*args, **kwargs))
 
 def TypedListType(*args, **kwargs):
   allowed_type = kwargs.pop("allowed_type", str)
@@ -279,20 +335,27 @@ def defineYANGDynClass(*args, **kwargs):
 """)
 
   for module in modules:
-    mods = [module]
-    typedefs = {}
-    print module.arg
-    print module.search('import')
-    for i in module.search('import'):
-      prefix = i.search_one('prefix')
-      mod = ctx.get_module(i.arg)
-      if hasattr(mod, "i_typedefs"):
-        for k,v in mod.i_typedefs.iteritems():
-          typedefs["%s:%s" % (prefix.arg, k)] = v
+    typedefs = get_typedefs(ctx, module)
+    mods = module.search('import')
+    for i in mods:
+      prefix = i.search_one('prefix').arg
+      for k,v in get_typedefs(ctx,module,prefix=prefix).iteritems():
+        if not k in typedefs:
+          typedefs[k] = v
+        else:
+          raise AttributeError, "Duplicate definition of a type (%s)" % k
+      #mod = ctx.get_module(i.arg)
+      #if hasattr(mod, "i_typedefs"):
+      #  for k,v in mod.i_typedefs.iteritems():
+      #    typedefs["%s:%s" % (prefix.arg, k)] = v
+
 
   print typedefs
+  for k,v in typedefs.iteritems():
+    class_map[k] = (v[0], False, v[1])
   ### PLACEHOLDER TODO -- now need to parse these typedefs
 
+  print class_map
   # we need to parse each module
   for module in modules:
     # we need to parse each sub-module
@@ -308,6 +371,45 @@ def defineYANGDynClass(*args, **kwargs):
 
 
       get_children(fd, children, m, m)
+
+def get_typedefs(ctx, module, prefix=False):
+  r_typedefs = {}
+  mod = ctx.get_module(module.arg)
+  typedefs = mod.search('typedef')
+  restricted_arg = False
+  for item in typedefs:
+    #print item.keyword
+    #print item.arg
+    mapped_type = False
+    restricted_arg = False
+    for x in item.substmts:
+
+      #print x.keyword
+      #print x.arg
+      if x.keyword == "type":
+        type_type = x.arg
+        print type_type
+        if x.arg in ["uint8", "uint16", "uint32",]:
+          restriction = x.search_one("range")
+          if not restriction == None:
+            mapped_type = "restricted-int"
+            restricted_arg = restriction.arg
+          else:
+            mapped_type = type_type
+        elif x.arg in ["string"]:
+          restriction = x.search_one("pattern")
+          if not restriction == None:
+            mapped_type = "restricted-string"
+            restricted_arg = restriction.arg
+          else:
+            mapped_type = type_type
+        else:
+          mapped_type = type_type
+    r_typedefs[item.arg] = (mapped_type, restricted_arg)
+  #if hasattr(mod, "i_typedefs"):
+  #  for k,v in mod.i_typedefs.iteritems():
+  #    typedefs["%s%s" % ("%s:" % prefix if prefix else "" , k)] = v
+  return r_typedefs
 
 def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
@@ -421,7 +523,7 @@ def get_children(fd, i_children, module, parent, path=str()):
     try:
       t = defineYANGDynClass(v,base=%s)
     except (TypeError, ValueError):
-      raise TypeError("%s must be of a type compatible with %s")
+      raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],
                           i["origtype"], i["name"], i["name"], \
                           ntype, i["name"], ntype, i["name"]))
@@ -505,14 +607,37 @@ def get_element(fd, element, module, parent, path):
       create_list = True
     cls = "leaf"
     #print dir(element)
-    try:
-      elemtype = class_map[element.search_one('type').arg]
-    except KeyError:
-      print dir(element)
-      print element.i_typedefs
-      import sys
-      print "FATAL: unmapped type"
-      sys.exit(127)
+    #try:
+    et = element.search_one('type')
+    if et.arg == "string":
+      pattern = et.search_one('pattern')
+      if not pattern == None:
+        cls = "restricted-string"
+        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="pattern", restriction_arg="%s")""" \
+                        % (class_map[et.arg][0], pattern.arg), False)
+      else:
+        elemtype = class_map[et.arg]
+    elif et.arg in ["uint8", "uint16", "uint32"]:
+      range_stmt = et.search_one('range')
+      if not range_stmt == None:
+        cls = "restricted-%s" % et.arg
+        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="range", restriction_arg="%s")""" \
+                        % (class_map[et.arg][0], range_stmt.arg), False)
+      else:
+        elemtype = class_map[et.arg]
+    else:
+      try:
+        elemtype = class_map[et.arg]
+      except KeyError:
+        print "FATAL: unmapped type"
+        sys.exit(127)
+    #elemtype = class_map[met]
+    #except KeyError:
+    #  print dir(element)
+    #  print element.i_typedefs
+    #  import sys
+    #  print "FATAL: unmapped type"
+    #  sys.exit(127)
     elemdefault = element.search_one('default').arg if \
                                         element.search_one('default') else None
     # This maps a 'default' specified in the YANG file to a to a default of the

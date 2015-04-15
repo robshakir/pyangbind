@@ -28,5 +28,25 @@ module string {
             description
               "A string that has a default value";
         }
+
+        leaf restricted-string {
+            type string {
+                pattern "^a";
+            }
+            description
+                "A test leaf with a restriction that
+                the string can only start with an a";
+        }
+
+        leaf restricted-string-default {
+            type string {
+                pattern "^b";
+            }
+            description
+                "A test leaf with a restriction that
+                the string can only start with a b
+                and a default value";
+            default "b";
+        }
     }
 }
