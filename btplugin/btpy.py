@@ -108,7 +108,9 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       elif restriction_type == "range":
-        x = [base_type(i) for i in re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", "\g<low>,\g<high>", restriction_arg).split(",")]
+        x = [base_type(i) for i in \
+          re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", "\g<low>,\g<high>", \
+           restriction_arg).split(",")]
         self._restriction_test = staticmethod(lambda i: i in range(x[0], x[1]))
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
@@ -146,7 +148,8 @@ def TypedListType(*args, **kwargs):
 
     def check(self,v):
       if not isinstance(v, self._allowed_type):
-        raise TypeError("Cannot add %s to TypedList (accepts only %s)" % (v, self._allowed_type))
+        raise TypeError("Cannot add %s to TypedList (accepts only %s)" % \
+          (v, self._allowed_type))
 
     def __len__(self): return len(self._list)
     def __getitem__(self, i): return self._list[i]
@@ -203,7 +206,8 @@ def YANGListType(*args,**kwargs):
         except TypeError, m:
           raise ValueError, "key value must be valid, %s" % m
       else:
-        raise ValueError, "value must be set to an instance of %s" % (self._contained_class)
+        raise ValueError, "value must be set to an instance of %s" % \
+          (self._contained_class)
 
     def __delitem__(self, k):
       del self._members[k]
@@ -423,7 +427,8 @@ def get_children(fd, i_children, module, parent, path=str()):
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
-      fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), safe_name(path.replace("/", "_"))))
+      fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
+        safe_name(path.replace("/", "_"))))
     else:
       fd.write("class %s(object):\n" % safe_name(parent.arg))
     fd.write("""  \"\"\"
@@ -496,7 +501,8 @@ def get_children(fd, i_children, module, parent, path=str()):
     #fd.write("    object.__init__(self)\n")
 
   #for e in elem_getter_required:
-  #  fd.write("""  %s = property(attrgetter("%s"))\n""" % (re.sub("^_","",i["name"]), i["name"]))
+  #  fd.write("""  %s = property(attrgetter("%s"))\n""" % \
+      #(re.sub("^_","",i["name"]), i["name"]))
     node = {}
     for i in elements:
       fd.write("""
@@ -613,16 +619,16 @@ def get_element(fd, element, module, parent, path):
       pattern = et.search_one('pattern')
       if not pattern == None:
         cls = "restricted-string"
-        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="pattern", restriction_arg="%s")""" \
-                        % (class_map[et.arg][0], pattern.arg), False)
+        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="pattern", \
+          restriction_arg="%s")""" % (class_map[et.arg][0], pattern.arg), False)
       else:
         elemtype = class_map[et.arg]
     elif et.arg in ["uint8", "uint16", "uint32"]:
       range_stmt = et.search_one('range')
       if not range_stmt == None:
         cls = "restricted-%s" % et.arg
-        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="range", restriction_arg="%s")""" \
-                        % (class_map[et.arg][0], range_stmt.arg), False)
+        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="range", \
+          restriction_arg="%s")"""  % (class_map[et.arg][0], range_stmt.arg), False)
       else:
         elemtype = class_map[et.arg]
     else:
