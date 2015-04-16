@@ -37,12 +37,12 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':          ("YANGBool", class_bool_map),
-  'uint8':            ("np.uint8", False, False),
-  'uint16':           ("np.uint16", False, False),
-  'uint32':           ("np.uint32", False, False),
-  'string':           ("str", False, False),
-  'decimal64':        ("float", False, False),
+  'boolean':          {"native_type": "YANGBool", "map": class_bool_map, "base_type": True},
+  'uint8':            {"native_type": "np.uint8", "base_type": True},
+  'uint16':           {"native_type": "np.uint16", "base_type": True},
+  'uint32':           {"native_type": "np.uint32", "base_type": True},
+  'string':           {"native_type": "str", "base_type": True},
+  'decimal64':        {"native_type": "float", "base_type": True},
   # we need to look at how to parse typedefs
   #'inet:as-number':     ("int", False),
   #'inet:ipv4-address':   ("str", False),
@@ -78,9 +78,6 @@ def build_btclass(ctx, modules, fd):
 
   fd.write("""import collections, re
 
-def RestrictedClassError(Exception):
-  pass
-
 def RestrictedClassType(*args, **kwargs):
   base_type = kwargs.pop("base_type", str)
   restriction_type = kwargs.pop("restriction_type", None)
@@ -115,10 +112,10 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       else:
-        raise RestrictedClassError, "unsupported restriction type"
+        raise ValueError, "unsupported restriction type"
       try:
         if not self._restriction_test(args[0]):
-          raise RestrictedClassError, "did not match restricted type"
+          raise ValueError, "did not match restricted type"
       except IndexError:
         pass
       obj = base_type.__new__(self, *args, **kwargs)
@@ -127,7 +124,7 @@ def RestrictedClassType(*args, **kwargs):
     def __check(self, v):
       if self._restriction_type == "pattern":
         if not self._restriction_test(v):
-          raise RestrictedClassError, "did not match restricted type"
+          raise ValueError, "did not match restricted type"
         return True
 
     def __setitem__(self, *args, **kwargs):
@@ -332,34 +329,42 @@ def defineYANGDynClass(*args, **kwargs):
           obj.set()
         else:
           obj._changed = False
-        obj._default = base_type(default)
+        obj._default = default
       return obj
 
   return YANGDynClass(*args,**kwargs)
 """)
-
+  r_typedefs = {}
   for module in modules:
     typedefs = get_typedefs(ctx, module)
     mods = module.search('import')
     for i in mods:
       prefix = i.search_one('prefix').arg
-      for k,v in get_typedefs(ctx,module,prefix=prefix).iteritems():
-        if not k in typedefs:
-          typedefs[k] = v
+      for k,v in get_typedefs(ctx,i,prefix=prefix).iteritems():
+        print "%s,%s" % (k,v)
+        if not k in r_typedefs:
+          r_typedefs[k] = v
         else:
           raise AttributeError, "Duplicate definition of a type (%s)" % k
-      #mod = ctx.get_module(i.arg)
-      #if hasattr(mod, "i_typedefs"):
-      #  for k,v in mod.i_typedefs.iteritems():
-      #    typedefs["%s:%s" % (prefix.arg, k)] = v
+  print r_typedefs
 
+  for k,v in r_typedefs.iteritems():
+    restricted = False
+    if v[1]:
+      m_name = """RestrictedClassType(base_type=%s, restriction_type="%s",restriction_arg="%s")""" % \
+        (class_map[v[0]]["native_type"], v[1], v[2])
+      restricted = True
+    else:
+      m_name = v[0]
+    class_map[k] = {"native_type": m_name, "base_type": False, "parent_type": v[3],}
+    if v[4]:
+      class_map[k]["default"] = v[4]
+    if restricted:
+      class_map[k]["restriction_type"] = v[1]
+      class_map[k]["restriction_argument"] = v[0]
+      class_map[k]["base_type"] = False
+      class_map[k]["parent_type"] = v[0]
 
-  print typedefs
-  for k,v in typedefs.iteritems():
-    class_map[k] = (v[0], False, v[1])
-  ### PLACEHOLDER TODO -- now need to parse these typedefs
-
-  print class_map
   # we need to parse each module
   for module in modules:
     # we need to parse each sub-module
@@ -372,8 +377,6 @@ def defineYANGDynClass(*args, **kwargs):
     for m in mods:
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
-
-
       get_children(fd, children, m, m)
 
 def get_typedefs(ctx, module, prefix=False):
@@ -381,49 +384,47 @@ def get_typedefs(ctx, module, prefix=False):
   mod = ctx.get_module(module.arg)
   typedefs = mod.search('typedef')
   restricted_arg = False
+  default = False
   for item in typedefs:
-    #print item.keyword
-    #print item.arg
     mapped_type = False
     restricted_arg = False
     for x in item.substmts:
-
-      #print x.keyword
-      #print x.arg
       if x.keyword == "type":
         type_type = x.arg
-        print type_type
         if x.arg in ["uint8", "uint16", "uint32",]:
           restriction = x.search_one("range")
           if not restriction == None:
-            mapped_type = "restricted-int"
+            mapped_type = "%s" % x.arg
             restricted_arg = restriction.arg
+            restriction_k = restriction.keyword
           else:
-            mapped_type = type_type
+            restriction_k = False
+            mapped_type = class_map[type_type]["native_type"]
         elif x.arg in ["string"]:
           restriction = x.search_one("pattern")
           if not restriction == None:
-            mapped_type = "restricted-string"
+            mapped_type = "string"
             restricted_arg = restriction.arg
+            restriction_k = restriction.keyword
           else:
-            mapped_type = type_type
+            restriction_k = False
+            try:
+              mapped_type = class_map[type_type]["native_type"]
+            except KeyError:
+              raise AttributeError, "tried to map to derived type" \
+                + " which was unknown"
         else:
-          mapped_type = type_type
-    r_typedefs[item.arg] = (mapped_type, restricted_arg)
-  #if hasattr(mod, "i_typedefs"):
-  #  for k,v in mod.i_typedefs.iteritems():
-  #    typedefs["%s%s" % ("%s:" % prefix if prefix else "" , k)] = v
+          restriction = False
+          mapped_type = class_map[type_type]["native_type"]
+      elif x.keyword == "default":
+        default = x.arg
+    r_typedefs[item.arg] = (mapped_type, restriction_k, restricted_arg, type_type, default)
   return r_typedefs
 
 def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
   for ch in i_children:
     elements += get_element(fd, ch, module, parent, path+"/"+ch.arg)
-
-  #for element in elements:
-    #print element
-  #  if element["class"] == "leaf" and not element["type"] in used_types:
-  #    used_types.append(element["type"])
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
@@ -437,14 +438,9 @@ def get_children(fd, i_children, module, parent, path=str()):
      Each member element of the container is represented as a class
      variable - with a specific YANG type.
     \"\"\"\n"""  % (module.arg, (path if not path == "" else "/")))
-  #elif parent.keyword == "list":
-  #  print "HIT A LIST"
-  #  import sys
-  #  sys.exit(127)
   else:
     raise TypeError, "unhandled keyword with children %s" % parent.keyword
 
-  #elem_getter_required = []
   if len(elements) == 0:
     fd.write("  pass\n")
   else:
@@ -459,50 +455,30 @@ def get_children(fd, i_children, module, parent, path=str()):
     e_str += "}\n"
     fd.write(slots_str)
     fd.write("\n")
-    #fd.write("  def __init__(self, *args, **kwargs):\n")
     for i in elements:
       #rint "looping elements"
       if i["class"] == "leaf-list":
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass(base="
         class_str += "%s(allowed_type=%s), " % i["type"]
-        class_str += "%s" % ("default=\"%s\"," % i["default"] if "default" in \
-                            i.keys() and not i["default"] == None else "")
-        #class_str += "parent=\"hi\")\n"
+        if "default" in i.keys() and not i["default"] == None:
+          class_str += "default=%s(%s)" % (i["defaulttype"], i["default"])
         class_str += ")\n"
-        #fd.write(class_str)
-        #fd.write("  __%s = %s(%s)\n" % (i["name"],
-        #                                i["type"][0], i["type"][1]))
       elif i["class"] == "list":
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass(base=YANGListType("
         class_str += "\"%s\",yc_%s_%s), " % (i["key"], safe_name(i["name"]), \
                         safe_name(path.replace("/","_"))+"_"+safe_name(i["name"]))
         class_str += ")\n"
-        #class_str += "parent=\"hi\")\n"
-        #fd.wr
-        #print "HIT A LIST"
-        #sys.exit(127)
       else:
-        #fd.write("  %s%s = %s(%s)\n" % ("__" if i["config"] else "", i["name"],
-        #                                  i["type"], i["default"] if "default" \
-        #                                  in i.keys() and not i["default"] == \
-        #                                  None else ""))
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass("
         class_str += "base=%s, " % i["type"]
-        class_str += "%s" % ("default=\"%s\", " % (i["default"]) if "default" in \
-                              i.keys() and not i["default"] == None else "")
-        #class_str += "parent=\"hi\")\n"
+        if "default" in i.keys() and not i["default"] == None:
+          class_str += "default=%s(\"%s\")" % (i["defaulttype"], i["default"])
         class_str += ")\n"
       fd.write(class_str)
-      #if i["config"] == False:
-      #  elem_getter_required.append(i["name"])
-    #fd.write("    object.__init__(self)\n")
 
-  #for e in elem_getter_required:
-  #  fd.write("""  %s = property(attrgetter("%s"))\n""" % \
-      #(re.sub("^_","",i["name"]), i["name"]))
     node = {}
     for i in elements:
       fd.write("""
@@ -583,23 +559,14 @@ def get_element(fd, element, module, parent, path):
   p = False
   create_list = False
   if hasattr(element, 'i_children'):
-    #print element.keyword
-    #print element.keyword
     if element.keyword in ["container", "list"]:
       p = True
     elif element.keyword in ["leaf-list"]:
-      #print "%s was a leaf-list" % element.arg
       create_list = True
     if element.i_children:
-      #print dir(element)
-      #print "children of %s (%s)" % (element.arg,type(element.i_children))
-      #for i in element.i_children:
-      #  print "  %s" % i.arg
+
       chs = element.i_children
-      #print "class yc_%s(YANGContainer):" % element.arg
       get_children(fd, chs, module, element, path)
-      #print child_code
-      #print safe_name(element.arg)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))), "class": element.keyword,
@@ -612,58 +579,77 @@ def get_element(fd, element, module, parent, path):
     if element.keyword in ["leaf-list"]:
       create_list = True
     cls = "leaf"
-    #print dir(element)
-    #try:
+
     et = element.search_one('type')
+    restricted = False
+
     if et.arg == "string":
       pattern = et.search_one('pattern')
       if not pattern == None:
         cls = "restricted-string"
-        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="pattern", \
-          restriction_arg="%s")""" % (class_map[et.arg][0], pattern.arg), False)
+        elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern",
+                        restriction_arg="%s")""" % (class_map[et.arg]["native_type"], pattern.arg), \
+                    "restriction_arg": pattern.arg, "restriction_type": "pattern", "parent_type": et.arg, \
+                    "base_type": False}
+        restricted = elemtype
+        #default_type = class_map["string"][0]
       else:
         elemtype = class_map[et.arg]
+        #default_type = et.arg
     elif et.arg in ["uint8", "uint16", "uint32"]:
       range_stmt = et.search_one('range')
       if not range_stmt == None:
         cls = "restricted-%s" % et.arg
-        elemtype = ("""RestrictedClassType(base_type=%s, restriction_type="range", \
-          restriction_arg="%s")"""  % (class_map[et.arg][0], range_stmt.arg), False)
+        elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range", 
+                      restriction_arg="%s")"""  % (class_map[et.arg]["native_type"], range_stmt.arg), \
+                    "restriction_arg": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
+                    "base_type": False}
+        #default_type = class_map[et.arg][0]
+        restricted = elemtype
       else:
         elemtype = class_map[et.arg]
     else:
       try:
         elemtype = class_map[et.arg]
       except KeyError:
-        print "FATAL: unmapped type"
+        print "FATAL: unmapped type (%s)" % et.arg
+        import pprint
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(class_map)
         sys.exit(127)
-    #elemtype = class_map[met]
-    #except KeyError:
-    #  print dir(element)
-    #  print element.i_typedefs
-    #  import sys
-    #  print "FATAL: unmapped type"
-    #  sys.exit(127)
+
     elemdefault = element.search_one('default').arg if \
                                         element.search_one('default') else None
-    # This maps a 'default' specified in the YANG file to a to a default of the
-    # Python type specified
-    if elemtype[1] and elemdefault:
-      elemdefault = elemtype[1][elemdefault]
+    found_native = False
+    nested_default = False
+    tmp_default = restricted if restricted else elemtype
+    while not found_native:
+      if not nested_default and "default" in tmp_default.keys():
+        nested_default = tmp_default["default"]
+      if not tmp_default["base_type"]:
+        tmp_default = class_map[tmp_default["parent_type"]]
+      else:
+        tmp_default = tmp_default["native_type"]
+        found_native = True
+        break
+
+    default_type = tmp_default
+    if nested_default:
+      elemdefault = nested_default
+
     elemconfig = class_bool_map[element.search_one('config').arg] if \
                                   element.search_one('config') else True
 
     elemname = safe_name(element.arg)
-    #print "Appending %s" % element.arg
     if create_list:
       cls = "leaf-list"
-      elemtype = ("TypedListType", elemtype[0])
+      elemtype = ("TypedListType", elemtype["native_type"])
     else:
-      elemtype = elemtype[0]
+      elemtype = elemtype["native_type"]
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": safe_name(path),
                         "class": cls, "default": elemdefault,
-                        "config": elemconfig}
+                        "config": elemconfig, "defaulttype": default_type}
     this_object.append(elemdict)
   return this_object
 

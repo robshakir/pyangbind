@@ -24,6 +24,34 @@ def main():
   from bindings import typedef
   t = typedef()
 
+  for element in ["string", "integer", "stringdefault", "integerdefault", "new_string"]:
+    assert hasattr(t.container, element), "element %s did not exist within the container" % element
+
+  t.container.string = "hello"
+  assert t.container.string == "hello", \
+    "incorrect value set for the string container (value: %s)" \
+    % t.container.string
+
+  assert t.container.stringdefault._default == "aDefaultValue", \
+    "incorrect default value for derived string type with a default (value: %s)" % \
+    t.container.stringdefault._default
+
+  assert t.container.new_string._default == "defaultValue", \
+    "incorrect default value where derived from typedef (value: %s)" % \
+    t.container.new_string._default
+
+  t.container.integer = 1
+  assert t.container.integer == 1, \
+    "integer value not correctly updated"
+
+  passed = False
+  try:
+    t.container.integer = 65 # outside of range
+  except:
+    passed = True
+
+  assert passed == True, "restricted int from typedef was set to invalid value"
+
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -39,10 +39,10 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       else:
-        raise RestrictedClassError, "unsupported restriction type"
+        raise ValueError, "unsupported restriction type"
       try:
         if not self._restriction_test(args[0]):
-          raise RestrictedClassError, "did not match restricted type"
+          raise ValueError, "did not match restricted type"
       except IndexError:
         pass
       obj = base_type.__new__(self, *args, **kwargs)
@@ -51,7 +51,7 @@ def RestrictedClassType(*args, **kwargs):
     def __check(self, v):
       if self._restriction_type == "pattern":
         if not self._restriction_test(v):
-          raise RestrictedClassError, "did not match restricted type"
+          raise ValueError, "did not match restricted type"
         return True
 
     def __setitem__(self, *args, **kwargs):
@@ -420,6 +420,12 @@ class string(object):
           pass
     return d
   
+
+#RestrictedClassType  
+integerdefault = defineYANGDynClass(base=RestrictedClassType(base_type=np.uint16, restriction_type="range",restriction_arg="0..64"), default=np.uint16("10"))
+
+import sys
+sys.exit(127)
 
 s = string()
 print dir(s)
