@@ -19,12 +19,15 @@ def main():
       k = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/Users/rjs/Code/pyang/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
+  os.system("/Users/rjs/Code/pyang/bin/pyang \
+            --plugindir /Users/rjs/Code/pyangbind/btplugin \
+            -p %s -f bt \
+            -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, this_dir, TESTNAME))
 
   from bindings import typedef
   t = typedef()
 
-  for element in ["string", "integer", "stringdefault", "integerdefault", "new_string"]:
+  for element in ["string", "integer", "stringdefault", "integerdefault", "new_string", "remote_new_type"]:
     assert hasattr(t.container, element), "element %s did not exist within the container" % element
 
   t.container.string = "hello"
@@ -51,6 +54,11 @@ def main():
     passed = True
 
   assert passed == True, "restricted int from typedef was set to invalid value"
+
+  t.container.remote_new_type = "testString"
+  assert t.container.remote_new_type == "testString", \
+    "incorrect value for the remote definition (%s)" % \
+      t.container.remote_new_type
 
 
   if not k:

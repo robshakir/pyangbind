@@ -16,6 +16,12 @@ from pyang import statements
 
 USED_TYPES = []
 
+DEBUG = True
+
+if DEBUG:
+  import pprint
+  pp = pprint.PrettyPrinter(indent=2)
+
 #class YANGParent():
 #  name = str()
 #  def __init__(self, n):
@@ -89,9 +95,6 @@ def RestrictedClassType(*args, **kwargs):
     _restriction_test = None
 
     def __init__(self, *args, **kwargs):
-      if self._restriction_type == "pattern":
-        p = re.compile(self._restriction_arg)
-        self._restriction_test = p.match
       try:
         self.__check(args[0])
       except IndexError:
@@ -338,15 +341,16 @@ def defineYANGDynClass(*args, **kwargs):
   for module in modules:
     typedefs = get_typedefs(ctx, module)
     mods = module.search('import')
+    mods.append(module)
     for i in mods:
       prefix = i.search_one('prefix').arg
+      if i == module:
+        prefix = False
       for k,v in get_typedefs(ctx,i,prefix=prefix).iteritems():
-        print "%s,%s" % (k,v)
         if not k in r_typedefs:
           r_typedefs[k] = v
         else:
           raise AttributeError, "Duplicate definition of a type (%s)" % k
-  print r_typedefs
 
   for k,v in r_typedefs.iteritems():
     restricted = False
@@ -411,14 +415,28 @@ def get_typedefs(ctx, module, prefix=False):
             try:
               mapped_type = class_map[type_type]["native_type"]
             except KeyError:
+              if DEBUG:
+                pp.pprint(class_map)
+                pp.pprint(type_type)
+                pp.pprint(item)
               raise AttributeError, "tried to map to derived type" \
-                + " which was unknown"
+                + " which was unknown (%s)" % type_type
         else:
           restriction = False
-          mapped_type = class_map[type_type]["native_type"]
+          try:
+            mapped_type = class_map[type_type]["native_type"]
+          except KeyError:
+            if DEBUG:
+              pp.pprint(class_map)
+              pp.pprint(type_type)
+              pp.pprint(item.arg)
+            raise AttributeError, "a typedef used a type which was not" \
+              + " currently supported (%s)" % type_type
+
       elif x.keyword == "default":
         default = x.arg
-    r_typedefs[item.arg] = (mapped_type, restriction_k, restricted_arg, type_type, default)
+    type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
+    r_typedefs[type_name] = (mapped_type, restriction_k, restricted_arg, type_type, default)
   return r_typedefs
 
 def get_children(fd, i_children, module, parent, path=str()):
@@ -613,9 +631,9 @@ def get_element(fd, element, module, parent, path):
         elemtype = class_map[et.arg]
       except KeyError:
         print "FATAL: unmapped type (%s)" % et.arg
-        import pprint
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(class_map)
+        if DEBUG:
+          pp.pprint(class_map)
+          pp.pprint(et)
         sys.exit(127)
 
     elemdefault = element.search_one('default').arg if \

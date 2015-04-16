@@ -2,6 +2,9 @@ module typedef {
     yang-version "1";
     namespace "http://rob.sh/yang/test/list";
     prefix "foo";
+
+    import remote { prefix defn; }
+
     organization "BugReports Inc";
     contact "A bug reporter";
 
@@ -51,6 +54,10 @@ module typedef {
 
         leaf new-string {
             type new-string-type;
+        }
+
+        leaf remote-new-type {
+            type defn:remote-definition;
         }
     }
 }
