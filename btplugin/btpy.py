@@ -114,6 +114,22 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_test = staticmethod(lambda i: i in range(x[0], x[1]))
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
+      elif restriction_type == "dict_key":
+        # populate enum values
+        used_values = []
+        for k in restriction_arg.keys():
+          if "value" in restriction_arg[k].keys():
+            used_values.append(int(restriction_arg[k]["value"]))
+        c = 0
+        for k in restriction_arg.keys():
+          while c in used_values:
+            c += 1
+          if not "value" in restriction_arg[k].keys():
+            restriction_arg[k]["value"] = c
+          c += 1
+        self._restriction_test = staticmethod(lambda i: i in restriction_arg.keys())
+        self._restriction_arg = restriction_arg
+        self._restriction_type = restriction_type
       else:
         raise ValueError, "unsupported restriction type"
       try:
@@ -130,9 +146,12 @@ def RestrictedClassType(*args, **kwargs):
           raise ValueError, "did not match restricted type"
         return True
 
-    def __setitem__(self, *args, **kwargs):
-      self.__check(args[0])
-      super(RestrictedClass, self).__setitem__(*args, **kwargs)
+    def getValue(self, *args, **kwargs):
+      if self._restriction_type == "dict_key":
+        value = kwargs.pop("mapped", False)
+        if value:
+          return self._restriction_arg[self.__str__()]["value"]
+      return self
 
   return type(RestrictedClass(*args, **kwargs))
 
@@ -243,7 +262,6 @@ class YANGBool(int):
   def __repr__(self):
     return str(True if self.__v else False)
 
-
 def defineYANGDynClass(*args, **kwargs):
   base_type = kwargs.pop("base",int)
   class YANGDynClass(base_type):
@@ -312,9 +330,17 @@ def defineYANGDynClass(*args, **kwargs):
 
       obj = base_type.__new__(self, *args, **kwargs)
       if default == None:
-        if value == None or value == base_type():
+        base_type_default = True
+        try:
+          base_type_default = base_type()
+        except:
+          base_type_default = False
+
+        if value == None:
           # there was no default, and the value was not set, or was
           # set to the default of the base type
+          obj._changed = False
+        elif base_type_default and value == base_type_default:
           obj._changed = False
         else:
           # there was no default, and the value was something other
@@ -421,14 +447,27 @@ def get_typedefs(ctx, module, prefix=False):
                 pp.pprint(item)
               raise AttributeError, "tried to map to derived type" \
                 + " which was unknown (%s)" % type_type
+        elif x.arg in ["enumeration"]:
+            restriction_k = False
+            mapped_type = "string"
+            restriction_type = "dict_key"
+            enumeration_arg = {}
+            for enum in x.search('enum'):
+              enumeration_arg[enum.arg] = {}
+              val = enum.search_one('value')
+              if not val == None:
+                enumeration_arg[enum.arg]["value"] = int(val.arg)
         else:
           restriction = False
           try:
             mapped_type = class_map[type_type]["native_type"]
           except KeyError:
             if DEBUG:
+              pp.pprint("Current class_map:")
               pp.pprint(class_map)
+              pp.pprint("Type being processed: ")
               pp.pprint(type_type)
+              pp.pprint("Name of element:")
               pp.pprint(item.arg)
             raise AttributeError, "a typedef used a type which was not" \
               + " currently supported (%s)" % type_type
@@ -618,7 +657,7 @@ def get_element(fd, element, module, parent, path):
       range_stmt = et.search_one('range')
       if not range_stmt == None:
         cls = "restricted-%s" % et.arg
-        elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range", 
+        elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range",
                       restriction_arg="%s")"""  % (class_map[et.arg]["native_type"], range_stmt.arg), \
                     "restriction_arg": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
                     "base_type": False}
@@ -626,6 +665,19 @@ def get_element(fd, element, module, parent, path):
         restricted = elemtype
       else:
         elemtype = class_map[et.arg]
+    elif et.arg == "enumeration":
+      enumeration_dict = {}
+      for enum in et.search('enum'):
+        enumeration_dict[enum.arg] = {}
+        val = enum.search_one('value')
+        if not val == None:
+          enumeration_dict[enum.arg]["value"] = int(val.arg)
+      #elemtype = {"native_type": """YANGEnumType(initial=None,enum_spec=%s)""" % enumeration_dict, "base_type": False, "parent_type": "string",}
+      elemtype = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", \
+                  restriction_arg=%s,)""" % (enumeration_dict), "restruction_arg": enumeration_dict, \
+                  "restriction_type": "dict_key", "parent_type": "string", \
+                  "base_type": False}
+      restricted = elemtype
     else:
       try:
         elemtype = class_map[et.arg]

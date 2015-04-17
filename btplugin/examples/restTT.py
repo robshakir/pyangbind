@@ -38,6 +38,10 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_test = staticmethod(lambda i: i in range(x[0], x[1]))
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
+      elif restriction_type == "dict_key":
+        self._restriction_test = staticmethod(lambda i: i in restriction_arg.keys())
+        self._restriction_arg = restriction_arg
+        self._restriction_type = restriction_type
       else:
         raise RestrictedClassError, "unsupported restriction type"
       try:
@@ -420,6 +424,11 @@ class string(object):
           pass
     return d
   
+
+s = string
+
+import sys
+sys.exit(127)
 
 s = string()
 print dir(s)
