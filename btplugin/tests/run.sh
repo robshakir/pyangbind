@@ -6,10 +6,9 @@ for i in `find $TESTDIR -mindepth 1 -maxdepth 1 -type d`; do
     $i/run.py > /dev/null
     if [ $? -ne 0 ]; then
         echo "TEST FAILED $i";
-        FAIL = expr $FAIL + 1
+        FAIL=$((FAIL+1))
     fi
 done
-
 if [ $FAIL -eq 0 ]; then
     echo "RESULT: all tests passed"
 else

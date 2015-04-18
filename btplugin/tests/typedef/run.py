@@ -19,7 +19,7 @@ def main():
       k = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/Users/rjs/Code/pyang/bin/pyang \
+  os.system("/usr/local/bin/pyang \
             --plugindir /Users/rjs/Code/pyangbind/btplugin \
             -p %s -f bt \
             -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, this_dir, TESTNAME))
