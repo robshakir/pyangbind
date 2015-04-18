@@ -25,13 +25,13 @@ def main():
 
   u = uint()
 
-  for name in ["eight", "sixteen", "thirtytwo"]:
+  for name in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     for subname in ["", "default", "result", "restricted"]:
       assert hasattr(u.uint_container, "%s%s" % (name, subname)) == True, \
         "missing %s%s from container" % (name, subname)
 
   # tests default and equality
-  for e in [("eight", 2**8-1), ("sixteen", 2**16-1), ("thirtytwo", 2**32-1)]:
+  for e in [("eight", 2**8-1), ("sixteen", 2**16-1), ("thirtytwo", 2**32-1), ("sixtyfour", 2**64-1)]:
     default_v = getattr(u.uint_container, "%sdefault" % e[0])._default
     assert default_v == e[1], \
       "defaults incorrectly set for %s, expected: %d, got %d" % (e[0], e[1], default_v)
@@ -40,10 +40,12 @@ def main():
   u.uint_container.eight = 42
   u.uint_container.sixteen = 42
   u.uint_container.thirtytwo = 42
+  u.uint_container.sixtyfour = 42
   u.uint_container.eightdefault = 84
   u.uint_container.sixteendefault = 84
   u.uint_container.thirtytwodefault = 84
-  for i in ["eight", "sixteen", "thirtytwo"]:
+  u.uint_container.sixtyfourdefault = 84
+  for i in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     v = getattr(u.uint_container, i)
     assert v == 42, "incorrectly set %s, expected 42, got %d" % (i, v)
     c = getattr(u.uint_container, "changed")()
@@ -92,6 +94,14 @@ def main():
   except:
     e = True
   assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (9999)"
+
+  e = False
+  try:
+    u.uint_container.sixtyfourrestricted = 18446744073709551615
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (18446744073709551615)"
+
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

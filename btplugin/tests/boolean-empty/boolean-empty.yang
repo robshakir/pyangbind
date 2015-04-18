@@ -1,0 +1,35 @@
+module boolean-empty {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/boolean-empty";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+        leaf b1 {
+            type boolean;
+            description
+                "A test leaf";
+        }
+
+        leaf b2 {
+            type boolean;
+            default "false";
+            description
+                "A test leaf with a default";
+        }
+
+        leaf e1 {
+            type empty;
+            description
+                "A test empty leaf";
+        }
+    }
+}

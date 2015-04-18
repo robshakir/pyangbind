@@ -47,8 +47,14 @@ class_map = {
   'uint8':            {"native_type": "np.uint8", "base_type": True},
   'uint16':           {"native_type": "np.uint16", "base_type": True},
   'uint32':           {"native_type": "np.uint32", "base_type": True},
+  'uint64':           {"native_type": "np.uint64", "base_type": True},
   'string':           {"native_type": "str", "base_type": True},
   'decimal64':        {"native_type": "float", "base_type": True},
+  'empty':            {"native_type": "YANGBool", "map": class_bool_map, "base_type": True},
+  'int8':             {"native_type": "np.int8", "base_type": True},
+  'int16':            {"native_type": "np.int16", "base_type": True},
+  'int32':            {"native_type": "np.int32", "base_type": True},
+  'int64':            {"native_type": "np.int64", "base_type": True},
   # we need to look at how to parse typedefs
   #'inet:as-number':     ("int", False),
   #'inet:ipv4-address':   ("str", False),
@@ -111,7 +117,7 @@ def RestrictedClassType(*args, **kwargs):
         x = [base_type(i) for i in \
           re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", "\g<low>,\g<high>", \
            restriction_arg).split(",")]
-        self._restriction_test = staticmethod(lambda i: i in range(x[0], x[1]))
+        self._restriction_test = staticmethod(lambda i: i > x[0] and i < x[1])
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       elif restriction_type == "dict_key":
@@ -253,14 +259,22 @@ def YANGListType(*args,**kwargs):
   return type(YANGList(*args,**kwargs))
 
 class YANGBool(int):
-  __v = 0
-  def __init__(self,v=False):
-    if v in [0, False, "false", "False"]:
-      self.__v = 0
+  def __new__(self, *args, **kwargs):
+    false_args = ["false", "False", False, 0, "0"]
+    true_args = ["true", "True", True, 1, "1"]
+    if len(args):
+      if not args[0] in false_args + true_args:
+        raise ValueError, "%s is an invalid value for a YANGBool" % args[0]
+      value = 0 if args[0] in false_args else 1
     else:
-      self.__v = 1
+      value = 0
+    return int.__new__(self, bool(value))
+
   def __repr__(self):
-    return str(True if self.__v else False)
+    return str([False, True][self])
+
+  def __str__(self):
+    return str(self.__repr__())
 
 def defineYANGDynClass(*args, **kwargs):
   base_type = kwargs.pop("base",int)
@@ -421,7 +435,7 @@ def get_typedefs(ctx, module, prefix=False):
     for x in item.substmts:
       if x.keyword == "type":
         type_type = x.arg
-        if x.arg in ["uint8", "uint16", "uint32",]:
+        if x.arg in ["uint8", "uint16", "uint32", "uint64"]:
           restriction = x.search_one("range")
           if not restriction == None:
             mapped_type = "%s" % x.arg
@@ -653,7 +667,7 @@ def get_element(fd, element, module, parent, path):
       else:
         elemtype = class_map[et.arg]
         #default_type = et.arg
-    elif et.arg in ["uint8", "uint16", "uint32"]:
+    elif et.arg in ["uint8", "uint16", "uint32", "uint64"]:
       range_stmt = et.search_one('range')
       if not range_stmt == None:
         cls = "restricted-%s" % et.arg

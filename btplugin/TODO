@@ -3,12 +3,34 @@
 ## base of the module. When defined at the base of the module, then we need to
 ## call parent validate() methods for all sub-objects.
 
-## TODO: we need to define dynamic types - so read through typedefs and then
-## define new types.
+##	YANG types implementation:
+##		TYPE 					IMPLEMENTATION STATUS								UNIT TESTS
+##		binary					no													-
+##			* length			no
+##		bits					no													-
+##			* position			no
+##		boolean 				implemented (YANGBool, cannot subclass bool)		tests/boolean-empty
+##		empty					implemented as boolean								tests/boolean-empty
+##		decimal64				implemented as float								no
+##			* fraction-digits	no
+##		enumeration				implemented											tests/enumeration (complete)
+##		identityref				no													-
+##		int{8,16,32,64}			implemented (numpy int{8,16,32,64})					no													-
+##		uint{8,16,32,64}		implemented (numpy uint{8,16,32,64})				tests/uint (complete)
+##			* range substmt		yes
+##		leafref					no													-
+##		string 					implemented as string 								tests/string (complete)
+##			* pattern substmt	yes
+##			* length substmt	no
+##		union					no													tests/union
+##		typedef					yes													tests/typedef (complete)
+##
+##		container 				yes													tests/*
+##		list					yes													tests/list (complete)
+##		leaf-list				yes													tests/leaf-list (complete)
 
-## TODO: we have to handle unsafe names other than those with "-" in them --
-## which might mean that we rename some of the YANG module variables. for
-## instance, we need to change 'global' which exists in the BGP model.
+##	Generic tests needed
+##		* unsafe python names
 
 
 ## description statements should be included as a __doc__ strings within the

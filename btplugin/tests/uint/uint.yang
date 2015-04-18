@@ -73,6 +73,25 @@ module uint {
               "A test leaf that stores results of operations";
         }
 
+        leaf sixtyfour {
+            type uint64;
+            description
+              "A test leaf for uint16";
+        }
+
+        leaf sixtyfourdefault {
+            type uint64;
+            default 18446744073709551615;
+            description
+              "A test leaf for uint16 with a default";
+        }
+
+        leaf sixtyfourresult {
+            type uint64;
+            description
+              "A test leaf that stores results of operations";
+        }
+
         leaf eightrestricted {
             type uint8 {
                 range 1..10;
@@ -92,6 +111,14 @@ module uint {
         leaf thirtytworestricted {
             type uint32 {
                 range 10000..500000;
+            }
+            description
+              "A test uint32 that has a restricted range";
+        }
+
+        leaf sixtyfourrestricted {
+            type uint64 {
+                range 800..173709551615;
             }
             description
               "A test uint32 that has a restricted range";
