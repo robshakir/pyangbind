@@ -33,7 +33,7 @@ if DEBUG:
 # this is a hack solution, we need to fix this to have
 # dynamic learning of types
 
-reserved_name = ["list", "str", "int", "global"]
+reserved_name = ["list", "str", "int", "global", "decimal", "float", "as"]
 
 class_bool_map = {
   'false':  False,
@@ -43,14 +43,14 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':          {"native_type": "YANGBool", "map": class_bool_map, "base_type": True},
+  'boolean':          {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True},
   'uint8':            {"native_type": "np.uint8", "base_type": True},
   'uint16':           {"native_type": "np.uint16", "base_type": True},
   'uint32':           {"native_type": "np.uint32", "base_type": True},
   'uint64':           {"native_type": "np.uint64", "base_type": True},
-  'string':           {"native_type": "str", "base_type": True},
-  'decimal64':        {"native_type": "float", "base_type": True},
-  'empty':            {"native_type": "YANGBool", "map": class_bool_map, "base_type": True},
+  'string':           {"native_type": "str", "base_type": True, "quote_arg": True},
+  'decimal64':        {"native_type": "Decimal", "base_type": True,},
+  'empty':            {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True},
   'int8':             {"native_type": "np.int8", "base_type": True},
   'int16':            {"native_type": "np.int16", "base_type": True},
   'int32':            {"native_type": "np.int32", "base_type": True},
@@ -61,6 +61,9 @@ class_map = {
   #'decimal64':       ("float", False),
   # more types to be added here
 }
+
+# all types that support range substmts
+INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64"]
 
 def safe_name(arg):
   """
@@ -86,9 +89,28 @@ class BTPyClass(plugin.PyangPlugin):
 def build_btclass(ctx, modules, fd):
   # numpy provides some elements of the classes datatypes
   fd.write("from operator import attrgetter\n")
-  fd.write("import numpy as np\n\n")
+  fd.write("import numpy as np\n")
+  fd.write("from decimal import Decimal\n")
 
   fd.write("""import collections, re
+
+def RestrictedPrecisionDecimalType(*args, **kwargs):
+  precision = kwargs.pop("precision", False)
+  class RestrictedPrecisionDecimal(Decimal):
+    _precision = 10.0**(-1.0*int(precision))
+    def __new__(self, *args, **kwargs):
+      if not self._precision == None:
+        if len(args):
+          value = Decimal(args[0]).quantize(Decimal(str(self._precision)))
+        else:
+          value = Decimal(0)
+      elif len(args):
+        value = Decimal(args[0])
+      else:
+        value = Decimal(0)
+      obj = Decimal.__new__(self, value, **kwargs)
+      return obj
+  return type(RestrictedPrecisionDecimal(*args, **kwargs))
 
 def RestrictedClassType(*args, **kwargs):
   base_type = kwargs.pop("base_type", str)
@@ -394,20 +416,23 @@ def defineYANGDynClass(*args, **kwargs):
 
   for k,v in r_typedefs.iteritems():
     restricted = False
-    if v[1]:
+    if v["restriction"] in ["pattern", "range"]:
       m_name = """RestrictedClassType(base_type=%s, restriction_type="%s",restriction_arg="%s")""" % \
-        (class_map[v[0]]["native_type"], v[1], v[2])
+        (class_map[v["type"]]["native_type"], v["restriction"], v["argument"])
       restricted = True
+    elif v["restriction"] in ["fraction-digits"]:
+      m_name = """RestrictedPrecisionDecimal(precision=%s)""" % \
+                  (v["argument"])
     else:
-      m_name = v[0]
-    class_map[k] = {"native_type": m_name, "base_type": False, "parent_type": v[3],}
-    if v[4]:
-      class_map[k]["default"] = v[4]
+      m_name = v["type"]
+    class_map[k] = {"native_type": m_name, "base_type": False, "parent_type": v["parent"],}
+    if v["default"]:
+      class_map[k]["default"] = v["default"]
     if restricted:
-      class_map[k]["restriction_type"] = v[1]
-      class_map[k]["restriction_argument"] = v[0]
+      class_map[k]["restriction_type"] = v["restriction"]
+      class_map[k]["restriction_argument"] = v["argument"]
       class_map[k]["base_type"] = False
-      class_map[k]["parent_type"] = v[0]
+      class_map[k]["parent_type"] = v["type"]
 
   # we need to parse each module
   for module in modules:
@@ -435,7 +460,7 @@ def get_typedefs(ctx, module, prefix=False):
     for x in item.substmts:
       if x.keyword == "type":
         type_type = x.arg
-        if x.arg in ["uint8", "uint16", "uint32", "uint64"]:
+        if x.arg in INT_RANGE_TYPES:
           restriction = x.search_one("range")
           if not restriction == None:
             mapped_type = "%s" % x.arg
@@ -471,6 +496,15 @@ def get_typedefs(ctx, module, prefix=False):
               val = enum.search_one('value')
               if not val == None:
                 enumeration_arg[enum.arg]["value"] = int(val.arg)
+        elif x.arg in ["decimal64"]:
+          restriction = x.search_one('fraction-digits')
+          if not restriction == None:
+            mapped_type = "decimal64"
+            restricted_arg = restrction.arg
+            restriction_k = restricton.keyword
+          else:
+            restriction_k = False
+            mapped_type = class_map[type_type]["native_type"]
         else:
           restriction = False
           try:
@@ -489,7 +523,8 @@ def get_typedefs(ctx, module, prefix=False):
       elif x.keyword == "default":
         default = x.arg
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
-    r_typedefs[type_name] = (mapped_type, restriction_k, restricted_arg, type_type, default)
+    r_typedefs[type_name] = {"type": mapped_type, "restriction": restriction_k, \
+                              "argument": restricted_arg, "parent": type_type, "default": default}
   return r_typedefs
 
 def get_children(fd, i_children, module, parent, path=str()):
@@ -564,6 +599,14 @@ def get_children(fd, i_children, module, parent, path=str()):
         ntype = i["type"][0]
       else:
         ntype = i["type"]
+      if "default" in i.keys() and not i["default"] == None:
+        if i["quote_arg"]:
+          default_arg = "\"%s\"" % i["default"]
+        else:
+          default_arg = i["default"]
+        default_s = ",default=%s(%s)," % (i["defaulttype"], default_arg)
+      else:
+        default_s = ""
       fd.write("""
   def _set_%s(self,v):
     \"\"\"
@@ -574,12 +617,12 @@ def get_children(fd, i_children, module, parent, path=str()):
       do so via calling thisObj._set_%s() directly.
     \"\"\"
     try:
-      t = defineYANGDynClass(v,base=%s)
+      t = defineYANGDynClass(v,base=%s%s)
     except (TypeError, ValueError):
       raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],
                           i["origtype"], i["name"], i["name"], \
-                          ntype, i["name"], ntype, i["name"]))
+                          ntype, default_s, i["name"], ntype, i["name"]))
       fd.write("    self.set()\n")
     fd.write("\n")
     for i in elements:
@@ -667,7 +710,7 @@ def get_element(fd, element, module, parent, path):
       else:
         elemtype = class_map[et.arg]
         #default_type = et.arg
-    elif et.arg in ["uint8", "uint16", "uint32", "uint64"]:
+    elif et.arg in INT_RANGE_TYPES:
       range_stmt = et.search_one('range')
       if not range_stmt == None:
         cls = "restricted-%s" % et.arg
@@ -692,6 +735,15 @@ def get_element(fd, element, module, parent, path):
                   "restriction_type": "dict_key", "parent_type": "string", \
                   "base_type": False}
       restricted = elemtype
+    elif et.arg == "decimal64":
+      fd_stmt = et.search_one('fraction-digits')
+      if not fd_stmt == None:
+        cls = "restricted-decimal64"
+        elemtype = {"native_type": """RestrictedPrecisionDecimalType(precision=%s)""" % fd_stmt.arg, \
+                    "base_type": False, "parent_type": "decimal64"}
+        restricted = elemtype
+      else:
+        elemtype = class_map[et.arg]
     else:
       try:
         elemtype = class_map[et.arg]
@@ -725,6 +777,10 @@ def get_element(fd, element, module, parent, path):
                                   element.search_one('config') else True
 
     elemname = safe_name(element.arg)
+    if "quote_arg" in elemtype.keys():
+      quote_arg = elemtype["quote_arg"]
+    else:
+      quote_arg = False
     if create_list:
       cls = "leaf-list"
       elemtype = ("TypedListType", elemtype["native_type"])
@@ -733,7 +789,7 @@ def get_element(fd, element, module, parent, path):
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": safe_name(path),
                         "class": cls, "default": elemdefault,
-                        "config": elemconfig, "defaulttype": default_type}
+                        "config": elemconfig, "defaulttype": default_type, "quote_arg": quote_arg}
     this_object.append(elemdict)
   return this_object
 

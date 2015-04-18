@@ -1,0 +1,127 @@
+module int {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/uint";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container int-container {
+        description
+            "A container";
+
+        leaf eight {
+            type int8;
+            description
+              "A test leaf for uint8";
+        }
+
+        leaf eightdefault {
+            type int8;
+            default 127;
+            description
+              "A test leaf for uint8 with a default";
+        }
+
+        leaf eightresult {
+            type int8;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf sixteen {
+            type int16;
+            description
+              "A test leaf for uint16";
+        }
+
+        leaf sixteendefault {
+            type int16;
+            default 32767;
+            description
+              "A test leaf for uint16 with a default";
+        }
+
+        leaf sixteenresult {
+            type int16;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf thirtytwo {
+            type int32;
+            description
+              "A test leaf for uint32";
+        }
+
+        leaf thirtytwodefault {
+            type int32;
+            default 2147483647;
+            description
+              "A test leaf for uint32 with a default";
+        }
+
+        leaf thirtytworesult {
+            type int32;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf sixtyfour {
+            type int64;
+            description
+              "A test leaf for uint16";
+        }
+
+        leaf sixtyfourdefault {
+            type int64;
+            default 9223372036854775807;
+            description
+              "A test leaf for uint16 with a default";
+        }
+
+        leaf sixtyfourresult {
+            type int64;
+            description
+              "A test leaf that stores results of operations";
+        }
+
+        leaf eightrestricted {
+            type int8 {
+                range -42..10;
+            }
+            description
+              "A test uint8 that has restricted range";
+        }
+
+        leaf sixteenrestricted {
+            type int16 {
+                range -42..1000;
+            }
+            description
+              "A test uint16 that has a restricted range";
+        }
+
+        leaf thirtytworestricted {
+            type int32 {
+                range -42..500000;
+            }
+            description
+              "A test uint32 that has a restricted range";
+        }
+
+        leaf sixtyfourrestricted {
+            type int64 {
+                range -42..72036854775807;
+            }
+            description
+              "A test uint32 that has a restricted range";
+        }
+    }
+}

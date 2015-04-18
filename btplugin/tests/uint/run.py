@@ -102,6 +102,13 @@ def main():
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (18446744073709551615)"
 
+  e = False
+  try:
+    u.uint_container.sixtyfourrestricted = 799
+  except:
+    e = True
+  assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (799)"
+
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

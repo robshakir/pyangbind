@@ -1,0 +1,42 @@
+module decimal {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/decimal";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+        leaf d1 {
+            type decimal64 {
+                fraction-digits 2;
+            }
+            description
+                "A test decimal64 leaf with restricted precision";
+        }
+
+        leaf d2 {
+            type decimal64 {
+                fraction-digits 3;
+            }
+            default 42.00;
+            description
+                "A test decimal64 with leaf with a default";
+        }
+
+        leaf d3 {
+            type decimal64 {
+                fraction-digits 1;
+            }
+            default 1.0;
+            description
+                "A test decimal64 with restriction & default";
+        }
+    }
+}
