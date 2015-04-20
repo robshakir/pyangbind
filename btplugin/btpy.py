@@ -10,6 +10,7 @@ import optparse
 import sys
 import re
 import string
+import textwrap
 
 from pyang import plugin
 from pyang import statements
@@ -95,10 +96,23 @@ def build_btclass(ctx, modules, fd):
   fd.write("""import collections, re
 
 def RestrictedPrecisionDecimalType(*args, **kwargs):
+  \"\"\"
+    Function to return a new type that is based on decimal.Decimal with
+    an arbitrary restricted precision.
+  \"\"\"
   precision = kwargs.pop("precision", False)
   class RestrictedPrecisionDecimal(Decimal):
+    \"\"\"
+      Class extending decimal.Decimal to restrict the precision that is
+      stored, supporting the fraction-digits argument of the YANG decimal64
+      type.
+    \"\"\"
     _precision = 10.0**(-1.0*int(precision))
     def __new__(self, *args, **kwargs):
+      \"\"\"
+        Overloads the decimal __new__ function in order to round the input
+        value to the new value.
+      \"\"\"
       if not self._precision == None:
         if len(args):
           value = Decimal(args[0]).quantize(Decimal(str(self._precision)))
@@ -113,16 +127,32 @@ def RestrictedPrecisionDecimalType(*args, **kwargs):
   return type(RestrictedPrecisionDecimal(*args, **kwargs))
 
 def RestrictedClassType(*args, **kwargs):
+  \"\"\"
+    Function to return a new type that restricts an arbitrary base_type with
+    a specified restriction. The restriction_type specified determines the
+    type of restriction placed on the class, and the restriction_arg gives
+    any input data that this function needs.
+  \"\"\"
   base_type = kwargs.pop("base_type", str)
   restriction_type = kwargs.pop("restriction_type", None)
   restriction_arg = kwargs.pop("restriction_arg", None)
 
   class RestrictedClass(base_type):
+    \"\"\"
+      A class that restricts the base_type class with a new function that the
+      input value is validated against before being applied. The function is
+      a static method which is assigned to _restricted_test.
+    \"\"\"
     _restriction_type = restriction_type
     _restriction_arg = restriction_arg
     _restriction_test = None
 
     def __init__(self, *args, **kwargs):
+      \"\"\"
+        Overloads the base_class __init__ method to check the input argument
+        against the validation function - returns on instance of the base_type
+        class, which can be manipulated as per a usual Python object.
+      \"\"\"
       try:
         self.__check(args[0])
       except IndexError:
@@ -130,6 +160,10 @@ def RestrictedClassType(*args, **kwargs):
       super(RestrictedClass, self).__init__(*args, **kwargs)
 
     def __new__(self, *args, **kwargs):
+      \"\"\"
+        Create a new class instance, and dynamically define the
+        _restriction_test method so that it can be called by other functions.
+      \"\"\"
       if restriction_type == "pattern":
         p = re.compile(restriction_arg)
         self._restriction_test = p.match
@@ -169,12 +203,20 @@ def RestrictedClassType(*args, **kwargs):
       return obj
 
     def __check(self, v):
+      \"\"\"
+        Run the _restriction_test static method against the argument v,
+        returning an error if the value does not validate.
+      \"\"\"
       if self._restriction_type == "pattern":
         if not self._restriction_test(v):
           raise ValueError, "did not match restricted type"
         return True
 
     def getValue(self, *args, **kwargs):
+      \"\"\"
+        For types where there is a dict_key restriction (such as YANG
+        enumeration), return the value of the dictionary key.
+      \"\"\"
       if self._restriction_type == "dict_key":
         value = kwargs.pop("mapped", False)
         if value:
@@ -412,27 +454,27 @@ def defineYANGDynClass(*args, **kwargs):
         if not k in r_typedefs:
           r_typedefs[k] = v
         else:
-          raise AttributeError, "Duplicate definition of a type (%s)" % k
+          raise TypeError, "Duplicate definition of a type (%s)" % k
 
   for k,v in r_typedefs.iteritems():
     restricted = False
-    if v["restriction"] in ["pattern", "range"]:
-      m_name = """RestrictedClassType(base_type=%s, restriction_type="%s",restriction_arg="%s")""" % \
-        (class_map[v["type"]]["native_type"], v["restriction"], v["argument"])
-      restricted = True
-    elif v["restriction"] in ["fraction-digits"]:
-      m_name = """RestrictedPrecisionDecimal(precision=%s)""" % \
-                  (v["argument"])
+    class_map[k] = {"native_type": v["native_type"], "base_type": False,}
+    if "parent_type" in v.keys():
+      class_map[k]["parent_type"] = v["parent_type"]
     else:
-      m_name = v["type"]
-    class_map[k] = {"native_type": m_name, "base_type": False, "parent_type": v["parent"],}
-    if v["default"]:
+      if v["yang_type"] in class_map.keys():
+        v["parent_type"] = v["yang_type"]
+      else:
+        raise TypeError, "typedef specified a native type that was not supported"
+
+      class_map[k]["parent_type"] = v["yang_type"]
+    if "default" in v.keys():
       class_map[k]["default"] = v["default"]
-    if restricted:
-      class_map[k]["restriction_type"] = v["restriction"]
-      class_map[k]["restriction_argument"] = v["argument"]
-      class_map[k]["base_type"] = False
-      class_map[k]["parent_type"] = v["type"]
+    if "restriction_type" in v.keys():
+      class_map[k]["restriction_type"] = v["restriction_type"]
+      class_map[k]["restriction_argument"] = v["restriction_arg"]
+    if "quote_arg" in v.keys():
+      class_map[k]["quote_arg"] = v["quote_arg"]
 
   # we need to parse each module
   for module in modules:
@@ -457,74 +499,15 @@ def get_typedefs(ctx, module, prefix=False):
   for item in typedefs:
     mapped_type = False
     restricted_arg = False
-    for x in item.substmts:
-      if x.keyword == "type":
-        type_type = x.arg
-        if x.arg in INT_RANGE_TYPES:
-          restriction = x.search_one("range")
-          if not restriction == None:
-            mapped_type = "%s" % x.arg
-            restricted_arg = restriction.arg
-            restriction_k = restriction.keyword
-          else:
-            restriction_k = False
-            mapped_type = class_map[type_type]["native_type"]
-        elif x.arg in ["string"]:
-          restriction = x.search_one("pattern")
-          if not restriction == None:
-            mapped_type = "string"
-            restricted_arg = restriction.arg
-            restriction_k = restriction.keyword
-          else:
-            restriction_k = False
-            try:
-              mapped_type = class_map[type_type]["native_type"]
-            except KeyError:
-              if DEBUG:
-                pp.pprint(class_map)
-                pp.pprint(type_type)
-                pp.pprint(item)
-              raise AttributeError, "tried to map to derived type" \
-                + " which was unknown (%s)" % type_type
-        elif x.arg in ["enumeration"]:
-            restriction_k = False
-            mapped_type = "string"
-            restriction_type = "dict_key"
-            enumeration_arg = {}
-            for enum in x.search('enum'):
-              enumeration_arg[enum.arg] = {}
-              val = enum.search_one('value')
-              if not val == None:
-                enumeration_arg[enum.arg]["value"] = int(val.arg)
-        elif x.arg in ["decimal64"]:
-          restriction = x.search_one('fraction-digits')
-          if not restriction == None:
-            mapped_type = "decimal64"
-            restricted_arg = restrction.arg
-            restriction_k = restricton.keyword
-          else:
-            restriction_k = False
-            mapped_type = class_map[type_type]["native_type"]
-        else:
-          restriction = False
-          try:
-            mapped_type = class_map[type_type]["native_type"]
-          except KeyError:
-            if DEBUG:
-              pp.pprint("Current class_map:")
-              pp.pprint(class_map)
-              pp.pprint("Type being processed: ")
-              pp.pprint(type_type)
-              pp.pprint("Name of element:")
-              pp.pprint(item.arg)
-            raise AttributeError, "a typedef used a type which was not" \
-              + " currently supported (%s)" % type_type
-
-      elif x.keyword == "default":
-        default = x.arg
+    cls,elemtype = build_elemtype(item)
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
-    r_typedefs[type_name] = {"type": mapped_type, "restriction": restriction_k, \
-                              "argument": restricted_arg, "parent": type_type, "default": default}
+    r_typedefs[type_name] = elemtype
+    r_typedefs[type_name]["yang_type"] = item.search_one('type').arg
+    default_stmt = item.search_one('default')
+    if not default_stmt == None:
+      r_typedefs[type_name]["default"] = default_stmt.arg
+    #r_typedefs[type_name] = {"type": mapped_type, "restriction": restriction_k, \
+    #                          "argument": restricted_arg, "parent": type_type, "default": default}
   return r_typedefs
 
 def get_children(fd, i_children, module, parent, path=str()):
@@ -538,15 +521,23 @@ def get_children(fd, i_children, module, parent, path=str()):
         safe_name(path.replace("/", "_"))))
     else:
       fd.write("class %s(object):\n" % safe_name(parent.arg))
+
+    parent_descr = parent.search_one('description')
+    if not parent_descr == None:
+      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg
+    else:
+      parent_descr = ""
+
     fd.write("""  \"\"\"
      This class was auto-generated by the PythonClass plugin for PYANG
-     from YANG module %s - based on the path %s.
-     Each member element of the container is represented as a class
-     variable - with a specific YANG type.
-    \"\"\"\n"""  % (module.arg, (path if not path == "" else "/")))
+     from YANG module %s - based on the path %s. Each member element of
+     the container is represented as a class variable - with a specific 
+     YANG type.%s
+    \"\"\"\n"""  % (module.arg, (path if not path == "" else "/"), parent_descr))
   else:
     raise TypeError, "unhandled keyword with children %s" % parent.keyword
 
+  e_str = ""
   if len(elements) == 0:
     fd.write("  pass\n")
   else:
@@ -587,14 +578,17 @@ def get_children(fd, i_children, module, parent, path=str()):
 
     node = {}
     for i in elements:
+      description_str = ""
+      if i["description"]:
+        description_str = "\n\n      YANG Description: %s" % i["description"]
       fd.write("""
   def _get_%s(self):
     \"\"\"
-      Getter method for %s, mapped from YANG variable %s (%s)
+      Getter method for %s, mapped from YANG variable %s (%s)%s
     \"\"\"
     return self.__%s
       """ % (i["name"], i["name"], i["path"], i["origtype"],
-             i["name"]))
+             description_str, i["name"]))
       if type(i["type"]) == type((1,1)):
         ntype = i["type"][0]
       else:
@@ -614,14 +608,14 @@ def get_children(fd, i_children, module, parent, path=str()):
       If this variable is read-only (config: false) in the
       source YANG file, then _set_%s is considered as a private
       method. Backends looking to populate this variable should
-      do so via calling thisObj._set_%s() directly.
+      do so via calling thisObj._set_%s() directly.%s
     \"\"\"
     try:
       t = defineYANGDynClass(v,base=%s%s)
     except (TypeError, ValueError):
       raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],
-                          i["origtype"], i["name"], i["name"], \
+                          i["origtype"], i["name"], i["name"], description_str, \
                           ntype, default_s, i["name"], ntype, i["name"]))
       fd.write("    self.set()\n")
     fd.write("\n")
@@ -667,24 +661,94 @@ def get_children(fd, i_children, module, parent, path=str()):
   fd.write("\n")
   return True
 
+def build_elemtype(element):
+  cls = "leaf"
+  et = element.search_one('type')
+  restricted = False
+
+  if et.arg == "string":
+    pattern = et.search_one('pattern')
+    if not pattern == None:
+      cls = "restricted-string"
+      elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern",
+                      restriction_arg="%s")""" % (class_map[et.arg]["native_type"], pattern.arg), \
+                  "restriction_arg": pattern.arg, "restriction_type": "pattern", "parent_type": et.arg, \
+                  "base_type": False,}
+      restricted = True
+      #default_type = class_map["string"][0]
+    else:
+      elemtype = class_map[et.arg]
+      #default_type = et.arg
+  elif et.arg in INT_RANGE_TYPES:
+    range_stmt = et.search_one('range')
+    if not range_stmt == None:
+      cls = "restricted-%s" % et.arg
+      elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range",
+                    restriction_arg="%s")"""  % (class_map[et.arg]["native_type"], range_stmt.arg), \
+                  "restriction_arg": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
+                  "base_type": False,}
+      #default_type = class_map[et.arg][0]
+      restricted = True
+    else:
+      elemtype = class_map[et.arg]
+  elif et.arg == "enumeration":
+    enumeration_dict = {}
+    for enum in et.search('enum'):
+      enumeration_dict[enum.arg] = {}
+      val = enum.search_one('value')
+      if not val == None:
+        enumeration_dict[enum.arg]["value"] = int(val.arg)
+    #elemtype = {"native_type": """YANGEnumType(initial=None,enum_spec=%s)""" % enumeration_dict, "base_type": False, "parent_type": "string",}
+    elemtype = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", \
+                restriction_arg=%s,)""" % (enumeration_dict), "restruction_arg": enumeration_dict, \
+                "restriction_type": "dict_key", "parent_type": "string", \
+                "base_type": False,}
+    restricted = True
+  elif et.arg == "decimal64":
+    fd_stmt = et.search_one('fraction-digits')
+    if not fd_stmt == None:
+      cls = "restricted-decimal64"
+      elemtype = {"native_type": """RestrictedPrecisionDecimalType(precision=%s)""" % fd_stmt.arg, \
+                  "base_type": False, "parent_type": "decimal64",}
+      restricted = True
+    else:
+      elemtype = class_map[et.arg]
+  else:
+    try:
+      elemtype = class_map[et.arg]
+    except KeyError:
+      print "FATAL: unmapped type (%s)" % et.arg
+      if DEBUG:
+        pp.pprint(class_map)
+        pp.pprint(et)
+      sys.exit(127)
+  return (cls,elemtype)
+
+
 def get_element(fd, element, module, parent, path):
   this_object = []
   default = False
   p = False
   create_list = False
+
+  elemdescr = element.search_one('description')
+  if elemdescr == None:
+    elemdescr = False
+  else:
+    elemdescr = elemdescr.arg
+
   if hasattr(element, 'i_children'):
     if element.keyword in ["container", "list"]:
       p = True
     elif element.keyword in ["leaf-list"]:
       create_list = True
     if element.i_children:
-
       chs = element.i_children
       get_children(fd, chs, module, element, path)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))), "class": element.keyword,
-                          "path": safe_name(path), "config": True}
+                          "path": safe_name(path), "config": True, "description": elemdescr,}
       if element.keyword == "list":
         elemdict["key"] = safe_name(element.search_one("key").arg)
       this_object.append(elemdict)
@@ -692,73 +756,12 @@ def get_element(fd, element, module, parent, path):
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
-    cls = "leaf"
-
-    et = element.search_one('type')
-    restricted = False
-
-    if et.arg == "string":
-      pattern = et.search_one('pattern')
-      if not pattern == None:
-        cls = "restricted-string"
-        elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern",
-                        restriction_arg="%s")""" % (class_map[et.arg]["native_type"], pattern.arg), \
-                    "restriction_arg": pattern.arg, "restriction_type": "pattern", "parent_type": et.arg, \
-                    "base_type": False}
-        restricted = elemtype
-        #default_type = class_map["string"][0]
-      else:
-        elemtype = class_map[et.arg]
-        #default_type = et.arg
-    elif et.arg in INT_RANGE_TYPES:
-      range_stmt = et.search_one('range')
-      if not range_stmt == None:
-        cls = "restricted-%s" % et.arg
-        elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range",
-                      restriction_arg="%s")"""  % (class_map[et.arg]["native_type"], range_stmt.arg), \
-                    "restriction_arg": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
-                    "base_type": False}
-        #default_type = class_map[et.arg][0]
-        restricted = elemtype
-      else:
-        elemtype = class_map[et.arg]
-    elif et.arg == "enumeration":
-      enumeration_dict = {}
-      for enum in et.search('enum'):
-        enumeration_dict[enum.arg] = {}
-        val = enum.search_one('value')
-        if not val == None:
-          enumeration_dict[enum.arg]["value"] = int(val.arg)
-      #elemtype = {"native_type": """YANGEnumType(initial=None,enum_spec=%s)""" % enumeration_dict, "base_type": False, "parent_type": "string",}
-      elemtype = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", \
-                  restriction_arg=%s,)""" % (enumeration_dict), "restruction_arg": enumeration_dict, \
-                  "restriction_type": "dict_key", "parent_type": "string", \
-                  "base_type": False}
-      restricted = elemtype
-    elif et.arg == "decimal64":
-      fd_stmt = et.search_one('fraction-digits')
-      if not fd_stmt == None:
-        cls = "restricted-decimal64"
-        elemtype = {"native_type": """RestrictedPrecisionDecimalType(precision=%s)""" % fd_stmt.arg, \
-                    "base_type": False, "parent_type": "decimal64"}
-        restricted = elemtype
-      else:
-        elemtype = class_map[et.arg]
-    else:
-      try:
-        elemtype = class_map[et.arg]
-      except KeyError:
-        print "FATAL: unmapped type (%s)" % et.arg
-        if DEBUG:
-          pp.pprint(class_map)
-          pp.pprint(et)
-        sys.exit(127)
-
+    cls,elemtype = build_elemtype(element)
     elemdefault = element.search_one('default').arg if \
                                         element.search_one('default') else None
     found_native = False
     nested_default = False
-    tmp_default = restricted if restricted else elemtype
+    tmp_default = elemtype
     while not found_native:
       if not nested_default and "default" in tmp_default.keys():
         nested_default = tmp_default["default"]
@@ -770,7 +773,7 @@ def get_element(fd, element, module, parent, path):
         break
 
     default_type = tmp_default
-    if nested_default:
+    if elemdefault == None and nested_default:
       elemdefault = nested_default
 
     elemconfig = class_bool_map[element.search_one('config').arg] if \
@@ -789,7 +792,8 @@ def get_element(fd, element, module, parent, path):
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": safe_name(path),
                         "class": cls, "default": elemdefault,
-                        "config": elemconfig, "defaulttype": default_type, "quote_arg": quote_arg}
+                        "config": elemconfig, "defaulttype": default_type, "quote_arg": quote_arg,
+                        "description": elemdescr,}
     this_object.append(elemdict)
   return this_object
 

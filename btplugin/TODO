@@ -9,10 +9,10 @@
 ##			* length			no
 ##		bits					no													-
 ##			* position			no
-##		boolean 				implemented (YANGBool, cannot subclass bool)		tests/boolean-empty
-##		empty					implemented as boolean								tests/boolean-empty
-##		decimal64				implemented as decimal								no
-##			* fraction-digits	no
+##		boolean 				implemented (YANGBool, cannot subclass bool)		tests/boolean-empty (complete)
+##		empty					implemented as boolean								tests/boolean-empty (complete)
+##		decimal64				implemented as decimal								tests/decimal64 (complete)
+##			* fraction-digits	yes
 ##		enumeration				implemented											tests/enumeration (complete)
 ##		identityref				no													-
 ##		int{8,16,32,64}			implemented (numpy int{8,16,32,64})					tests/int (complete)													-

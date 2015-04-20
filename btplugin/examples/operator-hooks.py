@@ -28,12 +28,17 @@ def instrument_operator_hooks(cls):
         add_hook(hook_name)
     return cls
 
-@instrument_operator_hooks
-class CatchAll(object):
-    pass
+def CatchAllType(*args, **kwargs):
+    base_class = kwargs.pop("base_class",None)
+    @instrument_operator_hooks
+    class CatchAll(base_class):
+        pass
+    return type(CatchAll(*args,**kwargs))
 
-c = CatchAll()
+c = CatchAllType(["one", "two", "three"], base_class=str)
+print dir(c)
 
-c.append("bar")
-f = ["hello"]
-print c+f
+print c
+#c.append("bar")
+#f = ["hello"]
+#print c+f
