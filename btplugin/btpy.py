@@ -10,7 +10,8 @@ import optparse
 import sys
 import re
 import string
-import textwrap
+import numpy as np
+import decimal
 
 from pyang import plugin
 from pyang import statements
@@ -23,16 +24,25 @@ if DEBUG:
   import pprint
   pp = pprint.PrettyPrinter(indent=2)
 
-#class YANGParent():
-#  name = str()
-#  def __init__(self, n):
-#    self.name = n
-#
-#class YANGContainer(YANGParent):
-#  pass
+# TODO, move this to a header file
+class YANGBool(int):
+  def __new__(self, *args, **kwargs):
+    false_args = ["false", "False", False, 0, "0"]
+    true_args = ["true", "True", True, 1, "1"]
+    if len(args):
+      if not args[0] in false_args + true_args:
+        raise ValueError, "%s is an invalid value for a YANGBool" % args[0]
+      value = 0 if args[0] in false_args else 1
+    else:
+      value = 0
+    return int.__new__(self, bool(value))
 
-# this is a hack solution, we need to fix this to have
-# dynamic learning of types
+  def __repr__(self):
+    return str([False, True][self])
+
+  def __str__(self):
+    return str(self.__repr__())
+
 
 reserved_name = ["list", "str", "int", "global", "decimal", "float", "as"]
 
@@ -44,18 +54,18 @@ class_bool_map = {
 }
 
 class_map = {
-  'boolean':          {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True},
-  'uint8':            {"native_type": "np.uint8", "base_type": True},
-  'uint16':           {"native_type": "np.uint16", "base_type": True},
-  'uint32':           {"native_type": "np.uint32", "base_type": True},
-  'uint64':           {"native_type": "np.uint64", "base_type": True},
-  'string':           {"native_type": "str", "base_type": True, "quote_arg": True},
-  'decimal64':        {"native_type": "Decimal", "base_type": True,},
-  'empty':            {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True},
-  'int8':             {"native_type": "np.int8", "base_type": True},
-  'int16':            {"native_type": "np.int16", "base_type": True},
-  'int32':            {"native_type": "np.int32", "base_type": True},
-  'int64':            {"native_type": "np.int64", "base_type": True},
+  'boolean':          {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True, "pytype": YANGBool},
+  'uint8':            {"native_type": "np.uint8", "base_type": True, "pytype": np.uint8},
+  'uint16':           {"native_type": "np.uint16", "base_type": True, "pytype": np.uint16},
+  'uint32':           {"native_type": "np.uint32", "base_type": True, "pytype": np.uint32},
+  'uint64':           {"native_type": "np.uint64", "base_type": True, "pytype": np.uint64},
+  'string':           {"native_type": "str", "base_type": True, "quote_arg": True, "pytype": str},
+  'decimal64':        {"native_type": "Decimal", "base_type": True, "pytype": decimal.Decimal},
+  'empty':            {"native_type": "YANGBool", "map": class_bool_map, "base_type": True, "quote_arg": True, "pytype": YANGBool},
+  'int8':             {"native_type": "np.int8", "base_type": True, "pytype": np.int8},
+  'int16':            {"native_type": "np.int16", "base_type": True, "pytype": np.int16},
+  'int32':            {"native_type": "np.int32", "base_type": True, "pytype": np.int32},
+  'int64':            {"native_type": "np.int64", "base_type": True, "pytype": np.int64},
   # we need to look at how to parse typedefs
   #'inet:as-number':     ("int", False),
   #'inet:ipv4-address':   ("str", False),
@@ -94,6 +104,20 @@ def build_btclass(ctx, modules, fd):
   fd.write("from decimal import Decimal\n")
 
   fd.write("""import collections, re
+
+def UnionType(*args, **kwargs):
+  expected_types = kwargs.pop("expected_types", False)
+  if not expected_types or not type(expected_types) == type([]):
+    raise AttributeError, "could not initialise union"
+  if not len(args):
+    return expected_types[0]
+  else:
+    for t in expected_types:
+      try:
+        return t(args[0])
+      except ValueError:
+        pass
+    raise AttributeError, "specified argument did not match any union type"
 
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   \"\"\"
@@ -499,7 +523,7 @@ def get_typedefs(ctx, module, prefix=False):
   for item in typedefs:
     mapped_type = False
     restricted_arg = False
-    cls,elemtype = build_elemtype(item)
+    cls,elemtype = build_elemtype(item.search_one('type'))
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     r_typedefs[type_name] = elemtype
     r_typedefs[type_name]["yang_type"] = item.search_one('type').arg
@@ -554,12 +578,15 @@ def get_children(fd, i_children, module, parent, path=str()):
     fd.write("\n")
     for i in elements:
       #rint "looping elements"
+      if "default" in i.keys() and not i["default"] == None:
+        default_arg = "\"%s\"" % i["default"] if i["quote_arg"] else "%s" % i["default"]
+
       if i["class"] == "leaf-list":
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass(base="
-        class_str += "%s(allowed_type=%s), " % i["type"]
+        class_str += "%s(allowed_type=%s), " % i["type"]["native_type"]
         if "default" in i.keys() and not i["default"] == None:
-          class_str += "default=%s(%s)" % (i["defaulttype"], i["default"])
+          class_str += "default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       elif i["class"] == "list":
         class_str = "  __%s" % (i["name"])
@@ -567,12 +594,22 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str += "\"%s\",yc_%s_%s), " % (i["key"], safe_name(i["name"]), \
                         safe_name(path.replace("/","_"))+"_"+safe_name(i["name"]))
         class_str += ")\n"
+      elif i["class"] == "union":
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base=%s(" % i["type"][0]
+        class_str += "expected_types=["
+        for u in i["type"][1]:
+          class_str += "%s," % u[1]["native_type"]
+        class_str += "])"
+        if "default" in i.keys() and not i["default"] == None:
+          class_str += ", default=%s(%s)" % (i["defaulttype"]["native_type"], default_arg)
+        class_str += ")\n"
       else:
         class_str = "  __%s" % (i["name"])
         class_str += " = defineYANGDynClass("
         class_str += "base=%s, " % i["type"]
         if "default" in i.keys() and not i["default"] == None:
-          class_str += "default=%s(\"%s\")" % (i["defaulttype"], i["default"])
+          class_str += "default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       fd.write(class_str)
 
@@ -589,16 +626,30 @@ def get_children(fd, i_children, module, parent, path=str()):
     return self.__%s
       """ % (i["name"], i["name"], i["path"], i["origtype"],
              description_str, i["name"]))
-      if type(i["type"]) == type((1,1)):
-        ntype = i["type"][0]
+
+      print i["type"]
+      print type(i["type"])
+      print i["class"]
+      if i["class"] == "leaf-list":
+        native_type = i["type"]["native_type"]
+      elif i["class"] == "union":
+        native_type = "%s(" % i["type"][0]
+        native_type += "expected_types=["
+        for u in i["type"][1]:
+          native_type += "%s," % u[1]["native_type"]
+        native_type += "])"
       else:
-        ntype = i["type"]
+        native_type = i["type"]
+
       if "default" in i.keys() and not i["default"] == None:
         if i["quote_arg"]:
           default_arg = "\"%s\"" % i["default"]
         else:
           default_arg = i["default"]
-        default_s = ",default=%s(%s)," % (i["defaulttype"], default_arg)
+        if not i["class"] == "union":
+          default_s = ",default=%s(%s)," % (i["defaulttype"], default_arg)
+        else:
+          default_s = ",default=%s(%s)," % (i["defaulttype"]["native_type"], default_arg)
       else:
         default_s = ""
       fd.write("""
@@ -616,7 +667,7 @@ def get_children(fd, i_children, module, parent, path=str()):
       raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],
                           i["origtype"], i["name"], i["name"], description_str, \
-                          ntype, default_s, i["name"], ntype, i["name"]))
+                          native_type, default_s, i["name"], native_type, i["name"]))
       fd.write("    self.set()\n")
     fd.write("\n")
     for i in elements:
@@ -661,9 +712,9 @@ def get_children(fd, i_children, module, parent, path=str()):
   fd.write("\n")
   return True
 
-def build_elemtype(element):
+def build_elemtype(et):
   cls = "leaf"
-  et = element.search_one('type')
+  #et = element.search_one('type')
   restricted = False
 
   if et.arg == "string":
@@ -713,6 +764,13 @@ def build_elemtype(element):
       restricted = True
     else:
       elemtype = class_map[et.arg]
+  elif et.arg == "union":
+    elemtype = []
+    for uniontype in et.search('type'):
+      print uniontype.arg
+      elemtype_s = build_elemtype(uniontype)
+      elemtype.append(elemtype_s)
+    cls = "union"
   else:
     try:
       elemtype = class_map[et.arg]
@@ -756,38 +814,91 @@ def get_element(fd, element, module, parent, path):
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
-    cls,elemtype = build_elemtype(element)
+    cls,elemtype = build_elemtype(element.search_one('type'))
+
+    if not cls == "union":
+      element_types = [elemtype,]
+    else:
+      element_types = [i[1] for i in elemtype]
+
     elemdefault = element.search_one('default').arg if \
                                         element.search_one('default') else None
-    found_native = False
-    nested_default = False
-    tmp_default = elemtype
-    while not found_native:
-      if not nested_default and "default" in tmp_default.keys():
-        nested_default = tmp_default["default"]
-      if not tmp_default["base_type"]:
-        tmp_default = class_map[tmp_default["parent_type"]]
-      else:
-        tmp_default = tmp_default["native_type"]
-        found_native = True
-        break
 
-    default_type = tmp_default
-    if elemdefault == None and nested_default:
-      elemdefault = nested_default
+    default_options = []
+    print "element types %s" % element_types
+    for option in element_types:
+      found_native = False
+      if not elemdefault == None:
+        nested_default = elemdefault
+      elif "default" in option.keys():
+        elemdefault = option["default"]
+      else:
+        elemdefault = None
+      nested_type = option
+      while not found_native:
+        # traverse up the hierarchy of classes
+        # as soon as we find a default set native default to it
+        # and then only look at types.
+        # walk the tree until we find something that is a native
+        # Python type, so that we can initialise the value correctly
+        if elemdefault == None and "default" in nested_type.keys():
+          # if we haven't already found a default and this type has one
+          # inherit it.
+          elemdefault = nested_type["default"]
+        if not nested_type["base_type"]:
+          # if the type we are looking at is not a native type, then
+          # look at the parent next
+          nested_type = class_map[nested_type["parent_type"]]
+        else:
+          # but if it was, break and take the native type from the
+          # class
+          nested_type = nested_type
+          found_native = True
+          break
+
+      if nested_type:
+        default_options.append({"value": elemdefault, "type": nested_type, "pytype": nested_type["pytype"]})
+
+    if len(default_options) == 1:
+      elemdefault = default_options[0]["value"]
+      default_type = default_options[0]["type"]["native_type"]
+      selected_default_type = default_options[0]["type"]
+    elif len(default_options) > 1:
+      # check against each type that the union might support, and check
+      # which one to use for the default
+      # we must have a value at the top level to need to support this
+
+      # if they had local defaults, elemdefault overwrites them so therefore
+      # we do not need to re-retrieve it
+      for t in default_options:
+        set_default = False
+        try:
+          q = t["pytype"](t["value"])
+          set_default = True
+        except:
+          pass
+        elemdefault = t["value"]
+        default_type = t["type"]
+        selected_default_type = default_options[0]["type"]
+    else:
+      raise ValueError, "a default was specified, but no type for it was found"
 
     elemconfig = class_bool_map[element.search_one('config').arg] if \
                                   element.search_one('config') else True
 
-    elemname = safe_name(element.arg)
-    if "quote_arg" in elemtype.keys():
-      quote_arg = elemtype["quote_arg"]
+    if "quote_arg" in selected_default_type.keys():
+      quote_arg = selected_default_type["quote_arg"]
     else:
       quote_arg = False
+
+    elemname = safe_name(element.arg)
+
     if create_list:
       cls = "leaf-list"
-      elemtype = ("TypedListType", elemtype["native_type"])
+      elemtype = {"class": cls, "native_type": ("TypedListType", elemtype["native_type"])}
     else:
+      if cls == "union":
+        elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
       elemtype = elemtype["native_type"]
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": safe_name(path),

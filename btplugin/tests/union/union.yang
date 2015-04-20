@@ -1,0 +1,58 @@
+module union {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/union";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+
+        //leaf u2 {
+        //    type union {
+        //        type string;
+        //        type int8;
+        //    }
+        //    default "a string value";
+        //    description
+        //        "A test leaf with a default";
+        //}
+
+        //leaf u3 {
+        //    type union {
+        //        type int8;
+        //        type string;
+        //    }
+        //    default "a string value";
+        //    description
+        //        "a test leaf with a default that must skip a type";
+        //}
+
+        leaf u4 {
+            type union {
+                type int8;
+                type string;
+            }
+            default 1;
+            description
+                "a test leaf that does not need to skip but is an int";
+        }
+
+        leaf u1 {
+            type union {
+                type string;
+                type int8;
+            }
+            description
+                "A test leaf";
+        }
+
+
+    }
+}
