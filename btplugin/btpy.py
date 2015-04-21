@@ -12,6 +12,7 @@ import re
 import string
 import numpy as np
 import decimal
+import copy
 
 from pyang import plugin
 from pyang import statements
@@ -104,20 +105,6 @@ def build_btclass(ctx, modules, fd):
   fd.write("from decimal import Decimal\n")
 
   fd.write("""import collections, re
-
-def UnionType(*args, **kwargs):
-  expected_types = kwargs.pop("expected_types", False)
-  if not expected_types or not type(expected_types) == type([]):
-    raise AttributeError, "could not initialise union"
-  if not len(args):
-    return expected_types[0]
-  else:
-    for t in expected_types:
-      try:
-        return t(args[0])
-      except ValueError:
-        pass
-    raise AttributeError, "specified argument did not match any union type"
 
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   \"\"\"
@@ -366,6 +353,23 @@ class YANGBool(int):
 
 def defineYANGDynClass(*args, **kwargs):
   base_type = kwargs.pop("base",int)
+  if type(base_type) == type([]):
+    # this is a union, we need to infer type
+    if not len(args):
+      # we don't have an argument, so we just return the first
+      # type that was specified
+      base_type = base_type[0]
+    else:
+      type_test = False
+      for t in base_type:
+        try:
+          type_test = t(args[0])
+          break
+        except:
+          pass
+      if not type_test:
+        raise TypeError, "did not find a valid type using hint"
+      base_type = t
   class YANGDynClass(base_type):
     _changed = False
     _default = False
@@ -465,41 +469,26 @@ def defineYANGDynClass(*args, **kwargs):
 
   return YANGDynClass(*args,**kwargs)
 """)
+
   r_typedefs = {}
   for module in modules:
-    typedefs = get_typedefs(ctx, module)
+    #typedefs = get_typedefs(ctx, module)
     mods = module.search('import')
+    # we have to do this module last, since it may
+    # have typedef dependencies elsewhere
     mods.append(module)
     for i in mods:
       prefix = i.search_one('prefix').arg
       if i == module:
         prefix = False
-      for k,v in get_typedefs(ctx,i,prefix=prefix).iteritems():
-        if not k in r_typedefs:
-          r_typedefs[k] = v
-        else:
-          raise TypeError, "Duplicate definition of a type (%s)" % k
+      if not get_typedefs(ctx, i, prefix=prefix):
+        raise TypeError, "Invalid specification of typedefs"
 
-  for k,v in r_typedefs.iteritems():
-    restricted = False
-    class_map[k] = {"native_type": v["native_type"], "base_type": False,}
-    if "parent_type" in v.keys():
-      class_map[k]["parent_type"] = v["parent_type"]
-    else:
-      if v["yang_type"] in class_map.keys():
-        v["parent_type"] = v["yang_type"]
-      else:
-        raise TypeError, "typedef specified a native type that was not supported"
+  # build infrastructure, a tree of classes
 
-      class_map[k]["parent_type"] = v["yang_type"]
-    if "default" in v.keys():
-      class_map[k]["default"] = v["default"]
-    if "restriction_type" in v.keys():
-      class_map[k]["restriction_type"] = v["restriction_type"]
-      class_map[k]["restriction_argument"] = v["restriction_arg"]
-    if "quote_arg" in v.keys():
-      class_map[k]["quote_arg"] = v["quote_arg"]
 
+  #pp.pprint(class_map)
+  #assert False, "TODO"
   # we need to parse each module
   for module in modules:
     # we need to parse each sub-module
@@ -517,22 +506,112 @@ def defineYANGDynClass(*args, **kwargs):
 def get_typedefs(ctx, module, prefix=False):
   r_typedefs = {}
   mod = ctx.get_module(module.arg)
+  print "%s!" % module.arg
+  if mod == None:
+    raise AttributeError, "unmapped types, please specify path to %s!" % (module.arg)
   typedefs = mod.search('typedef')
   restricted_arg = False
   default = False
-  for item in typedefs:
+
+  # we need to check whether there are any dependencies between
+  # the typedefs that we have within the module.
+  process_typedefs_ordered = []
+  known_typedefs = class_map.keys()
+  remaining_typedefs = []
+  definition_dict = {}
+  for i in typedefs:
+    if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
+      name = "%s:%s" % (prefix, i.arg)
+    else:
+      name = i.arg
+    definition_dict[name] = i
+    remaining_typedefs.append(name)
+
+  #remaining_typedefs = typedefs
+
+  print "starting processing typedef for %s..." % (module.arg)
+  # for each remaining typedef definition that we
+  # do not know about - retrieve the definition
+  # check whether it references a type that we now
+  # know about, and if not, re-queue it. if so
+  # add it to the queue
+  while remaining_typedefs:
+    i_name = remaining_typedefs.pop(0)
+    item = definition_dict[i_name]
+
+    print "processing item %s..." % i_name
+    this_type = item.search_one('type').arg
+    if this_type == "union":
+      subtypes = [i.arg for i in item.search_one('type').search('type')]
+    else:
+      subtypes = [this_type,]
+    print " subtypes...%s" % subtypes
+    any_unknown = False
+    for i in subtypes:
+      if not i in known_typedefs:
+        any_unknown = True
+    if not any_unknown:
+      process_typedefs_ordered.append(item)
+      known_typedefs.append(i_name)
+    else:
+      if not name in remaining_typedefs:
+         remaining_typedefs.append(i_name)
+
+  for item in process_typedefs_ordered:
+    print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
-    cls,elemtype = build_elemtype(item.search_one('type'))
+    cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type')))
+    #pp.pprint(elemtype)
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
-    r_typedefs[type_name] = elemtype
-    r_typedefs[type_name]["yang_type"] = item.search_one('type').arg
+    if type_name in class_map.keys():
+      raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
-    if not default_stmt == None:
-      r_typedefs[type_name]["default"] = default_stmt.arg
-    #r_typedefs[type_name] = {"type": mapped_type, "restriction": restriction_k, \
-    #                          "argument": restricted_arg, "parent": type_type, "default": default}
-  return r_typedefs
+    #pp.pprint(elemtype)
+    if not type(elemtype) == type(list()):
+      restricted = False
+      class_map[type_name] = {"native_type": elemtype["native_type"], "base_type": False,}
+      if "parent_type" in elemtype.keys():
+        class_map[type_name]["parent_type"] = elemtype["parent_type"]
+      else:
+        yang_type = item.search_one('type').arg
+        if not yang_type in class_map.keys():
+          raise TypeError, "typedef specified a native type that was not supported"
+        class_map[type_name]["parent_type"] = yang_type
+      if not default_stmt == None:
+        class_map[type_name]["default"] = default_stmt.arg
+      if "restriction_type" in elemtype.keys():
+        #print elemtype
+        class_map[type_name]["restriction_type"] = elemtype["restriction_type"]
+        class_map[type_name]["restriction_argument"] = elemtype["restriction_argument"]
+      if "quote_arg" in elemtype.keys():
+        class_map[type_name]["quote_arg"] = elemtype["quote_arg"]
+    else:
+      native_type = []
+      parent_type = []
+      default = False if default_stmt == None else default_stmt.arg
+      for i in elemtype:
+        # CHANGE - 13:30
+        #print i
+        native_type.append(i[1]["native_type"])
+        #if "parent_type" in i[1].keys():
+        #  parent_type.append(i[1]["parent_type"])
+        #else:
+        if i[1]["yang_type"] in class_map.keys():
+          parent_type.append(i[1]["yang_type"])
+        else:
+          raise TypeError, "typedef in a union specified a native type that was not supported"
+        if "default" in i[1].keys() and not default:
+          # we do strict ordering, so only the first default wins
+          q = True if "quote_arg" in i[1].keys() else False
+          default = (i[1]["default"], q)
+      class_map[type_name] = {"native_type": native_type, "base_type": False,
+                              "parent_type": parent_type,}
+      if default:
+        class_map[type_name]["default"] = default[0]
+        class_map[type_name]["quote_default"] = default[1]
+
+  return True
 
 def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
@@ -596,13 +675,21 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str += ")\n"
       elif i["class"] == "union":
         class_str = "  __%s" % (i["name"])
-        class_str += " = defineYANGDynClass(base=%s(" % i["type"][0]
-        class_str += "expected_types=["
+        class_str += " = defineYANGDynClass(base=["
         for u in i["type"][1]:
           class_str += "%s," % u[1]["native_type"]
-        class_str += "])"
+        class_str += "]"
         if "default" in i.keys() and not i["default"] == None:
-          class_str += ", default=%s(%s)" % (i["defaulttype"]["native_type"], default_arg)
+          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+        class_str += ")\n"
+      elif i["class"] == "leaf-union":
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base=["
+        for u in i["type"]:
+          class_str += "%s," % u
+        class_str += "]"
+        if "default" in i.keys() and not i["default"] == None:
+          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       else:
         class_str = "  __%s" % (i["name"])
@@ -627,17 +714,18 @@ def get_children(fd, i_children, module, parent, path=str()):
       """ % (i["name"], i["name"], i["path"], i["origtype"],
              description_str, i["name"]))
 
-      print i["type"]
-      print type(i["type"])
-      print i["class"]
       if i["class"] == "leaf-list":
         native_type = i["type"]["native_type"]
       elif i["class"] == "union":
-        native_type = "%s(" % i["type"][0]
-        native_type += "expected_types=["
+        native_type = "["
         for u in i["type"][1]:
           native_type += "%s," % u[1]["native_type"]
-        native_type += "])"
+        native_type += "]"
+      elif i["class"] == "leaf-union":
+        native_type = "["
+        for u in i["type"]:
+          native_type += "%s," % u
+        native_type += "]"
       else:
         native_type = i["type"]
 
@@ -649,7 +737,7 @@ def get_children(fd, i_children, module, parent, path=str()):
         if not i["class"] == "union":
           default_s = ",default=%s(%s)," % (i["defaulttype"], default_arg)
         else:
-          default_s = ",default=%s(%s)," % (i["defaulttype"]["native_type"], default_arg)
+          default_s = ",default=%s(%s)," % (i["defaulttype"], default_arg)
       else:
         default_s = ""
       fd.write("""
@@ -723,7 +811,7 @@ def build_elemtype(et):
       cls = "restricted-string"
       elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern",
                       restriction_arg="%s")""" % (class_map[et.arg]["native_type"], pattern.arg), \
-                  "restriction_arg": pattern.arg, "restriction_type": "pattern", "parent_type": et.arg, \
+                  "restriction_argument": pattern.arg, "restriction_type": "pattern", "parent_type": et.arg, \
                   "base_type": False,}
       restricted = True
       #default_type = class_map["string"][0]
@@ -736,7 +824,7 @@ def build_elemtype(et):
       cls = "restricted-%s" % et.arg
       elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range",
                     restriction_arg="%s")"""  % (class_map[et.arg]["native_type"], range_stmt.arg), \
-                  "restriction_arg": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
+                  "restriction_argument": range_stmt.arg, "restriction_type": "range", "parent_type": et.arg, \
                   "base_type": False,}
       #default_type = class_map[et.arg][0]
       restricted = True
@@ -767,8 +855,8 @@ def build_elemtype(et):
   elif et.arg == "union":
     elemtype = []
     for uniontype in et.search('type'):
-      print uniontype.arg
-      elemtype_s = build_elemtype(uniontype)
+      elemtype_s = copy.deepcopy(build_elemtype(uniontype))
+      elemtype_s[1]["yang_type"] = uniontype.arg
       elemtype.append(elemtype_s)
     cls = "union"
   else:
@@ -780,6 +868,8 @@ def build_elemtype(et):
         pp.pprint(class_map)
         pp.pprint(et)
       sys.exit(127)
+    if type(elemtype["native_type"]) == type(list()):
+      cls = "leaf-union"
   return (cls,elemtype)
 
 
@@ -814,82 +904,156 @@ def get_element(fd, element, module, parent, path):
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
-    cls,elemtype = build_elemtype(element.search_one('type'))
+    cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type')))
 
-    if not cls == "union":
-      element_types = [elemtype,]
-    else:
-      element_types = [i[1] for i in elemtype]
+    # build a tree that is rooted on this class.
+    # perform a breadth-first search - the first node found
+    # that has the "default" leaf set, then we take this
+    # as the value for the default
 
-    elemdefault = element.search_one('default').arg if \
-                                        element.search_one('default') else None
+    # then starting at the selected default node, traverse
+    # until we find a node that is declared to be a base_type
 
-    default_options = []
-    print "element types %s" % element_types
-    for option in element_types:
-      found_native = False
-      if not elemdefault == None:
-        nested_default = elemdefault
-      elif "default" in option.keys():
-        elemdefault = option["default"]
-      else:
-        elemdefault = None
-      nested_type = option
-      while not found_native:
-        # traverse up the hierarchy of classes
-        # as soon as we find a default set native default to it
-        # and then only look at types.
-        # walk the tree until we find something that is a native
-        # Python type, so that we can initialise the value correctly
-        if elemdefault == None and "default" in nested_type.keys():
-          # if we haven't already found a default and this type has one
-          # inherit it.
-          elemdefault = nested_type["default"]
-        if not nested_type["base_type"]:
-          # if the type we are looking at is not a native type, then
-          # look at the parent next
-          nested_type = class_map[nested_type["parent_type"]]
+    elemdefault = element.search_one('default')
+    default_type = False
+    quote_arg = False
+    if not elemdefault == None:
+      elemdefault = elemdefault.arg
+      default_type = elemtype
+      #print "   (basetype,basedefault) default was %s" % elemdefault
+      #print "   (basetype,basedefault) type was %s" % default_type
+
+    #print "\t\t%s" % element.arg
+    #print "\t\t\t%s" % elemtype
+    #mapped_elemtype = elemtype
+    if isinstance(elemtype, list):
+      # this is a union, we should check whether any of the types
+      # immediately has a default
+      for i in elemtype:
+        if "default" in i[1].keys():
+          elemdefault = i[1]["default"]
+          default_type = i[1]
+          #default_type = i[1]
+          #mapped_elemtype = i[1]
+    elif "default" in elemtype.keys():
+      # if the actual type defines the default, then we need to maintain
+      # thi
+      elemdefault = elemtype["default"]
+      default_type = elemtype
+
+    #quote_arg = elemtype["quote_arg"] if "quote_arg" in elemtype.keys() else False
+    #default_stmt = element.search_one('default')
+    #default_dict = {element.arg: {"default": default_stmt.arg if not default_stmt == None else None,
+    #                              "type":elemtype,},
+    #
+    if not default_type:
+      #print "(pre-bfs) type: %s" % elemtype
+      #print "(pre-bfs) elem: %s" % element.arg
+      #print "(pre-bfs) default: %s" % elemdefault
+
+      if isinstance(elemtype, list):
+        # this type has multiple parents
+        for i in elemtype:
+          if "parent_type" in i[1].keys():
+            if isinstance(i[1]["parent_type"], list):
+              to_visit = [j for j in i[1]["parent_type"]]
+            else:
+              to_visit = [i[1]["parent_type"],]
+      elif "parent_type" in elemtype.keys():
+        if isinstance(elemtype["parent_type"], list):
+          to_visit = [i for i in elemtype["parent_type"]]
         else:
-          # but if it was, break and take the native type from the
-          # class
-          nested_type = nested_type
-          found_native = True
-          break
+          to_visit = [elemtype["parent_type"],]
 
-      if nested_type:
-        default_options.append({"value": elemdefault, "type": nested_type, "pytype": nested_type["pytype"]})
+        checked = list()
+        while to_visit:
+          check = to_visit.pop(0)
+          #print "(bfs) checking %s" %  check
+          if check not in checked:
+            checked.append(check)
+            #print "(bfs) check was %s" % check
+            if "parent_type" in class_map[check].keys():
+              #print "(bfs) adding %s" % class_map[check]["parent_type"]
+              if isinstance(class_map[check]["parent_type"], list):
+                to_visit.extend(class_map[check]["parent_type"])
+              else:
+                to_visit.append(class_map[check]["parent_type"])
 
-    if len(default_options) == 1:
-      elemdefault = default_options[0]["value"]
-      default_type = default_options[0]["type"]["native_type"]
-      selected_default_type = default_options[0]["type"]
-    elif len(default_options) > 1:
-      # check against each type that the union might support, and check
-      # which one to use for the default
-      # we must have a value at the top level to need to support this
+        # checked now has the breadth-first search result
+        if elemdefault == None:
+          for option in checked:
+            if "default" in class_map[option].keys():
+              elemdefault = class_map[option]["default"]
+              default_type = class_map[option]
+              break
 
-      # if they had local defaults, elemdefault overwrites them so therefore
-      # we do not need to re-retrieve it
-      for t in default_options:
-        set_default = False
-        try:
-          q = t["pytype"](t["value"])
-          set_default = True
-        except:
-          pass
-        elemdefault = t["value"]
-        default_type = t["type"]
-        selected_default_type = default_options[0]["type"]
-    else:
-      raise ValueError, "a default was specified, but no type for it was found"
+      #print "(post bfs) default: %s, type: %s" % (elemdefault, elemtype)
 
+
+    if not elemdefault == None:
+      # we now need to check whether there's a need to
+      # find out what the base type is for this type
+      # we really expect a linear chain here.
+      #print "(pre-dfs) defaulttype: %s " % default_type
+      #print "(pre-dfs) default: %s" % elemdefault
+      #print "(pre-dfs) type: %s" % elemtype
+
+      # if we have a tuple as the type here, this means that
+      # the default was set at a level where there was not
+      # a single option for the type. check the default
+      # against each option, to get a to a single default_type
+      if isinstance(default_type, list):
+        #print "started a bake-off"
+        # "first valid wins" as per rfc6020
+        for i in default_type:
+          try:
+            disposible = i[1]["pytype"](elemdefault)
+            default_type = i[1]
+            break
+          except:
+            pass
+        #print "(post bake-off) type: %s" % default_type
+
+      if not default_type["base_type"]:
+        if "parent_type" in default_type.keys():
+          if isinstance(default_type["parent_type"], list):
+            to_visit = [i for i in default_type["parent_type"]]
+          else:
+            to_visit = [default_type["parent_type"],]
+        checked = list()
+        while to_visit:
+          check = to_visit.pop(0) # remove from the top of stack - depth first
+          if not check in checked:
+            checked.append(check)
+            #print "(dfs) check was %s" % check
+            if "parent_type" in class_map[check].keys():
+              #print "adding %s" % class_map[check]["parent_type"]
+              if isinstance(class_map[check]["parent_type"], list):
+                to_visit.expand(class_map[check]["parent_type"])
+              else:
+                to_visit.append(class_map[check]["parent_type"])
+        #print "what have we checked for %s? %s " % (elemtype, checked)
+        default_type = class_map[checked.pop()]
+        #print default_type
+        if not default_type["base_type"]:
+          raise TypeError, "default type was not a base type"
+        #default_type = default_type
+        #quote_arg = default_type["quote_arg"] if "quote_arg" in default_type_d.keys() else False
+
+    # else:
+    #   if not elemtype["base_type"]:
+    #     raise TypeError, "default type was not a base type"
+    #   default_type = elemtype["native_type"]
+
+    #print "   (processend) default was %s" % elemdefault
+    #print "   (processend) type was %s" % default_type
+    if default_type:
+      quote_arg = default_type["quote_arg"] if "quote_arg" in default_type.keys() else False
+      default_type = default_type["native_type"]
+
+    #assert False, "foo"
     elemconfig = class_bool_map[element.search_one('config').arg] if \
                                   element.search_one('config') else True
-
-    if "quote_arg" in selected_default_type.keys():
-      quote_arg = selected_default_type["quote_arg"]
-    else:
-      quote_arg = False
 
     elemname = safe_name(element.arg)
 
@@ -900,6 +1064,7 @@ def get_element(fd, element, module, parent, path):
       if cls == "union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
       elemtype = elemtype["native_type"]
+    #print "built dictionary -- %s %s %s" % (elemdefault, default_type, cls)
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": safe_name(path),
                         "class": cls, "default": elemdefault,

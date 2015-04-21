@@ -12,27 +12,59 @@ module union {
         reference "fooled-you";
     }
 
+    typedef derived-union-type {
+        type union {
+            type int8;
+            type string;
+        }
+    }
+
+    typedef derived-union-default {
+        type union {
+            type derived-string-type;
+            type int8;
+        }
+    }
+
+    typedef derived-string-type {
+        type string;
+        default "hello";
+    }
+
+//  TYPEDEF ORDERING IS AN ISSUE
+    typedef derived-int-type {
+        type int8;
+        default 10;
+    }
+
+    typedef derived-union-int-default {
+        type union {
+            type derived-int-type;
+            type string;
+        }
+    }
+
     container container {
 
-        //leaf u2 {
-        //    type union {
-        //        type string;
-        //        type int8;
-        //    }
-        //    default "a string value";
-        //    description
-        //        "A test leaf with a default";
-        //}
+        leaf u2 {
+            type union {
+                type string;
+                type int8;
+            }
+            default "set from u2";
+            description
+                "A test leaf with a default";
+        }
 
-        //leaf u3 {
-        //    type union {
-        //        type int8;
-        //        type string;
-        //    }
-        //    default "a string value";
-        //    description
-        //        "a test leaf with a default that must skip a type";
-        //}
+        leaf u3 {
+            type union {
+                type int8;
+                type string;
+            }
+            default "set from u3";
+            description
+                "a test leaf with a default that must skip a type";
+        }
 
         leaf u4 {
             type union {
@@ -44,13 +76,30 @@ module union {
                 "a test leaf that does not need to skip but is an int";
         }
 
+        leaf u8 {
+            type derived-union-int-default;
+            description
+                "a test leaf with a typedef within a union";
+        }
+
         leaf u1 {
             type union {
-                type string;
                 type int8;
+                type string;
             }
             description
                 "A test leaf";
+        }
+
+        leaf u6 {
+            type union {
+                type uint8;
+                type derived-string-type;
+            }
+        }
+
+        leaf u7 {
+            type derived-union-type;
         }
 
 

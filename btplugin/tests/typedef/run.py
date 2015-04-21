@@ -27,7 +27,8 @@ def main():
   from bindings import typedef
   t = typedef()
 
-  for element in ["string", "integer", "stringdefault", "integerdefault", "new_string", "remote_new_type"]:
+  for element in ["string", "integer", "stringdefault", "integerdefault", \
+                  "new_string", "remote_new_type", "bgp_session_direction"]:
     assert hasattr(t.container, element), "element %s did not exist within the container" % element
 
   t.container.string = "hello"

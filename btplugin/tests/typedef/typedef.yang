@@ -25,6 +25,13 @@ module typedef {
         }
     }
 
+    typedef bgp-session-direction {
+        type enumeration {
+            enum INBOUND;
+            enum OUTBOUND;
+        }
+    }
+
     typedef new-string-type {
         type string;
         default "defaultValue";
