@@ -22,7 +22,7 @@
 ##		string 					implemented as string 								tests/string (complete)
 ##			* pattern substmt	yes
 ##			* length substmt	no
-##		union					no													-
+##		union					yes													tests/union (complete)
 ##		typedef					yes													tests/typedef (complete)
 ##
 ##		container 				yes													tests/*
@@ -32,6 +32,5 @@
 ##	Generic tests needed
 ##		* unsafe python names
 
-
-## description statements should be included as a __doc__ strings within the
-## derived classes
+## Need to convert safe python names back into unsafe python names
+## with get routines. potentially through a lookup dict

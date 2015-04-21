@@ -22,7 +22,7 @@ def main():
   os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
 
   from bindings import list_ as l
-  from bindings import defineYANGDynClass, YANGListType
+
   import numpy
 
   test_instance = l()

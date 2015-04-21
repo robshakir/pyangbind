@@ -277,11 +277,11 @@ def YANGListType(*args,**kwargs):
     _members = {}
     _contained_class = listclass
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, keyname, contained_class):
       self._keyval = keyname
-      if not type(listclass) == type(int):
+      if not type(contained_class) == type(int):
         raise ValueError, "contained class of a YANGList must be a class"
-      self._contained_class = listclass
+      self._contained_class = contained_class
 
     def __str__(self):
       return self._members.__str__()
@@ -310,7 +310,7 @@ def YANGListType(*args,**kwargs):
     def __setitem__(self, k, v):
       if self.__check__(v):
         try:
-          self._members[k] = YANGDynClass(v,base=self._contained_class)
+          self._members[k] = defineYANGDynClass(v,base=self._contained_class)
         except TypeError, m:
           raise ValueError, "key value must be valid, %s" % m
       else:
@@ -324,7 +324,7 @@ def YANGListType(*args,**kwargs):
 
     def add(self, k):
       try:
-        self._members[k] = YANGDynClass(base=self._contained_class)
+        self._members[k] = defineYANGDynClass(base=self._contained_class)
         setattr(self._members[k], self._keyval, k)
       except TypeError, m:
         del self._members[k]
@@ -359,91 +359,123 @@ class YANGBool(int):
   def __str__(self):
     return str(self.__repr__())
 
-def YANGDynClass(*args,**kwargs):
-  base_type = kwargs.pop("base", False)
-  default = kwargs.pop("default", False)
-  if not base_type:
-    raise AttributeError, "must have a base type"
-  if isinstance(base_type, list):
-    # this is a union, we must infer type
+def defineYANGDynClass(*args, **kwargs):
+  base_type = kwargs.pop("base",int)
+  if type(base_type) == type([]):
+    # this is a union, we need to infer type
     if not len(args):
-      # there is no argument to infer the type from
-      # so use the first type (default)
+      # we don't have an argument, so we just return the first
+      # type that was specified
       base_type = base_type[0]
     else:
       type_test = False
-      for candidate_type in base_type:
+      for t in base_type:
         try:
-          type_test = candidate_type(args[0]) # does the slipper fit?
+          type_test = t(args[0])
           break
         except:
-          pass # don't worry, move on, plenty more fish (types) in the sea...
+          pass
       if not type_test:
-        # we're left alone at midnight -- no types fit the arguments
-        raise TypeError, "did not find a valid type using the argument as a hint"
-      base_type = candidate_type # otherwise, hop, skip and jump with the last candidate
-  class YANGBaseClass(base_type):
-    def __new__(self, *args, **kwargs):
-      obj = base_type.__new__(self, *args, **kwargs)
-      return obj
-
-    def __init__(self, *args, **kwargs):
-      self._default = False
-      self._changed = False
-      if default:
-        self._default = default
-      if len(args):
-        if not args[0] == self._default:
-          self._changed = True
-      try:
-        super(YANGBaseClass, self).__init__(*args, **kwargs)
-      except:
-        print args
-        print kwargs
-        print base_type
-        raise TypeError, "couldn't generate dynamic type"
+        raise TypeError, "did not find a valid type using hint"
+      base_type = t
+  class YANGDynClass(base_type):
+    _changed = False
+    _default = False
 
     def changed(self):
       return self._changed
+
     def set(self):
       self._changed = True
+      # DEBUG
 
-    # we need to overload the set methods
+    def child_set(self):
+      self.set()
+
     def __setitem__(self, *args, **kwargs):
       self._changed = True
-      super(YANGBaseClass, self).__setitem__(*args, **kwargs)
+      super(YANGDynClass, self).__setitem__(*args, **kwargs)
 
     def append(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass,self), "append"):
+      if not hasattr(super(YANGDynClass,self), "append"):
         raise AttributeError("%s object has no attribute append" % base_type)
       self.set()
-      super(YANGBaseClass, self).append(*args,**kwargs)
+      super(YANGDynClass, self).append(*args,**kwargs)
 
     def pop(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass, self), "pop"):
+      if not hasattr(super(YANGDynClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
       self.set()
-      super(YANGBaseClass, self).pop(*args, **kwargs)
+      super(YANGDynClass, self).pop(*args, **kwargs)
 
     def remove(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass, self), "remove"):
+      if not hasattr(super(YANGDynClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
       self.set()
-      super(YANGBaseClass, self).remove(*args, **kwargs)
+      super(YANGDynClass, self).remove(*args, **kwargs)
 
     def extend(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass, self), "extend"):
+      if not hasattr(super(YANGDynClass, self), "extend"):
         raise AttributeError("%s object has no attribute extend" % base_type)
       self.set()
-      super(YANGBaseClass, self).extend(*args, **kwargs)
+      super(YANGDynClass, self).extend(*args, **kwargs)
 
     def insert(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass,self), "insert"):
+      if not hasattr(super(YANGDynClass,self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
       self.set()
-      super(YANGBaseClass, self).insert(*args, **kwargs)
+      super(YANGDynClass, self).insert(*args, **kwargs)
 
-  return YANGBaseClass(*args, **kwargs)
+    def __init__(self, *args, **kwargs):
+      pass
+
+    def __repr__(self, *args, **kwargs):
+      if self._default and not self._changed:
+        return repr(self._default)
+      else:
+        return super(YANGDynClass, self).__repr__()
+
+    def __new__(self, *args, **kwargs):
+      default = kwargs.pop("default", None)
+      try:
+        value = args[0]
+      except IndexError:
+        value = None
+
+      obj = base_type.__new__(self, *args, **kwargs)
+      if default == None:
+        base_type_default = True
+        try:
+          base_type_default = base_type()
+        except:
+          base_type_default = False
+
+        if value == None:
+          # there was no default, and the value was not set, or was
+          # set to the default of the base type
+          obj._changed = False
+        elif base_type_default and value == base_type_default:
+          obj._changed = False
+        else:
+          # there was no default, and the value was something other
+          # than a default - the object has changed
+          obj.set()
+          # was obj._changed = True
+      else:
+        # there is a default - if the value is not the same as that default
+        # then we have changed the object.
+        if value == None:
+          # if the value is none, then we have not changed it
+          obj._changed = False
+        elif not value == default:
+          #obj._changed = True
+          obj.set()
+        else:
+          obj._changed = False
+        obj._default = default
+      return obj
+
+  return YANGDynClass(*args,**kwargs)
 """)
 
   r_typedefs = {}
@@ -636,28 +668,27 @@ def get_children(fd, i_children, module, parent, path=str()):
     e_str += "}\n"
     fd.write(slots_str)
     fd.write("\n")
-    classes = []
     for i in elements:
       #rint "looping elements"
       if "default" in i.keys() and not i["default"] == None:
         default_arg = "\"%s\"" % i["default"] if i["quote_arg"] else "%s" % i["default"]
 
       if i["class"] == "leaf-list":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base="
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base="
         class_str += "%s(allowed_type=%s), " % i["type"]["native_type"]
         if "default" in i.keys() and not i["default"] == None:
           class_str += "default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       elif i["class"] == "list":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=YANGListType("
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base=YANGListType("
         class_str += "\"%s\",yc_%s_%s), " % (i["key"], safe_name(i["name"]), \
                         safe_name(path.replace("/","_"))+"_"+safe_name(i["name"]))
         class_str += ")\n"
       elif i["class"] == "union":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=["
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base=["
         for u in i["type"][1]:
           class_str += "%s," % u[1]["native_type"]
         class_str += "]"
@@ -665,8 +696,8 @@ def get_children(fd, i_children, module, parent, path=str()):
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       elif i["class"] == "leaf-union":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=["
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass(base=["
         for u in i["type"]:
           class_str += "%s," % u
         class_str += "]"
@@ -674,18 +705,13 @@ def get_children(fd, i_children, module, parent, path=str()):
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
       else:
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass("
+        class_str = "  __%s" % (i["name"])
+        class_str += " = defineYANGDynClass("
         class_str += "base=%s, " % i["type"]
         if "default" in i.keys() and not i["default"] == None:
           class_str += "default=%s(%s)" % (i["defaulttype"], default_arg)
         class_str += ")\n"
-      classes.append(class_str)
-
-    fd.write("""
-  def __init__(self, *args, **kwargs):\n""")
-    for c in classes:
-      fd.write("    self.%s" % c)
+      fd.write(class_str)
 
     node = {}
     for i in elements:
@@ -737,7 +763,7 @@ def get_children(fd, i_children, module, parent, path=str()):
       do so via calling thisObj._set_%s() directly.%s
     \"\"\"
     try:
-      t = YANGDynClass(v,base=%s%s)
+      t = defineYANGDynClass(v,base=%s%s)
     except (TypeError, ValueError):
       raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], i["name"], i["path"],

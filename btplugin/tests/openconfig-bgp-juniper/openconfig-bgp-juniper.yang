@@ -1,0 +1,54 @@
+module openconfig-bgp-juniper {
+namespace "http://juniper.net/opencfg/bgp";
+  prefix opencfg-bgp;
+  description "Example BGP.";
+  revision 2015-03-02 {
+    description "Initial revision.";
+  }
+  container juniper-config {
+    container bgp {
+      description "Openconfig BGP implementation";
+      container global {
+        description "Global options";
+        leaf as {
+          type string;
+          description "Autonomous system number";
+        }
+      }
+      list peer-group {
+        key "group-name";
+        description "List of peer groups";
+        leaf group-name {
+          type string;
+          description "Peer group name";
+        }
+        leaf peer-type {
+          description "Select type of the peer";
+          mandatory true;
+          type enumeration {
+            enum "internal" {
+              description
+                "IBGP group";
+            }
+            enum "external" {
+              description
+                "EBGP group";
+            }
+          }
+        }
+        list neighbor {
+          description "Neighbor configuration";
+          key "neighbor-name";
+          leaf neighbor-name {
+            description "Neighbor name";
+            type string;
+          }
+          leaf peer-as {
+            description "Neighbor autonomous system number";
+            type string;
+          }
+        }
+      }
+    }
+  }
+}
