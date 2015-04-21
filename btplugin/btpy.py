@@ -484,9 +484,7 @@ def defineYANGDynClass(*args, **kwargs):
       if not get_typedefs(ctx, i, prefix=prefix):
         raise TypeError, "Invalid specification of typedefs"
 
-  # build infrastructure, a tree of classes
-
-
+  #assert False, "CHECK"
   #pp.pprint(class_map)
   #assert False, "TODO"
   # we need to parse each module
@@ -506,7 +504,7 @@ def defineYANGDynClass(*args, **kwargs):
 def get_typedefs(ctx, module, prefix=False):
   r_typedefs = {}
   mod = ctx.get_module(module.arg)
-  print "%s!" % module.arg
+  #print "%s!" % module.arg
   if mod == None:
     raise AttributeError, "unmapped types, please specify path to %s!" % (module.arg)
   typedefs = mod.search('typedef')
@@ -517,6 +515,9 @@ def get_typedefs(ctx, module, prefix=False):
   # the typedefs that we have within the module.
   process_typedefs_ordered = []
   known_typedefs = class_map.keys()
+  # we always know enumerations even though they are non-native
+  # because they cannot have subtypes
+  known_typedefs.append("enumeration")
   remaining_typedefs = []
   definition_dict = {}
   for i in typedefs:
@@ -544,6 +545,7 @@ def get_typedefs(ctx, module, prefix=False):
     if this_type == "union":
       subtypes = [i.arg for i in item.search_one('type').search('type')]
     else:
+      #print this_type
       subtypes = [this_type,]
     print " subtypes...%s" % subtypes
     any_unknown = False
@@ -551,18 +553,22 @@ def get_typedefs(ctx, module, prefix=False):
       if not i in known_typedefs:
         any_unknown = True
     if not any_unknown:
+      print "   no unknowns!"
       process_typedefs_ordered.append(item)
       known_typedefs.append(i_name)
     else:
-      if not name in remaining_typedefs:
-         remaining_typedefs.append(i_name)
+      print "   some unknowns"
+      print remaining_typedefs
+      if not i_name in remaining_typedefs:
+        print "   re-appended!"
+        remaining_typedefs.append(i_name)
 
   for item in process_typedefs_ordered:
     print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
     cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type')))
-    #pp.pprint(elemtype)
+    pp.pprint(elemtype)
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     if type_name in class_map.keys():
       raise TypeError, "Duplicate definition of %s" % type_name
@@ -591,7 +597,6 @@ def get_typedefs(ctx, module, prefix=False):
       parent_type = []
       default = False if default_stmt == None else default_stmt.arg
       for i in elemtype:
-        # CHANGE - 13:30
         #print i
         native_type.append(i[1]["native_type"])
         #if "parent_type" in i[1].keys():
@@ -839,7 +844,7 @@ def build_elemtype(et):
         enumeration_dict[enum.arg]["value"] = int(val.arg)
     #elemtype = {"native_type": """YANGEnumType(initial=None,enum_spec=%s)""" % enumeration_dict, "base_type": False, "parent_type": "string",}
     elemtype = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", \
-                restriction_arg=%s,)""" % (enumeration_dict), "restruction_arg": enumeration_dict, \
+                restriction_arg=%s,)""" % (enumeration_dict), "restriction_argument": enumeration_dict, \
                 "restriction_type": "dict_key", "parent_type": "string", \
                 "base_type": False,}
     restricted = True
@@ -866,7 +871,7 @@ def build_elemtype(et):
       print "FATAL: unmapped type (%s)" % et.arg
       if DEBUG:
         pp.pprint(class_map)
-        pp.pprint(et)
+        pp.pprint(et.arg)
       sys.exit(127)
     if type(elemtype["native_type"]) == type(list()):
       cls = "leaf-union"
