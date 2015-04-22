@@ -1,0 +1,45 @@
+module identityref {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/identityref";
+    prefix "foo";
+
+    import remote { prefix defn; }
+
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    identity base-identity {
+        description "an identity base";
+    }
+
+    identity option-one {
+        base "base-identity";
+        description "option one on the base";
+    }
+
+    identity option-two {
+        base "base-identity";
+        description "option two on the base";
+    }
+
+    container test-container {
+        leaf id1 {
+            type identityref {
+                base base-identity;
+            }
+        }
+
+        leaf idr1 {
+            type identityref {
+                base defn:remote-base;
+            }
+        }
+    }
+}

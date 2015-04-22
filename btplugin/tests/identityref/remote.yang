@@ -1,0 +1,31 @@
+module remote {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/typedef/remote";
+    prefix "remote";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    identity remote-one {
+        description "remote definition one";
+        base remote-base;
+    }
+
+    identity remote-two {
+        description "remote defintion two";
+        base remote-base;
+    }
+
+    identity remote-base {
+        description
+            "an identity in another namespace
+             also defined out of order just to
+             check that this works";
+    }
+}

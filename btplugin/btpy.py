@@ -144,7 +144,7 @@ class BTPyClass(plugin.PyangPlugin):
 
 def build_btclass(ctx, modules, fd):
   # output the base code that we need to re-use with dynamically generated
-  # objects. 
+  # objects.
   fd.write("from operator import attrgetter\n")
   fd.write("import numpy as np\n")
   fd.write("from decimal import Decimal\n")
@@ -497,7 +497,6 @@ def YANGDynClass(*args,**kwargs):
   return YANGBaseClass(*args, **kwargs)
 """)
 
-  r_typedefs = {}
   for module in modules:
     #typedefs = get_typedefs(ctx, module)
     mods = module.search('import')
@@ -510,10 +509,9 @@ def YANGDynClass(*args,**kwargs):
         prefix = False
       if not get_typedefs(ctx, i, prefix=prefix):
         raise TypeError, "Invalid specification of typedefs"
+      if not get_identityrefs(ctx, i, prefix=prefix):
+        raise TypeError, "Invalid specification of identityrefs"
 
-  #assert False, "CHECK"
-  #pp.pprint(class_map)
-  #assert False, "TODO"
   # we need to parse each module
   for module in modules:
     # we need to parse each sub-module
@@ -528,10 +526,56 @@ def YANGDynClass(*args,**kwargs):
             if ch.keyword in statements.data_definition_keywords]
       get_children(fd, children, m, m)
 
-def get_typedefs(ctx, module, prefix=False):
-  r_typedefs = {}
+def get_identityrefs(ctx, module, prefix=False):
   mod = ctx.get_module(module.arg)
-  #print "%s!" % module.arg
+  if mod == None:
+    raise AttributeError, "unmapped identities, please specify path to %s!" \
+                                % (module.arg)
+  identities = mod.search('identity')
+  definition_dict = {}
+  remaining_identities = []
+  for i in identities:
+    if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
+      name = "%s:%s" % (prefix, i.arg)
+    else:
+      name = i.arg
+    definition_dict[name] = i
+    remaining_identities.append(name)
+
+  known_identities = []
+  identity_d = {}
+  while remaining_identities:
+    item = remaining_identities.pop(0)
+    i = definition_dict[item]
+    base = i.search_one('base')
+    if base == None:
+      # this is a base type, so we can add it to the known
+      # values and create a dict entry for it
+      identity_d[item] = {}
+      known_identities.append(item)
+    else:
+      base_name = "%s%s" % ("%s:" % prefix if prefix else "", base.arg)
+      if base_name in known_identities:
+        val = item.split(":")[1] if ":" in item else item
+        identity_d[base_name][val] = {}
+        known_identities.append(item)
+      else:
+        remaining_identities.append(item)
+  for i in identity_d.keys():
+    id_type = {"native_type": """RestrictedClassType(base_type=str, \
+                    restriction_type="dict_key", \
+                    restriction_arg=%s,)""" % identity_d[i], \
+                "restriction_argument": identity_d[i], \
+                "restriction_type": "dict_key",
+                "parent_type": "string",
+                "base_type": False,}
+    class_map[i] = id_type
+
+  return True
+
+
+def get_typedefs(ctx, module, prefix=False):
+  mod = ctx.get_module(module.arg)
   if mod == None:
     raise AttributeError, "unmapped types, please specify path to %s!" \
                                 % (module.arg)
@@ -556,9 +600,6 @@ def get_typedefs(ctx, module, prefix=False):
     definition_dict[name] = i
     remaining_typedefs.append(name)
 
-  #remaining_typedefs = typedefs
-
-  print "starting processing typedef for %s..." % (module.arg)
   # for each remaining typedef definition that we
   # do not know about - retrieve the definition
   # check whether it references a type that we now
@@ -568,40 +609,33 @@ def get_typedefs(ctx, module, prefix=False):
     i_name = remaining_typedefs.pop(0)
     item = definition_dict[i_name]
 
-    print "processing item %s..." % i_name
     this_type = item.search_one('type').arg
     if this_type == "union":
       subtypes = [i.arg for i in item.search_one('type').search('type')]
     else:
-      #print this_type
       subtypes = [this_type,]
-    print " subtypes...%s" % subtypes
     any_unknown = False
     for i in subtypes:
       if not i in known_typedefs:
         any_unknown = True
     if not any_unknown:
-      print "   no unknowns!"
       process_typedefs_ordered.append(item)
       known_typedefs.append(i_name)
     else:
-      print "   some unknowns"
       print remaining_typedefs
       if not i_name in remaining_typedefs:
-        print "   re-appended!"
         remaining_typedefs.append(i_name)
 
   for item in process_typedefs_ordered:
-    print "building %s..." % item.arg
+    #print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
     cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type')))
-    pp.pprint(elemtype)
+    #pp.pprint(elemtype)
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     if type_name in class_map.keys():
       raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
-    #pp.pprint(elemtype)
     if not type(elemtype) == type(list()):
       restricted = False
       class_map[type_name] = {"native_type": elemtype["native_type"], \
@@ -617,7 +651,6 @@ def get_typedefs(ctx, module, prefix=False):
       if not default_stmt == None:
         class_map[type_name]["default"] = default_stmt.arg
       if "restriction_type" in elemtype.keys():
-        #print elemtype
         class_map[type_name]["restriction_type"] = \
                                               elemtype["restriction_type"]
         class_map[type_name]["restriction_argument"] = \
@@ -629,11 +662,7 @@ def get_typedefs(ctx, module, prefix=False):
       parent_type = []
       default = False if default_stmt == None else default_stmt.arg
       for i in elemtype:
-        #print i
         native_type.append(i[1]["native_type"])
-        #if "parent_type" in i[1].keys():
-        #  parent_type.append(i[1]["parent_type"])
-        #else:
         if i[1]["yang_type"] in class_map.keys():
           parent_type.append(i[1]["yang_type"])
         else:
@@ -648,7 +677,6 @@ def get_typedefs(ctx, module, prefix=False):
       if default:
         class_map[type_name]["default"] = default[0]
         class_map[type_name]["quote_default"] = default[1]
-
   return True
 
 def get_children(fd, i_children, module, parent, path=str()):
@@ -928,11 +956,24 @@ def build_elemtype(et):
       elemtype_s[1]["yang_type"] = uniontype.arg
       elemtype.append(elemtype_s)
     cls = "union"
+  elif et.arg == "identityref":
+    base_stmt = et.search_one('base')
+    if base_stmt == None:
+      raise ValueError, "identityref specified with no base statement"
+    try:
+      elemtype = class_map[base_stmt.arg]
+    except KeyError:
+      print "FATAL: identityref with an unknown base"
+      if DEBUG:
+        pp.pprint(class_map)
+        pp.pprint(et.arg)
+        pp.pprint(base.arg)
+      sys.exit(127)
   else:
     try:
       elemtype = class_map[et.arg]
     except KeyError:
-      print "FATAL: unmapped type (%s)" % et.arg
+      print "FATAL: unmapped type (%s)" % (et.arg)
       if DEBUG:
         pp.pprint(class_map)
         pp.pprint(et.arg)
@@ -976,6 +1017,7 @@ def get_element(fd, element, module, parent, path):
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
+    print "element: %s %s" % (element.keyword, element.arg)
     cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type')))
 
     # build a tree that is rooted on this class.

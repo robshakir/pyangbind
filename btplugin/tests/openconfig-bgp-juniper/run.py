@@ -44,7 +44,7 @@ def main():
                       {'peer-type': False, 'neighbor': {'1.1.1.1': {'neighbor-name':
                       '1.1.1.1', 'peer-as': '3741'}, '1.1.1.2': {'neighbor-name': '1.1.1.2',
                        'peer-as': '5400'}, '1.1.1.3': {'neighbor-name': '1.1.1.3', 'peer-as': '29636'}},
-                      'group-name': 'groupA'}, 'groupB': {'peer-type': False, 'neighbor': 
+                      'group-name': 'groupA'}, 'groupB': {'peer-type': False, 'neighbor':
                       {'2.2.2.2': {'neighbor-name': '2.2.2.2', 'peer-as': '12767'}}, 'group-name':
                       'groupB'}}, 'global': {'as': '2856'}}}}, \
     "bgp config build for juniper did not match expected values"

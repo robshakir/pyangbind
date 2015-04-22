@@ -14,8 +14,8 @@
 ##		decimal64				implemented as decimal								tests/decimal64 (complete)
 ##			* fraction-digits	yes
 ##		enumeration				implemented											tests/enumeration (complete)
-##		identityref				no													-
-##		int{8,16,32,64}			implemented (numpy int{8,16,32,64})					tests/int (complete)													-
+##		identityref				implemented											tests/identityref (complete)
+##		int{8,16,32,64}			implemented (numpy int{8,16,32,64})					tests/int (complete)
 ##		uint{8,16,32,64}		implemented (numpy uint{8,16,32,64})				tests/uint (complete)
 ##			* range substmt		yes
 ##		leafref					no													-
@@ -32,5 +32,8 @@
 ##	Generic tests needed
 ##		* unsafe python names
 
-## Need to convert safe python names back into unsafe python names
-## with get routines. potentially through a lookup dict
+## we need to support obsoleting values - but no-one has ever done this yet
+## so it's not clear that there's really a need to :-)
+
+## need to parse types from submodules that are included - build a complete
+## list of modules that must be parsed
