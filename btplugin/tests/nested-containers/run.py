@@ -36,13 +36,13 @@ def main():
   assert test_instance.container.subcontainer.changed() == True, \
     "subcontainer not marked to changed after change"
 
-  assert test_instance.container.subcontainer.get() == {'a_leaf': 1}, \
+  assert test_instance.container.subcontainer.get() == {'a-leaf': 1}, \
     "subcontainer get not correct"
 
-  assert test_instance.container.get() == {'subcontainer': {'a_leaf': 1}}, \
+  assert test_instance.container.get() == {'subcontainer': {'a-leaf': 1}}, \
     "container get not correct"
 
-  assert test_instance.get() == {'container': {'subcontainer': {'a_leaf': 1}}}, \
+  assert test_instance.get() == {'container': {'subcontainer': {'a-leaf': 1}}}, \
     "instance get not correct"
 
   if not k:

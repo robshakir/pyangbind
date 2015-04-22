@@ -40,13 +40,13 @@ def main():
     bgp.juniper_config.bgp.peer_group[peer[1]].neighbor.add(peer[0])
     bgp.juniper_config.bgp.peer_group[peer[1]].neighbor[peer[0]].peer_as = peer[2]
 
-  assert bgp.get() == {'juniper_config': {'bgp': {'peer_group': {'groupA':
-                      {'peer_type': False, 'neighbor': {'1.1.1.1': {'neighbor_name':
-                      '1.1.1.1', 'peer_as': '3741'}, '1.1.1.2': {'neighbor_name': '1.1.1.2',
-                       'peer_as': '5400'}, '1.1.1.3': {'neighbor_name': '1.1.1.3', 'peer_as': '29636'}},
-                      'group_name': 'groupA'}, 'groupB': {'peer_type': False, 'neighbor': 
-                      {'2.2.2.2': {'neighbor_name': '2.2.2.2', 'peer_as': '12767'}}, 'group_name':
-                      'groupB'}}, 'global_': {'as_': '2856'}}}}, \
+  assert bgp.get() == {'juniper-config': {'bgp': {'peer-group': {'groupA':
+                      {'peer-type': False, 'neighbor': {'1.1.1.1': {'neighbor-name':
+                      '1.1.1.1', 'peer-as': '3741'}, '1.1.1.2': {'neighbor-name': '1.1.1.2',
+                       'peer-as': '5400'}, '1.1.1.3': {'neighbor-name': '1.1.1.3', 'peer-as': '29636'}},
+                      'group-name': 'groupA'}, 'groupB': {'peer-type': False, 'neighbor': 
+                      {'2.2.2.2': {'neighbor-name': '2.2.2.2', 'peer-as': '12767'}}, 'group-name':
+                      'groupB'}}, 'global': {'as': '2856'}}}}, \
     "bgp config build for juniper did not match expected values"
 
   #import pprint
