@@ -35,5 +35,10 @@
 ## we need to support obsoleting values - but no-one has ever done this yet
 ## so it's not clear that there's really a need to :-)
 
-## need to parse types from submodules that are included - build a complete
-## list of modules that must be parsed
+## bug: need to parse types from submodules that are included - build a complete
+## list of modules that must be parsed, when a module is included only in a
+## submodule, then we might not find the type definitions that are needed.
+
+## bug: when config: false is set for a higher-order container, then all objects
+## within it need to inherit the fact that the container is config false. this
+## should be carried over multiple levels of nested containers.

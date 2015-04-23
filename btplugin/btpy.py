@@ -526,6 +526,10 @@ def YANGDynClass(*args,**kwargs):
             if ch.keyword in statements.data_definition_keywords]
       get_children(fd, children, m, m)
 
+#def find_includes(module):
+#  mods = module.search('import')
+
+
 def get_identityrefs(ctx, module, prefix=False):
   mod = ctx.get_module(module.arg)
   if mod == None:
@@ -617,12 +621,20 @@ def get_typedefs(ctx, module, prefix=False):
     any_unknown = False
     for i in subtypes:
       if not i in known_typedefs:
-        any_unknown = True
+        # check whether this type was actually local to the module that
+        # we are looking at too
+        tmp_name = "%s:%s" % (prefix, i)
+        if not tmp_name in known_typedefs:
+          any_unknown = True
     if not any_unknown:
       process_typedefs_ordered.append(item)
       known_typedefs.append(i_name)
     else:
-      print remaining_typedefs
+      print "remaining: %s " % remaining_typedefs
+      print "name:%s" % i_name
+      print "known: %s " % known_typedefs
+      print "subtypes: %s" % subtypes
+      print ""
       if not i_name in remaining_typedefs:
         remaining_typedefs.append(i_name)
 
@@ -630,7 +642,8 @@ def get_typedefs(ctx, module, prefix=False):
     #print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
-    cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type')))
+    cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type'), \
+                                    prefix=prefix))
     #pp.pprint(elemtype)
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     if type_name in class_map.keys():
@@ -867,7 +880,7 @@ def get_children(fd, i_children, module, parent, path=str()):
           del d[i_d]
       else:
         if filter == False and not f.changed():
-          if not f._default == None:
+          if not f._default == None and f._default:
             d[i_d] = f._default
           else:
             d[i_d] = f
@@ -881,7 +894,7 @@ def get_children(fd, i_children, module, parent, path=str()):
   fd.write("\n")
   return True
 
-def build_elemtype(et):
+def build_elemtype(et, prefix=False):
   cls = "leaf"
   #et = element.search_one('type')
   restricted = False
@@ -973,11 +986,20 @@ def build_elemtype(et):
     try:
       elemtype = class_map[et.arg]
     except KeyError:
-      print "FATAL: unmapped type (%s)" % (et.arg)
-      if DEBUG:
-        pp.pprint(class_map)
-        pp.pprint(et.arg)
-      sys.exit(127)
+      passed = False
+      if prefix:
+        try:
+          tmp_name = "%s:%s" % (prefix, et.arg)
+          elemtype = class_map[tmp_name]
+          passed = True
+        except:
+          pass
+      if passed == False:
+        print "FATAL: unmapped type (%s)" % (et.arg)
+        if DEBUG:
+          pp.pprint(class_map)
+          pp.pprint(et.arg)
+        sys.exit(127)
     if type(elemtype["native_type"]) == type(list()):
       cls = "leaf-union"
   return (cls,elemtype)
