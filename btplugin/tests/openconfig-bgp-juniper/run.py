@@ -40,18 +40,33 @@ def main():
     bgp.juniper_config.bgp.peer_group[peer[1]].neighbor.add(peer[0])
     bgp.juniper_config.bgp.peer_group[peer[1]].neighbor[peer[0]].peer_as = peer[2]
 
-  assert bgp.get() == {'juniper-config': {'bgp': {'peer-group': {'groupA':
-                      {'peer-type': False, 'neighbor': {'1.1.1.1': {'neighbor-name':
-                      '1.1.1.1', 'peer-as': '3741'}, '1.1.1.2': {'neighbor-name': '1.1.1.2',
-                       'peer-as': '5400'}, '1.1.1.3': {'neighbor-name': '1.1.1.3', 'peer-as': '29636'}},
-                      'group-name': 'groupA'}, 'groupB': {'peer-type': False, 'neighbor':
-                      {'2.2.2.2': {'neighbor-name': '2.2.2.2', 'peer-as': '12767'}}, 'group-name':
-                      'groupB'}}, 'global': {'as': '2856'}}}}, \
-    "bgp config build for juniper did not match expected values"
 
-  #import pprint
-  #pp = pprint.PrettyPrinter(indent=4)
-  #pp.pprint(bgp.get())
+  bgp_filter_response = {'juniper-config': {'bgp': {'global': {'as': '2856'},
+                            'peer-group': {'groupA': {'group-name': 'groupA',
+                                                      'neighbor': {'1.1.1.1': {'neighbor-name': '1.1.1.1',
+                                                                               'peer-as': '3741'},
+                                                                   '1.1.1.2': {'neighbor-name': '1.1.1.2',
+                                                                               'peer-as': '5400'},
+                                                                   '1.1.1.3': {'neighbor-name': '1.1.1.3',
+                                                                               'peer-as': '29636'}}},
+                                           'groupB': {'group-name': 'groupB',
+                                                      'neighbor': {'2.2.2.2': {'neighbor-name': '2.2.2.2',
+                                                                               'peer-as': '12767'}}}}}}}
+  bgp_unfilter_response = {'juniper-config': {'bgp': {'global': {'as': '2856'},
+                            'peer-group': {'groupA': {'group-name': 'groupA',
+                                                      'neighbor': {'1.1.1.1': {'neighbor-name': '1.1.1.1',
+                                                                               'peer-as': '3741'},
+                                                                   '1.1.1.2': {'neighbor-name': '1.1.1.2',
+                                                                               'peer-as': '5400'},
+                                                                   '1.1.1.3': {'neighbor-name': '1.1.1.3',
+                                                                               'peer-as': '29636'}},
+                                                      'peer-type': ''},
+                                           'groupB': {'group-name': 'groupB',
+                                                      'neighbor': {'2.2.2.2': {'neighbor-name': '2.2.2.2',
+                                                                               'peer-as': '12767'}},
+                                                      'peer-type': ''}}}}}
+  assert bgp.get() == bgp_unfilter_response, "unfiltered get response did not match"
+  assert bgp.get(filter=True) == bgp_filter_response, "filtered get response did not match"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -72,6 +72,21 @@ def main():
     {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo']}}, \
     "get did not correctly return the dictionary"
 
+  try:
+    leaflist_instance.container.leaflist = ["one", "two"]
+  except TypeError:
+    pass
+
+  assert leaflist_instance.container.leaflist == ["one", "two"], \
+    "leaflist assignment did not function correctly"
+
+  passed = False
+  try:
+    leaflist_instance.container.leaflist = [1,2]
+  except TypeError:
+    passed = True
+
+  assert passed == True, "an erroneous value was assigned to the list"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -112,6 +112,9 @@ class_map = {
                           "pytype": np.int32},
   'int64':            {"native_type": "np.int64", "base_type": True,
                           "pytype": np.int64},
+  # this is a temporary hack to support leafref, but it is still TODO
+  'leafref':          {"native_type": "str", "base_type": True,
+                          "pytype": str, "quote_arg": True,},
 }
 
 # all types that support range substmts
@@ -289,7 +292,10 @@ def TypedListType(*args, **kwargs):
     _allowed_type = allowed_type
 
     def __init__(self, *args, **kwargs):
-      self._list.extend(list(args))
+      if len(args):
+        for i in args[0]:
+          self.check(i)
+        self._list.extend(args[0])
 
     def check(self,v):
       if not isinstance(v, self._allowed_type):
@@ -310,7 +316,15 @@ def TypedListType(*args, **kwargs):
     def __str__(self):
       return str(self._list)
 
-    def get(self):
+    def __iter__(self):
+      return iter(self._list)
+
+    def __eq__(self, other):
+      if self._list == other:
+        return True
+      return False
+
+    def get(self, filter=False):
       return self._list
   return type(TypedList(*args,**kwargs))
 
@@ -375,11 +389,11 @@ def YANGListType(*args,**kwargs):
         del self._members[k]
         raise ValueError, "key value must be valid, %s" % m
 
-    def get(self):
+    def get(self, filter=False):
       d = {}
       for i in self._members:
         if hasattr(self._members[i], "get"):
-          d[i] = self._members[i].get()
+          d[i] = self._members[i].get(filter=filter)
         else:
           d[i] = self._members[i]
       return d
@@ -408,6 +422,7 @@ def YANGDynClass(*args,**kwargs):
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
   yang_name = kwargs.pop("yang_name", False)
+  parent_instance = kwargs.pop("parent", False)
   if not base_type:
     raise AttributeError, "must have a base type"
   if isinstance(base_type, list):
@@ -439,6 +454,7 @@ def YANGDynClass(*args,**kwargs):
       self._default = False
       self._changed = False
       self._yang_name = yang_name
+      self._parent = parent_instance
       if default:
         self._default = default
       if len(args):
@@ -447,15 +463,19 @@ def YANGDynClass(*args,**kwargs):
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except:
-        print args
-        print kwargs
-        print base_type
+        #print args
+        #print kwargs
+        #print base_type
         raise TypeError, "couldn't generate dynamic type"
 
     def changed(self):
       return self._changed
+
     def set(self):
       self._changed = True
+      if self._parent and hasattr(self._parent, "set"):
+        self._parent.set()
+
     def yang_name(self):
       return self._yang_name
 
@@ -497,6 +517,8 @@ def YANGDynClass(*args,**kwargs):
   return YANGBaseClass(*args, **kwargs)
 """)
 
+
+  processed_modules = []
   for module in modules:
     #typedefs = get_typedefs(ctx, module)
     mods = module.search('import')
@@ -504,6 +526,8 @@ def YANGDynClass(*args,**kwargs):
     # have typedef dependencies elsewhere
     mods.append(module)
     for i in mods:
+      if i.arg in processed_modules:
+        continue
       prefix = i.search_one('prefix').arg
       if i == module:
         prefix = False
@@ -511,6 +535,7 @@ def YANGDynClass(*args,**kwargs):
         raise TypeError, "Invalid specification of typedefs"
       if not get_identityrefs(ctx, i, prefix=prefix):
         raise TypeError, "Invalid specification of identityrefs"
+      processed_modules.append(i.arg)
 
   # we need to parse each module
   for module in modules:
@@ -524,7 +549,7 @@ def YANGDynClass(*args,**kwargs):
     for m in mods:
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
-      get_children(fd, children, m, m)
+      get_children(fd, children, m, m, unmapped_prefix=[i.search_one('prefix').arg for i in m.search('import')])
 
 #def find_includes(module):
 #  mods = module.search('import')
@@ -630,11 +655,6 @@ def get_typedefs(ctx, module, prefix=False):
       process_typedefs_ordered.append(item)
       known_typedefs.append(i_name)
     else:
-      print "remaining: %s " % remaining_typedefs
-      print "name:%s" % i_name
-      print "known: %s " % known_typedefs
-      print "subtypes: %s" % subtypes
-      print ""
       if not i_name in remaining_typedefs:
         remaining_typedefs.append(i_name)
 
@@ -645,8 +665,13 @@ def get_typedefs(ctx, module, prefix=False):
     cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type'), \
                                     prefix=prefix))
     #pp.pprint(elemtype)
+    known_types = class_map.keys()
+    # Enumeration is a native type, but is not natively supported
+    # in the class_map, and hence we append it here.
+    known_types.append("enumeration")
+
     type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
-    if type_name in class_map.keys():
+    if type_name in known_types:
       raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
     if not type(elemtype) == type(list()):
@@ -657,9 +682,9 @@ def get_typedefs(ctx, module, prefix=False):
         class_map[type_name]["parent_type"] = elemtype["parent_type"]
       else:
         yang_type = item.search_one('type').arg
-        if not yang_type in class_map.keys():
+        if not yang_type in known_types:
           raise TypeError, "typedef specified a native type that was not \
-                              supported"
+                            supported"
         class_map[type_name]["parent_type"] = yang_type
       if not default_stmt == None:
         class_map[type_name]["default"] = default_stmt.arg
@@ -676,11 +701,12 @@ def get_typedefs(ctx, module, prefix=False):
       default = False if default_stmt == None else default_stmt.arg
       for i in elemtype:
         native_type.append(i[1]["native_type"])
-        if i[1]["yang_type"] in class_map.keys():
+        if i[1]["yang_type"] in known_types:
           parent_type.append(i[1]["yang_type"])
         else:
-          raise TypeError, "typedef in a union specified a native type that \
-                              was not supported"
+          msg = "typedef in a union specified a native type that was not"
+          msg += "supported (%s in %s)" % (i[1]["yang_type"], item.arg)
+          raise TypeError, msg
         if "default" in i[1].keys() and not default:
           # we do strict ordering, so only the first default wins
           q = True if "quote_arg" in i[1].keys() else False
@@ -692,10 +718,10 @@ def get_typedefs(ctx, module, prefix=False):
         class_map[type_name]["quote_default"] = default[1]
   return True
 
-def get_children(fd, i_children, module, parent, path=str()):
+def get_children(fd, i_children, module, parent, path=str(), unmapped_prefix=False):
   used_types,elements = [],[]
   for ch in i_children:
-    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg)
+    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, unmapped_prefix=unmapped_prefix)
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
@@ -748,14 +774,14 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str += "%s(allowed_type=%s)" % i["type"]["native_type"]
         if "default" in i.keys() and not i["default"] == None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        class_str += ",yang_name=\"%s\")\n" % i["yang_name"]
+        class_str += ",yang_name=\"%s\", parent=self)\n" % i["yang_name"]
       elif i["class"] == "list":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=YANGListType("
         class_str += "\"%s\",yc_%s_%s)" % (i["key"], safe_name(i["name"]), \
                         safe_name(path.replace("/","_")) + "_" + \
                         safe_name(i["name"]))
-        class_str += ", yang_name=\"%s\")\n" % i["yang_name"]
+        class_str += ", yang_name=\"%s\", parent=self)\n" % i["yang_name"]
       elif i["class"] == "union":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=["
@@ -764,7 +790,7 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str += "]"
         if "default" in i.keys() and not i["default"] == None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        class_str += ",yang_name=\"%s\")\n" % i["yang_name"]
+        class_str += ",yang_name=\"%s\", parent=self)\n" % i["yang_name"]
       elif i["class"] == "leaf-union":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=["
@@ -773,14 +799,15 @@ def get_children(fd, i_children, module, parent, path=str()):
         class_str += "]"
         if "default" in i.keys() and not i["default"] == None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        class_str += ",yang_name=\"%s\")\n" % i["yang_name"]
+        class_str += ",yang_name=\"%s\", parent=self)\n" % i["yang_name"]
       else:
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass("
         class_str += "base=%s" % i["type"]
         if "default" in i.keys() and not i["default"] == None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        class_str += ",yang_name=\"%s\")\n" % i["yang_name"]
+        class_str += ",yang_name=\"%s\"" % i["yang_name"]
+        class_str += ", parent=self)\n"
       classes.append(class_str)
 
     fd.write("""
@@ -803,7 +830,8 @@ def get_children(fd, i_children, module, parent, path=str()):
              description_str, i["name"]))
 
       if i["class"] == "leaf-list":
-        native_type = i["type"]["native_type"]
+        #native_type = i["type"]["native_type"]
+        native_type = "%s(allowed_type=%s)" % i["type"]["native_type"]
       elif i["class"] == "union":
         native_type = "["
         for u in i["type"][1]:
@@ -836,14 +864,14 @@ def get_children(fd, i_children, module, parent, path=str()):
       source YANG file, then _set_%s is considered as a private
       method. Backends looking to populate this variable should
       do so via calling thisObj._set_%s() directly.%s
-    \"\"\"
+    \"\"\"""" % (i["name"], i["name"], i["path"], \
+                          i["origtype"], i["name"], i["name"], description_str,))
+      fd.write("""
     try:
       t = YANGDynClass(v,base=%s%s,yang_name=\"%s\")
     except (TypeError, ValueError):
       raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
-    self.__%s = t\n""" % (i["name"], i["name"], i["path"],
-                          i["origtype"], i["name"], i["name"], description_str,\
-                          native_type, default_s, i["yang_name"], i["name"], \
+    self.__%s = t\n""" % (native_type, default_s, i["yang_name"], i["name"], \
                           native_type, i["name"]))
       fd.write("    self.set()\n")
     fd.write("\n")
@@ -867,25 +895,48 @@ def get_children(fd, i_children, module, parent, path=str()):
     def error():
       return NameError, "element does not exist"
     d = {}
-    for i in self.__elements.keys():
-      f = getattr(self, i, error)
-      if hasattr(f, "yang_name"):
-        i_d = getattr(f, "yang_name", error)
-        i_d = i_d()
+    # for each YANG element within this container.
+    for element_name in self.__elements.keys():
+      element = getattr(self, element_name, error)
+      if hasattr(element, "yang_name"):
+        # retrieve the YANG name method
+        yang_name = getattr(element, "yang_name", error)
+        element_id = yang_name()
       else:
-        i_d = i
-      if hasattr(f, "get"):
-        d[i_d] = f.get()
-        if filter == True and not f.changed():
-          del d[i_d]
+        element_id = element_name
+      if hasattr(element, "get"):
+        # this is a YANG container that has its own
+        # get method
+        d[element_id] = element.get(filter=filter)
+        if filter == True:
+          # if the element hadn't changed but we were
+          # filtering unchanged elements, remove it
+          # from the dictionary
+          if isinstance(d[element_id], dict):
+            for entry in d[element_id].keys():
+              if hasattr(d[element_id][entry], "changed"):
+                if not d[element_id][entry].changed():
+                  del d[element_id][entry]
+            if len(d[element_id].keys()) == 0:
+              del d[element_id]
+          elif isinstance(d[element_id], list):
+            for list_entry in d[element_id]:
+              if hasattr(list_entry, "changed"):
+                if not list_entry.changed():
+                  d[element_id].remove(list_entry)
+            if len(d[element_id]) == 0:
+              del d[element_id]
       else:
-        if filter == False and not f.changed():
-          if not f._default == None and f._default:
-            d[i_d] = f._default
+        # this is an attribute that does not have get()
+        # method
+
+        if filter == False and not element.changed():
+          if not element._default == False and element._default:
+            d[element_id] = element._default
           else:
-            d[i_d] = f
-        elif f.changed():
-          d[i_d] = f
+            d[element_id] = element
+        elif element.changed():
+          d[element_id] = element
         else:
           # changed = False, and filter = True
           pass
@@ -894,7 +945,7 @@ def get_children(fd, i_children, module, parent, path=str()):
   fd.write("\n")
   return True
 
-def build_elemtype(et, prefix=False):
+def build_elemtype(et, prefix=False, unmapped_prefix=False):
   cls = "leaf"
   #et = element.search_one('type')
   restricted = False
@@ -965,7 +1016,7 @@ def build_elemtype(et, prefix=False):
   elif et.arg == "union":
     elemtype = []
     for uniontype in et.search('type'):
-      elemtype_s = copy.deepcopy(build_elemtype(uniontype))
+      elemtype_s = copy.deepcopy(build_elemtype(uniontype,unmapped_prefix=unmapped_prefix))
       elemtype_s[1]["yang_type"] = uniontype.arg
       elemtype.append(elemtype_s)
     cls = "union"
@@ -989,23 +1040,36 @@ def build_elemtype(et, prefix=False):
       passed = False
       if prefix:
         try:
+          #print "trying %s:%s..." % (prefix, et.arg)
           tmp_name = "%s:%s" % (prefix, et.arg)
           elemtype = class_map[tmp_name]
           passed = True
         except:
           pass
+      elif unmapped_prefix:
+        for i in unmapped_prefix:
+          try:
+            #print "last resort %s:%s..." % (i, et.arg)
+            tmp_name = "%s:%s" % (i, et.arg)
+            elemtype = class_map[tmp_name]
+            passed = True
+            break
+          except:
+            pass
       if passed == False:
         print "FATAL: unmapped type (%s)" % (et.arg)
         if DEBUG:
-          pp.pprint(class_map)
+          pp.pprint(class_map.keys())
           pp.pprint(et.arg)
+          pp.pprint(prefix)
+          pp.pprint(unmapped_prefix)
         sys.exit(127)
     if type(elemtype["native_type"]) == type(list()):
       cls = "leaf-union"
   return (cls,elemtype)
 
 
-def get_element(fd, element, module, parent, path):
+def get_element(fd, element, module, parent, path, unmapped_prefix=False):
   this_object = []
   default = False
   p = False
@@ -1024,7 +1088,7 @@ def get_element(fd, element, module, parent, path):
       create_list = True
     if element.i_children:
       chs = element.i_children
-      get_children(fd, chs, module, element, path)
+      get_children(fd, chs, module, element, path, unmapped_prefix=unmapped_prefix)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))),
@@ -1039,8 +1103,9 @@ def get_element(fd, element, module, parent, path):
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
-    print "element: %s %s" % (element.keyword, element.arg)
-    cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type')))
+    #print "element: %s %s" % (element.keyword, element.arg)
+    #print "was building %s" % element.arg
+    cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type'), unmapped_prefix=unmapped_prefix))
 
     # build a tree that is rooted on this class.
     # perform a breadth-first search - the first node found
