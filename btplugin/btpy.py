@@ -54,7 +54,7 @@ class_bool_map = {
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
-reserved_name = ["list", "str", "int", "global", "decimal", "float", "as"]
+reserved_name = ["list", "str", "int", "global", "decimal", "float", "as", "if", "else", "elsif", "map", "set"]
 
 class_map = {
   # this map is dynamically built upon but defines how we take
@@ -381,6 +381,8 @@ def YANGListType(*args,**kwargs):
 
     def __len__(self): return len(self._members)
 
+    def keys(self): return self._members.keys()
+
     def add(self, k):
       try:
         self._members[k] = YANGDynClass(base=self._contained_class)
@@ -530,6 +532,7 @@ def YANGDynClass(*args,**kwargs):
         continue
       prefix = i.search_one('prefix').arg
       if i == module:
+        get_typedefs(ctx, i, prefix=prefix)
         prefix = False
       if not get_typedefs(ctx, i, prefix=prefix):
         raise TypeError, "Invalid specification of typedefs"
@@ -604,6 +607,7 @@ def get_identityrefs(ctx, module, prefix=False):
 
 
 def get_typedefs(ctx, module, prefix=False):
+  print "doing %s" % module.arg
   mod = ctx.get_module(module.arg)
   if mod == None:
     raise AttributeError, "unmapped types, please specify path to %s!" \
@@ -627,8 +631,10 @@ def get_typedefs(ctx, module, prefix=False):
     else:
       name = i.arg
     definition_dict[name] = i
+    print "added %s as %s" % (i.arg, name)
     remaining_typedefs.append(name)
 
+  print definition_dict.keys()
   # for each remaining typedef definition that we
   # do not know about - retrieve the definition
   # check whether it references a type that we now
@@ -636,6 +642,7 @@ def get_typedefs(ctx, module, prefix=False):
   # add it to the queue
   while remaining_typedefs:
     i_name = remaining_typedefs.pop(0)
+    print "handling %s" % i_name
     item = definition_dict[i_name]
 
     this_type = item.search_one('type').arg
@@ -643,6 +650,7 @@ def get_typedefs(ctx, module, prefix=False):
       subtypes = [i.arg for i in item.search_one('type').search('type')]
     else:
       subtypes = [this_type,]
+    print "and it had ... %s" % subtypes
     any_unknown = False
     for i in subtypes:
       if not i in known_typedefs:
