@@ -1,0 +1,57 @@
+module config-false {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/nested";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+        description
+            "A container";
+
+        container subone {
+            description
+                "A nested container";
+
+            leaf a-leaf {
+                type uint8;
+                description
+                    "A test leaf";
+            }
+
+            leaf d-leaf {
+                type uint8;
+                config false;
+                description
+                    "A test leaf that is config false";
+            }
+        }
+
+        container subtwo {
+            description
+                "A nested container with config false";
+
+            config false;
+            leaf b-leaf {
+                type uint8;
+                description
+                    "A config false leaf";
+            }
+
+            container subsubtwo {
+                leaf c-leaf {
+                    type uint8;
+                    description
+                        "A config false leaf within another container";
+                }
+            }
+        }
+    }
+}

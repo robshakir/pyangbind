@@ -838,10 +838,22 @@ def get_typedefs(ctx, module, prefix=False):
         class_map[type_name]["quote_default"] = default[1]
   return True
 
-def get_children(fd, i_children, module, parent, path=str()):
+def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True):
   used_types,elements = [],[]
+
+  if parent_cfg:
+    # the first time we find a container that has config false set on it
+    # then we need to hand this down the tree - we don't need to look if
+    # parent_cfg has already been set to False as we need to inherit.
+    parent_config = parent.search_one('config')
+    if not parent_config == None:
+      parent_config = parent_config.arg
+      if parent_config.upper() == "FALSE":
+        # this container is config false
+        parent_cfg = False
+
   for ch in i_children:
-    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg)
+    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg)
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
@@ -996,7 +1008,7 @@ def get_children(fd, i_children, module, parent, path=str()):
       fd.write("    self.set()\n")
     fd.write("\n")
     for i in elements:
-      if i["config"]:
+      if i["config"] and parent_cfg:
         fd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
                           (i["name"], i["name"], i["name"]))
       else:
@@ -1178,7 +1190,7 @@ def build_elemtype(et, prefix=False):
   return (cls,elemtype)
 
 
-def get_element(fd, element, module, parent, path):
+def get_element(fd, element, module, parent, path, parent_cfg=True):
   this_object = []
   default = False
   p = False
@@ -1197,7 +1209,7 @@ def get_element(fd, element, module, parent, path):
       create_list = True
     if element.i_children:
       chs = element.i_children
-      get_children(fd, chs, module, element, path)
+      get_children(fd, chs, module, element, path, parent_cfg=parent_cfg)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))),
