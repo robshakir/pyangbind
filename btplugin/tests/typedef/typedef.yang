@@ -70,5 +70,9 @@ module typedef {
         leaf session-dir {
             type bgp-session-direction;
         }
+
+        leaf remote-local-type {
+            type defn:remote-local-definition;
+        }
     }
 }

@@ -15,4 +15,12 @@ module remote {
     typedef remote-definition {
         type string;
     }
+
+    typedef remote-local-definition {
+        type local-definition;
+    }
+
+    typedef local-definition {
+        type string;
+    }
 }

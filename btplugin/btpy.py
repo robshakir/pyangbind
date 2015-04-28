@@ -286,6 +286,8 @@ def RestrictedClassType(*args, **kwargs):
 
 def TypedListType(*args, **kwargs):
   allowed_type = kwargs.pop("allowed_type", str)
+  if not isinstance(allowed_type, list):
+    allowed_type = [allowed_type,]
   # this was from collections.MutableSequence
   class TypedList(collections.MutableSequence):
     _list = list()
@@ -298,7 +300,12 @@ def TypedListType(*args, **kwargs):
         self._list.extend(args[0])
 
     def check(self,v):
-      if not isinstance(v, self._allowed_type):
+      passed = False
+      for i in self._allowed_type:
+        if isinstance(v, i):
+          passed = True
+      if not passed:
+      #if not isinstance(v, self._allowed_type):
         raise TypeError("Cannot add %s to TypedList (accepts only %s)" % \
           (v, self._allowed_type))
 
@@ -519,29 +526,119 @@ def YANGDynClass(*args,**kwargs):
   return YANGBaseClass(*args, **kwargs)
 """)
 
+  # we need to build a dependency map
+  # foreach module:
+  #   foreach import:
+  #      record dependencies for the module - along with prefix
+  dependency_d = {}
+  #pp.pprint(modules)
+  original_modules = [i.arg for i in modules]
+  to_process = copy.deepcopy(modules)
+  module_d = {}
+  while len(to_process):
+    module = to_process.pop(0)
+    if not module.arg in dependency_d.keys():
+      dependency_d[module.arg] = list()
+    print "searched %s for dependencies" % (module.arg)
+    dependencies = module.search('import')
+    print "and got %s" % [i.arg for i in dependencies]
+    print dir(module)
+    try:
+      print "import %s for %s" % (module.i_is_safe_import, module.arg)
+    except:
+      pass
+    #print "dependencies for %s are %s" % (module.arg, [i.arg for i in dependencies])
+    if not module.arg in module_d.keys():
+      module_d[module.arg] = module
+    if not dependencies == None:
+      for dep in dependencies:
+        prefix = dep.search_one('prefix').arg
+        dependency_d[module.arg].append((dep.arg, prefix))
+        to_process.append(dep)
+        if not dep.arg in module_d.keys():
+          module_d[dep.arg] = dep
 
-  processed_modules = []
-  for module in modules:
+  for dependency in dependency_d:
+    if len(dependency_d[dependency]) == 0:
+      sys.stderr.write("WARNING: did not find module imports for %s, " % dependency)
+      sys.stderr.write("you may need to specify the path to this module ")
+      sys.stderr.write("for all dependencies to be resolved.\n")
+
+  #print "dependency dictionary"
+  #pp.pprint(dependency_d)
+  #print "\n\n"
+  known_modules = {}
+  module_process_order = []
+  to_process = dependency_d.keys()
+  while len(to_process):
+    module = to_process.pop(0)
+    if len(dependency_d[module]) == 0:
+      known_modules[module] = []
+      module_process_order.append(module)
+      if module in original_modules:
+        known_modules[module].append('')
+    else:
+      unknown_dependencies = False
+      for dep in dependency_d[module]:
+        #print "dependencies: "
+        #print dep
+        #print "known"
+        #print known_modules.keys()
+        #print "\n\n"
+        if dep[0] in known_modules.keys():
+          #print "adding %s as %s" % (dep[0], dep[1])
+          if not dep[1] in known_modules[dep[0]]:
+            known_modules[dep[0]].append(dep[1]) # add this module to process with
+                                               # the local prefix
+        else:
+          unknown_dependencies = True
+      if not unknown_dependencies:
+        module_process_order.append(module)
+        known_modules[module] = []
+        if module in original_modules:
+          known_modules[module].append('')
+      else:
+        to_process.append(module)
+
+  #print known_modules
+  #print module_process_order
+  #pp.pprint(dependency_d)
+  #pp.pprint(known_modules)
+  pp.pprint(module_process_order)
+  #assert False, "TODO"
+
+  print "got to building %s" % module_process_order
+  built = []
+  for module in module_process_order:
+    for prefix in known_modules[module]:
+      if not "%s:%s" % (prefix, module) in built:
+        get_typedefs(ctx, module_d[module], prefix=prefix)
+        get_identityrefs(ctx, module_d[module], prefix=prefix)
+        built.append("%s:%s" % (prefix,module))
+  print "got out of building"
+  #processed_modules = []
+  #for module in modules:
     #typedefs = get_typedefs(ctx, module)
-    mods = module.search('import')
+    #mods = module.search('import')
     # we have to do this module last, since it may
     # have typedef dependencies elsewhere
-    mods.append(module)
-    for i in mods:
-      if i.arg in processed_modules:
-        continue
-      prefix = i.search_one('prefix').arg
-      if i == module:
-        get_typedefs(ctx, i, prefix=prefix)
-        prefix = False
-      if not get_typedefs(ctx, i, prefix=prefix):
-        raise TypeError, "Invalid specification of typedefs"
-      if not get_identityrefs(ctx, i, prefix=prefix):
-        raise TypeError, "Invalid specification of identityrefs"
-      processed_modules.append(i.arg)
-
+    #mods.append(module)
+    #for i in mods:
+    #  if i.arg in processed_modules:
+    #    continue
+    #  prefix = i.search_one('prefix').arg
+    #  if i == module:
+    #    get_typedefs(ctx, i, prefix=False)
+    #    get_identityrefs(ctx, i, prefix=False)
+    #  if not get_typedefs(ctx, i, prefix=prefix):
+    #    raise TypeError, "Invalid specification of typedefs"
+    #  if not get_identityrefs(ctx, i, prefix=prefix):
+    #    raise TypeError, "Invalid specification of identityrefs"
+    #  processed_modules.append(i.arg)
+  print [i.arg for i in modules]
   # we need to parse each module
   for module in modules:
+    print "processing %s...." % module.arg
     # we need to parse each sub-module
     mods = [module]
     for i in module.search('include'):
@@ -552,7 +649,7 @@ def YANGDynClass(*args,**kwargs):
     for m in mods:
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
-      get_children(fd, children, m, m, unmapped_prefix=[i.search_one('prefix').arg for i in m.search('import')])
+      get_children(fd, children, m, m)
 
 #def find_includes(module):
 #  mods = module.search('import')
@@ -607,7 +704,7 @@ def get_identityrefs(ctx, module, prefix=False):
 
 
 def get_typedefs(ctx, module, prefix=False):
-  print "doing %s" % module.arg
+  #print "doing %s" % module.arg
   mod = ctx.get_module(module.arg)
   if mod == None:
     raise AttributeError, "unmapped types, please specify path to %s!" \
@@ -640,9 +737,19 @@ def get_typedefs(ctx, module, prefix=False):
   # check whether it references a type that we now
   # know about, and if not, re-queue it. if so
   # add it to the queue
+  c = 0
   while remaining_typedefs:
+    if c > 1000:
+      # this is a safety net, we have unresolved
+      # dependencies, and it is not possible to
+      # fix it -- one of the warnings we gave
+      # earlier needs to be listened to.
+      sys.stderr.write("UNRESOLVED DEPENCIES: %s" % remaining_typedefs)
+      sys.stderr.write("%s \n" % subtypes)
+      sys.stderr.write("\nCHECK WARNINGS!\n")
+      sys.exit(127)
     i_name = remaining_typedefs.pop(0)
-    print "handling %s" % i_name
+    #print "handling %s" % i_name
     item = definition_dict[i_name]
 
     this_type = item.search_one('type').arg
@@ -650,13 +757,17 @@ def get_typedefs(ctx, module, prefix=False):
       subtypes = [i.arg for i in item.search_one('type').search('type')]
     else:
       subtypes = [this_type,]
-    print "and it had ... %s" % subtypes
+    #print "and it had ... %s" % subtypes
+    #print known_typedefs
     any_unknown = False
     for i in subtypes:
       if not i in known_typedefs:
         # check whether this type was actually local to the module that
         # we are looking at too
         tmp_name = "%s:%s" % (prefix, i)
+        #print prefix
+        #print tmp_name
+        #print known_typedefs
         if not tmp_name in known_typedefs:
           any_unknown = True
     if not any_unknown:
@@ -665,6 +776,7 @@ def get_typedefs(ctx, module, prefix=False):
     else:
       if not i_name in remaining_typedefs:
         remaining_typedefs.append(i_name)
+    c += 1
 
   for item in process_typedefs_ordered:
     #print "building %s..." % item.arg
@@ -726,10 +838,10 @@ def get_typedefs(ctx, module, prefix=False):
         class_map[type_name]["quote_default"] = default[1]
   return True
 
-def get_children(fd, i_children, module, parent, path=str(), unmapped_prefix=False):
+def get_children(fd, i_children, module, parent, path=str()):
   used_types,elements = [],[]
   for ch in i_children:
-    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, unmapped_prefix=unmapped_prefix)
+    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg)
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
@@ -953,7 +1065,7 @@ def get_children(fd, i_children, module, parent, path=str(), unmapped_prefix=Fal
   fd.write("\n")
   return True
 
-def build_elemtype(et, prefix=False, unmapped_prefix=False):
+def build_elemtype(et, prefix=False):
   cls = "leaf"
   #et = element.search_one('type')
   restricted = False
@@ -1024,7 +1136,7 @@ def build_elemtype(et, prefix=False, unmapped_prefix=False):
   elif et.arg == "union":
     elemtype = []
     for uniontype in et.search('type'):
-      elemtype_s = copy.deepcopy(build_elemtype(uniontype,unmapped_prefix=unmapped_prefix))
+      elemtype_s = copy.deepcopy(build_elemtype(uniontype))
       elemtype_s[1]["yang_type"] = uniontype.arg
       elemtype.append(elemtype_s)
     cls = "union"
@@ -1035,11 +1147,11 @@ def build_elemtype(et, prefix=False, unmapped_prefix=False):
     try:
       elemtype = class_map[base_stmt.arg]
     except KeyError:
-      print "FATAL: identityref with an unknown base"
+      sys.stderr.write("FATAL: identityref with an unknown base\n")
       if DEBUG:
         pp.pprint(class_map)
         pp.pprint(et.arg)
-        pp.pprint(base.arg)
+        pp.pprint(base_stmt.arg)
       sys.exit(127)
   else:
     try:
@@ -1054,30 +1166,19 @@ def build_elemtype(et, prefix=False, unmapped_prefix=False):
           passed = True
         except:
           pass
-      elif unmapped_prefix:
-        for i in unmapped_prefix:
-          try:
-            #print "last resort %s:%s..." % (i, et.arg)
-            tmp_name = "%s:%s" % (i, et.arg)
-            elemtype = class_map[tmp_name]
-            passed = True
-            break
-          except:
-            pass
       if passed == False:
-        print "FATAL: unmapped type (%s)" % (et.arg)
+        sys.stderr.write("FATAL: unmapped type (%s)\n" % (et.arg))
         if DEBUG:
           pp.pprint(class_map.keys())
           pp.pprint(et.arg)
           pp.pprint(prefix)
-          pp.pprint(unmapped_prefix)
         sys.exit(127)
     if type(elemtype["native_type"]) == type(list()):
       cls = "leaf-union"
   return (cls,elemtype)
 
 
-def get_element(fd, element, module, parent, path, unmapped_prefix=False):
+def get_element(fd, element, module, parent, path):
   this_object = []
   default = False
   p = False
@@ -1096,7 +1197,7 @@ def get_element(fd, element, module, parent, path, unmapped_prefix=False):
       create_list = True
     if element.i_children:
       chs = element.i_children
-      get_children(fd, chs, module, element, path, unmapped_prefix=unmapped_prefix)
+      get_children(fd, chs, module, element, path)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))),
@@ -1113,7 +1214,7 @@ def get_element(fd, element, module, parent, path, unmapped_prefix=False):
       create_list = True
     #print "element: %s %s" % (element.keyword, element.arg)
     #print "was building %s" % element.arg
-    cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type'), unmapped_prefix=unmapped_prefix))
+    cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type')))
 
     # build a tree that is rooted on this class.
     # perform a breadth-first search - the first node found
@@ -1231,8 +1332,28 @@ def get_element(fd, element, module, parent, path, unmapped_prefix=False):
 
     if create_list:
       cls = "leaf-list"
+      if isinstance(elemtype, list):
+        c = 0
+        allowed_types = []
+        for subtype in elemtype:
+          # nested union within a leaf-list type
+          if isinstance(subtype, tuple):
+            print subtype[0]
+            print subtype[1]
+            if subtype[0] == "leaf-union":
+              for subelemtype in subtype[1]["native_type"]:
+                allowed_types.append(subelemtype)
+            else:
+              allowed_types.append(subtype[1]["native_type"])
+          else:
+            allowed_types.append(subtype["native_type"])
+      else:
+        allowed_types = elemtype["native_type"]
+
+      #print "%s: %s" % (elemname, elemtype)
+      #pp.pprint(elemtype)
       elemtype = {"class": cls, "native_type": ("TypedListType", \
-                  elemtype["native_type"])}
+                  allowed_types)}
     else:
       if cls == "union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}

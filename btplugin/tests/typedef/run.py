@@ -28,7 +28,7 @@ def main():
   t = typedef()
 
   for element in ["string", "integer", "stringdefault", "integerdefault", \
-                  "new_string", "remote_new_type", "session_dir"]:
+                  "new_string", "remote_new_type", "session_dir", "remote_local_type"]:
     assert hasattr(t.container, element), "element %s did not exist within the container" % element
 
   t.container.string = "hello"
@@ -60,6 +60,11 @@ def main():
   assert t.container.remote_new_type == "testString", \
     "incorrect value for the remote definition (%s)" % \
       t.container.remote_new_type
+
+  t.container.remote_local_type = "testString"
+  assert t.container.remote_local_type == "testString", \
+    "incorrect value for remote definition which had local definition (%s)" % \
+      t.container.remote_local_type
 
 
   if not k:
