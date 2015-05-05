@@ -31,7 +31,6 @@ module union {
         default "hello";
     }
 
-//  TYPEDEF ORDERING IS AN ISSUE
     typedef derived-int-type {
         type int8;
         default 10;

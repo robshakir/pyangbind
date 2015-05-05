@@ -13,10 +13,10 @@ def main():
     print str(e)
     sys.exit(127)
 
-  k = False
+  keepfiles = False
   for o, a in opts:
     if o in ["-k", "--keepfiles"]:
-      k = True
+      keepfiles = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
   os.system("/usr/local/bin/pyang \
@@ -43,11 +43,12 @@ def main():
 
   for k in ["option-one", "option-two"]:
     passed = True
+    i.test_container.id1 = k
     try:
       i.test_container.id1 = k
     except:
       passed = False
-    assert passed == True, "id1 leaf was set to an invalid value (%s)" % k
+    assert passed == True, "id1 leaf was set to an invalid value (%s, %s)" % (passed,k)
 
   # checks that the namespaces are right
   for k in ["remote-one", "remote-two"]:
@@ -59,7 +60,7 @@ def main():
     assert passed == True, "idr1 leaf was set to an invalid value (%s)" % k
 
 
-  if not k:
+  if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
 

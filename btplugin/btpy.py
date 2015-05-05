@@ -539,14 +539,14 @@ def YANGDynClass(*args,**kwargs):
     module = to_process.pop(0)
     if not module.arg in dependency_d.keys():
       dependency_d[module.arg] = list()
-    print "searched %s for dependencies" % (module.arg)
+    #print "searched %s for dependencies" % (module.arg)
     dependencies = module.search('import')
-    print "and got %s" % [i.arg for i in dependencies]
-    print dir(module)
-    try:
-      print "import %s for %s" % (module.i_is_safe_import, module.arg)
-    except:
-      pass
+    #print "and got %s" % [i.arg for i in dependencies]
+    #print dir(module)
+    #try:
+    #  print "import %s for %s" % (module.i_is_safe_import, module.arg)
+    #except:
+    #  pass
     #print "dependencies for %s are %s" % (module.arg, [i.arg for i in dependencies])
     if not module.arg in module_d.keys():
       module_d[module.arg] = module
@@ -573,12 +573,14 @@ def YANGDynClass(*args,**kwargs):
   while len(to_process):
     module = to_process.pop(0)
     if len(dependency_d[module]) == 0:
-      known_modules[module] = []
+      known_modules[module] = [None,]
       module_process_order.append(module)
       if module in original_modules:
-        known_modules[module].append('')
+        #known_modules[module].append('')
+        known_modules[module].append(module_d[module].search_one('prefix').arg)
     else:
       unknown_dependencies = False
+      #known_modules[module].append('')
       for dep in dependency_d[module]:
         #print "dependencies: "
         #print dep
@@ -594,9 +596,10 @@ def YANGDynClass(*args,**kwargs):
           unknown_dependencies = True
       if not unknown_dependencies:
         module_process_order.append(module)
-        known_modules[module] = []
+        known_modules[module] = [None,]
         if module in original_modules:
-          known_modules[module].append('')
+          known_modules[module].append(module_d[module].search_one('prefix').arg)
+          #print "Asked to process %s with no prefix" % (module)
       else:
         to_process.append(module)
 
@@ -604,18 +607,29 @@ def YANGDynClass(*args,**kwargs):
   #print module_process_order
   #pp.pprint(dependency_d)
   #pp.pprint(known_modules)
-  pp.pprint(module_process_order)
+  #pp.pprint(module_process_order)
   #assert False, "TODO"
 
-  print "got to building %s" % module_process_order
+  #print "got to building %s" % module_process_order
+  #print known_modules
   built = []
   for module in module_process_order:
+    chkd_build = []
     for prefix in known_modules[module]:
-      if not "%s:%s" % (prefix, module) in built:
-        get_typedefs(ctx, module_d[module], prefix=prefix)
-        get_identityrefs(ctx, module_d[module], prefix=prefix)
-        built.append("%s:%s" % (prefix,module))
-  print "got out of building"
+      if not "%s%s" % ("%s:" % prefix if prefix else "", module) in built:
+        chkd_build.append(prefix)
+    get_typedefs(ctx, module_d[module], prefix_list=chkd_build)
+    get_identityrefs(ctx, module_d[module], prefix_list=chkd_build)
+    # TODO: same for identityrefs
+    for pfx in chkd_build:
+      built.append("%s%s" % ("%s:" % prefix if prefix else "", module))
+    #for prefix in known_modules[module]:
+    #  print "processing %s:%s" % (prefix, module)
+    #  if not "%s:%s" % (prefix, module) in built:
+    #    get_typedefs(ctx, module_d[module], prefix=prefix)
+    #    get_identityrefs(ctx, module_d[module], prefix=prefix)
+    #    built.append("%s:%s" % (prefix,module))
+  #print "got out of building"
   #processed_modules = []
   #for module in modules:
     #typedefs = get_typedefs(ctx, module)
@@ -635,10 +649,10 @@ def YANGDynClass(*args,**kwargs):
     #  if not get_identityrefs(ctx, i, prefix=prefix):
     #    raise TypeError, "Invalid specification of identityrefs"
     #  processed_modules.append(i.arg)
-  print [i.arg for i in modules]
+  #print [i.arg for i in modules]
   # we need to parse each module
   for module in modules:
-    print "processing %s...." % module.arg
+    #print "processing %s...." % module.arg
     # we need to parse each sub-module
     mods = [module]
     for i in module.search('include'):
@@ -651,45 +665,49 @@ def YANGDynClass(*args,**kwargs):
             if ch.keyword in statements.data_definition_keywords]
       get_children(fd, children, m, m)
 
-#def find_includes(module):
-#  mods = module.search('import')
+def get_identityrefs(ctx, module, prefix=False, prefix_list=False):
 
-
-def get_identityrefs(ctx, module, prefix=False):
   mod = ctx.get_module(module.arg)
   if mod == None:
     raise AttributeError, "unmapped identities, please specify path to %s!" \
                                 % (module.arg)
+
+  pfx = []
+  if prefix:
+    pfx.append(prefix)
+  if prefix_list:
+    pfx.extend(prefix_list)
+  if not None in pfx:
+    pfx.append(None)
+
   identities = mod.search('identity')
   definition_dict = {}
   remaining_identities = []
   for i in identities:
-    if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
-      name = "%s:%s" % (prefix, i.arg)
-    else:
-      name = i.arg
-    definition_dict[name] = i
-    remaining_identities.append(name)
+    for p in pfx:
+      name = "%s%s" % ("%s:" % p if not p == None else "", i.arg)
+      definition_dict[name] = i
+      remaining_identities.append(name)
 
   known_identities = []
   identity_d = {}
   while remaining_identities:
     item = remaining_identities.pop(0)
-    i = definition_dict[item]
-    base = i.search_one('base')
+    definition = definition_dict[item]
+    base = definition.search_one('base')
     if base == None:
-      # this is a base type, so we can add it to the known
-      # values and create a dict entry for it
       identity_d[item] = {}
       known_identities.append(item)
     else:
-      base_name = "%s%s" % ("%s:" % prefix if prefix else "", base.arg)
-      if base_name in known_identities:
-        val = item.split(":")[1] if ":" in item else item
-        identity_d[base_name][val] = {}
-        known_identities.append(item)
-      else:
-        remaining_identities.append(item)
+      for p in pfx:
+        base_name = "%s%s" % ("%s:" % p if not p == None else "", base.arg)
+        if base_name in known_identities:
+          val = item.split(":")[1] if ":" in item else item
+          identity_d[base_name][val] = {}
+        else:
+          remaining_identities.append(item)
+
+
   for i in identity_d.keys():
     id_type = {"native_type": """RestrictedClassType(base_type=str, \
                     restriction_type="dict_key", \
@@ -703,8 +721,7 @@ def get_identityrefs(ctx, module, prefix=False):
   return True
 
 
-def get_typedefs(ctx, module, prefix=False):
-  #print "doing %s" % module.arg
+def get_typedefs(ctx, module, prefix=False, prefix_list=False):
   mod = ctx.get_module(module.arg)
   if mod == None:
     raise AttributeError, "unmapped types, please specify path to %s!" \
@@ -722,16 +739,32 @@ def get_typedefs(ctx, module, prefix=False):
   known_typedefs.append("enumeration")
   remaining_typedefs = []
   definition_dict = {}
-  for i in typedefs:
-    if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
-      name = "%s:%s" % (prefix, i.arg)
-    else:
-      name = i.arg
-    definition_dict[name] = i
-    print "added %s as %s" % (i.arg, name)
-    remaining_typedefs.append(name)
 
-  print definition_dict.keys()
+  pfx = []
+  if prefix:
+    pfx.append(prefix)
+  if prefix_list:
+    pfx.extend(prefix_list)
+  if not None in pfx:
+    pfx.append(None)
+
+
+  for i in typedefs:
+    for p in pfx:
+      name = "%s%s" % ("%s:" % p if not p == None else "", i.arg)
+      definition_dict[name] = i
+      remaining_typedefs.append(name)
+    #if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
+    #  name = "%s:%s" % (prefix, i.arg)
+    #else:
+    #  name = i.arg
+    #definition_dict[name] = i
+    #print "added %s as %s" % (i.arg, name)
+    #remaining_typedefs.append(name)
+
+
+  #pp.pprint(definition_dict.keys())
+  #assert False, "TODO"
   # for each remaining typedef definition that we
   # do not know about - retrieve the definition
   # check whether it references a type that we now
@@ -739,7 +772,7 @@ def get_typedefs(ctx, module, prefix=False):
   # add it to the queue
   c = 0
   while remaining_typedefs:
-    if c > 1000:
+    if c > 500:
       # this is a safety net, we have unresolved
       # dependencies, and it is not possible to
       # fix it -- one of the warnings we gave
@@ -771,14 +804,16 @@ def get_typedefs(ctx, module, prefix=False):
         if not tmp_name in known_typedefs:
           any_unknown = True
     if not any_unknown:
-      process_typedefs_ordered.append(item)
+      process_typedefs_ordered.append((i_name,item))
       known_typedefs.append(i_name)
     else:
       if not i_name in remaining_typedefs:
         remaining_typedefs.append(i_name)
     c += 1
 
-  for item in process_typedefs_ordered:
+  for i_tuple in process_typedefs_ordered:
+    item = i_tuple[1]
+    type_name = i_tuple[0]
     #print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
@@ -790,7 +825,7 @@ def get_typedefs(ctx, module, prefix=False):
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
 
-    type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
+    #type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     if type_name in known_types:
       raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
@@ -838,7 +873,7 @@ def get_typedefs(ctx, module, prefix=False):
         class_map[type_name]["quote_default"] = default[1]
   return True
 
-def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True):
+def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False, case=False):
   used_types,elements = [],[]
 
   if parent_cfg:
@@ -852,10 +887,19 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True):
         # this container is config false
         parent_cfg = False
 
-  for ch in i_children:
-    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg)
+  #choice,case = False,False
+  #print "FOOBAR %s %s" % (parent.keyword, parent.arg)
+  in_choice = False
+  if parent.keyword in ["choice"]:
+    choice = parent.arg
+    in_choice = True
+  elif parent.keyword in ["case"]:
+    case = parent.arg
 
-  if parent.keyword in ["container", "module", "list"]:
+  for ch in i_children:
+    elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice, case=case)
+
+  if parent.keyword in ["container", "module", "list", "case"]:
     if not path == "":
       fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
         safe_name(path.replace("/", "_"))))
@@ -871,17 +915,31 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True):
     fd.write("""  \"\"\"
      This class was auto-generated by the PythonClass plugin for PYANG
      from YANG module %s - based on the path %s. Each member element of
-     the container is represented as a class variable - with a specific 
+     the container is represented as a class variable - with a specific
      YANG type.%s
     \"\"\"\n"""  % (module.arg, (path if not path == "" else "/"), \
                     parent_descr))
+  elif parent.keyword in ["choice",]:
+    pass
   else:
     raise TypeError, "unhandled keyword with children %s" % parent.keyword
+
 
   e_str = ""
   if len(elements) == 0:
     fd.write("  pass\n")
   else:
+    choices = {}
+    for i in elements:
+      if  i["choice"] and i["case"]:
+        if not i["choice"] in choices.keys():
+          choices[i["choice"]] = {}
+        if not i["case"] in choices[i["choice"]].keys():
+          choices[i["choice"]][i["case"]] = []
+        choices[i["choice"]][i["case"]].append(i["name"])
+
+    print "ELEPHANT %s: %s" % (parent.arg, choices)
+
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
     e_str = "__elements = {"
@@ -1161,7 +1219,7 @@ def build_elemtype(et, prefix=False):
     except KeyError:
       sys.stderr.write("FATAL: identityref with an unknown base\n")
       if DEBUG:
-        pp.pprint(class_map)
+        pp.pprint(class_map.keys())
         pp.pprint(et.arg)
         pp.pprint(base_stmt.arg)
       sys.exit(127)
@@ -1190,11 +1248,13 @@ def build_elemtype(et, prefix=False):
   return (cls,elemtype)
 
 
-def get_element(fd, element, module, parent, path, parent_cfg=True):
+def get_element(fd, element, module, parent, path, parent_cfg=True, choice=False, case=False):
   this_object = []
   default = False
   p = False
   create_list = False
+
+  print "FOOBAR %s %s" % (choice, case)
 
   elemdescr = element.search_one('description')
   if elemdescr == None:
@@ -1207,16 +1267,28 @@ def get_element(fd, element, module, parent, path, parent_cfg=True):
       p = True
     elif element.keyword in ["leaf-list"]:
       create_list = True
+
+    if element.keyword in ["choice"]:
+      path_parts = path.split("/")
+      npath = ""
+      for i in range(0,len(path_parts)-1):
+        npath += "%s/" % path_parts[i]
+      npath.rstrip("/")
+      print "MONKEY new path was %s from %s" % (npath,path)
+    else:
+      npath=path
     if element.i_children:
       chs = element.i_children
-      get_children(fd, chs, module, element, path, parent_cfg=parent_cfg)
+      print "MONKEY %s" % path
+      get_children(fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice, case=case)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
                           safe_name(path.replace("/", "_"))),
                           "class": element.keyword,
-                          "path": safe_name(path), "config": True, 
+                          "path": safe_name(npath), "config": True,
                           "description": elemdescr,
-                          "yang_name": element.arg}
+                          "yang_name": element.arg, "choice": choice,
+                          "case": case,}
       if element.keyword == "list":
         elemdict["key"] = safe_name(element.search_one("key").arg)
       this_object.append(elemdict)
@@ -1258,6 +1330,11 @@ def get_element(fd, element, module, parent, path, parent_cfg=True):
       default_type = elemtype
 
 
+    # we need to indicate that the default type for the class_map
+    # is str
+    tmp_class_map = copy.deepcopy(class_map)
+    tmp_class_map["enumeration"] = {"parent_type": "string"}
+
     if not default_type:
       if isinstance(elemtype, list):
         # this type has multiple parents
@@ -1278,18 +1355,18 @@ def get_element(fd, element, module, parent, path, parent_cfg=True):
           check = to_visit.pop(0)
           if check not in checked:
             checked.append(check)
-            if "parent_type" in class_map[check].keys():
-              if isinstance(class_map[check]["parent_type"], list):
-                to_visit.extend(class_map[check]["parent_type"])
+            if "parent_type" in tmp_class_map[check].keys():
+              if isinstance(tmp_class_map[check]["parent_type"], list):
+                to_visit.extend(tmp_class_map[check]["parent_type"])
               else:
-                to_visit.append(class_map[check]["parent_type"])
+                to_visit.append(tmp_class_map[check]["parent_type"])
 
         # checked now has the breadth-first search result
         if elemdefault == None:
           for option in checked:
-            if "default" in class_map[option].keys():
-              elemdefault = class_map[option]["default"]
-              default_type = class_map[option]
+            if "default" in tmp_class_map[option].keys():
+              elemdefault = tmp_class_map[option]["default"]
+              default_type = tmp_class_map[option]
               break
 
     if not elemdefault == None:
@@ -1322,12 +1399,12 @@ def get_element(fd, element, module, parent, path, parent_cfg=True):
           check = to_visit.pop(0) # remove from the top of stack - depth first
           if not check in checked:
             checked.append(check)
-            if "parent_type" in class_map[check].keys():
-              if isinstance(class_map[check]["parent_type"], list):
-                to_visit.expand(class_map[check]["parent_type"])
+            if "parent_type" in tmp_class_map[check].keys():
+              if isinstance(tmp_class_map[check]["parent_type"], list):
+                to_visit.expand(tmp_class_map[check]["parent_type"])
               else:
-                to_visit.append(class_map[check]["parent_type"])
-        default_type = class_map[checked.pop()]
+                to_visit.append(tmp_class_map[check]["parent_type"])
+        default_type = tmp_class_map[checked.pop()]
         #print default_type
         if not default_type["base_type"]:
           raise TypeError, "default type was not a base type"
@@ -1376,7 +1453,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True):
                         "class": cls, "default": elemdefault, \
                         "config": elemconfig, "defaulttype": default_type, \
                         "quote_arg": quote_arg, \
-                        "description": elemdescr, "yang_name": element.arg}
+                        "description": elemdescr, "yang_name": element.arg,
+                        "choice": choice, "case": case,}
     this_object.append(elemdict)
   return this_object
 

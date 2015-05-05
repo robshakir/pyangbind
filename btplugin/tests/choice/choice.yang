@@ -1,0 +1,34 @@
+module choice {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/nested";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container container {
+        description
+            "A container";
+
+        choice fish {
+            case haddock {
+                leaf haddock-scales {
+                    type int8;
+                }
+            }
+
+            case salmon {
+                leaf salmon-scales {
+                    type int8;
+                }
+            }
+        }
+
+    }
+}
