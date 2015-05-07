@@ -11,6 +11,7 @@ import sys
 import re
 import string
 import numpy as np
+import ctypes
 import decimal
 import copy
 
@@ -152,6 +153,9 @@ def build_btclass(ctx, modules, fd):
   fd.write("import numpy as np\n")
   fd.write("from decimal import Decimal\n")
   fd.write("""import collections, re
+
+NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
+                    np.int8, np.int16, np.int32, np.int64]
 
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   \"\"\"
@@ -434,6 +438,9 @@ def YANGDynClass(*args,**kwargs):
   parent_instance = kwargs.pop("parent", False)
   if not base_type:
     raise AttributeError, "must have a base type"
+  if base_type in NUMPY_INTEGER_TYPES and len(args):
+    if isinstance(args[0], list):
+      raise TypeError, "do not support creating numpy ndarrays!"
   if isinstance(base_type, list):
     # this is a union, we must infer type
     if not len(args):
@@ -938,7 +945,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           choices[i["choice"]][i["case"]] = []
         choices[i["choice"]][i["case"]].append(i["name"])
 
-    print "ELEPHANT %s: %s" % (parent.arg, choices)
+    #print "ELEPHANT %s: %s" % (parent.arg, choices)
 
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
@@ -1254,7 +1261,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True, choice=False
   p = False
   create_list = False
 
-  print "FOOBAR %s %s" % (choice, case)
+  #print "FOOBAR %s %s" % (choice, case)
 
   elemdescr = element.search_one('description')
   if elemdescr == None:
@@ -1274,12 +1281,12 @@ def get_element(fd, element, module, parent, path, parent_cfg=True, choice=False
       for i in range(0,len(path_parts)-1):
         npath += "%s/" % path_parts[i]
       npath.rstrip("/")
-      print "MONKEY new path was %s from %s" % (npath,path)
+      #print "MONKEY new path was %s from %s" % (npath,path)
     else:
       npath=path
     if element.i_children:
       chs = element.i_children
-      print "MONKEY %s" % path
+      #print "MONKEY %s" % path
       get_children(fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice, case=case)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
@@ -1427,8 +1434,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True, choice=False
         for subtype in elemtype:
           # nested union within a leaf-list type
           if isinstance(subtype, tuple):
-            print subtype[0]
-            print subtype[1]
+            #print subtype[0]
+            #print subtype[1]
             if subtype[0] == "leaf-union":
               for subelemtype in subtype[1]["native_type"]:
                 allowed_types.append(subelemtype)
