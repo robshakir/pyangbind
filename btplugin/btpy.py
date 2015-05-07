@@ -11,7 +11,6 @@ import sys
 import re
 import string
 import numpy as np
-import ctypes
 import decimal
 import copy
 
@@ -401,6 +400,12 @@ def YANGListType(*args,**kwargs):
       except TypeError, m:
         del self._members[k]
         raise ValueError, "key value must be valid, %s" % m
+
+    def delete(self, k):
+      try:
+        del self._members[k]
+      except KeyError, m:
+        raise KeyError, "key %s was not in list (%s)" % (k,m)
 
     def get(self, filter=False):
       d = {}
