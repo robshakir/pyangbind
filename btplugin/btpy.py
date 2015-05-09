@@ -54,7 +54,9 @@ class_bool_map = {
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
-reserved_name = ["list", "str", "int", "global", "decimal", "float", "as", "if", "else", "elsif", "map", "set"]
+reserved_name = ["list", "str", "int", "global", "decimal", "float",
+                  "as", "if", "else", "elsif", "map", "set", "class",
+                  "from", "import", "pass", "return", "is"]
 
 class_map = {
   # this map is dynamically built upon but defines how we take
@@ -127,6 +129,7 @@ def safe_name(arg):
   """
   k = arg
   arg = arg.replace("-", "_")
+  arg = arg.replace(".", "_")
   if arg in reserved_name:
     arg += "_"
   # store the unsafe->original version mapping
@@ -307,6 +310,11 @@ def TypedListType(*args, **kwargs):
       for i in self._allowed_type:
         if isinstance(v, i):
           passed = True
+        try:
+          tmp = i(v)
+          passed = True
+        except:
+          pass
       if not passed:
       #if not isinstance(v, self._allowed_type):
         raise TypeError("Cannot add %s to TypedList (accepts only %s)" % \
@@ -398,7 +406,10 @@ def YANGListType(*args,**kwargs):
         self._members[k] = YANGDynClass(base=self._contained_class)
         setattr(self._members[k], self._keyval, k)
       except TypeError, m:
-        del self._members[k]
+        try:
+          del self._members[k]
+        except:
+          pass
         raise ValueError, "key value must be valid, %s" % m
 
     def delete(self, k):
@@ -967,7 +978,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     for i in elements:
       #rint "looping elements"
       if "default" in i.keys() and not i["default"] == None:
-        default_arg = "\"%s\"" % i["default"] if i["quote_arg"] else "%s" \
+        default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
       if i["class"] == "leaf-list":
@@ -980,9 +991,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       elif i["class"] == "list":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=YANGListType("
-        class_str += "\"%s\",yc_%s_%s)" % (i["key"], safe_name(i["name"]), \
-                        safe_name(path.replace("/","_")) + "_" + \
-                        safe_name(i["name"]))
+        class_str += "\"%s\",%s)" % (i["key"], i["type"])
         class_str += ", yang_name=\"%s\", parent=self)\n" % i["yang_name"]
       elif i["class"] == "union":
         class_str = "__%s" % (i["name"])
@@ -1049,7 +1058,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
 
       if "default" in i.keys() and not i["default"] == None:
         if i["quote_arg"]:
-          default_arg = "\"%s\"" % i["default"]
+          default_arg = repr(i["default"])
         else:
           default_arg = i["default"]
         if not i["class"] == "union":
