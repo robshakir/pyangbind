@@ -16,16 +16,20 @@ module choice {
         description
             "A container";
 
-        choice fish {
-            case haddock {
-                leaf haddock-scales {
-                    type int8;
+        choice choice-one {
+            case case-one {
+                container case-one-container { 
+                    leaf case-one-leaf {
+                        type int8;
+                    }
                 }
             }
 
-            case salmon {
-                leaf salmon-scales {
-                    type int8;
+            case case-two {
+                container case-two-container {
+                    leaf case-two-leaf {
+                        type int8;
+                    }
                 }
             }
         }
