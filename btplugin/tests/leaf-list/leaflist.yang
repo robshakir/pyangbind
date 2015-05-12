@@ -12,6 +12,12 @@ module leaflist {
         reference "fooled-you";
     }
 
+    typedef restricted-string {
+        type string {
+            pattern "^a";
+        }
+    }
+
     container container {
         description
             "A container";
@@ -20,6 +26,12 @@ module leaflist {
             type string;
             description
                 "A leaf list";
+        }
+
+        leaf-list listtwo {
+            type restricted-string;
+            description
+                "A restricted leaflist";
         }
     }
 }
