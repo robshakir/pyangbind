@@ -12,6 +12,17 @@ module list {
         reference "fooled-you";
     }
 
+    typedef string-with-a-or-b-first {
+        type union {
+            type string {
+                pattern "^a";
+            }
+            type string {
+                pattern "^b";
+            }
+        }
+    }
+
     container list-container {
         description
             "A container";
@@ -37,5 +48,31 @@ module list {
                 "A test list.";
         }
 
+        list list-two {
+            key "keyval";
+
+            leaf keyval {
+                type string {
+                    pattern "^a";
+                }
+            }
+
+            leaf another-value {
+                type string;
+                description "another value";
+            }
+        }
+
+        list list-three {
+            key "keyval";
+
+            leaf keyval {
+                type string-with-a-or-b-first;
+            }
+
+            leaf another-value {
+                type string;
+            }
+        }
     }
 }

@@ -18,7 +18,7 @@ module choice {
 
         choice choice-one {
             case case-one {
-                container case-one-container { 
+                container case-one-container {
                     leaf case-one-leaf {
                         type int8;
                     }

@@ -2,7 +2,7 @@
 
 import os, sys, getopt
 
-TESTNAME="config-false"
+TESTNAME="choice"
 
 # generate bindings in this folder
 
@@ -21,77 +21,25 @@ def main():
   this_dir = os.path.dirname(os.path.realpath(__file__))
   os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
 
-  from bindings import config_false
+  from bindings import choice
+  t = choice()
 
-  test_instance = config_false()
+  assert hasattr(t, "container"), "object does not have container"
+  for i in ["case_one_container", "case_two_container"]:
+    assert hasattr(t.container,i), "object does not have choice container, %s" % i
+  for i in ["choice_one", "choice_two", "case_one", "case_two"]:
+    assert not hasattr(t.container,i), "object has an erroneous choice option, %s" % i
 
-  structure_dict = {
-                      "container": {
-                                      "subone": {
-                                                  "a_leaf": True,
-                                                  "d_leaf": False,
-                                                },
-                                      "subtwo": {
-                                                  "b_leaf": False,
-                                                  "subsubtwo": {
-                                                                  "c_leaf": False,
-                                                                }
-                                                }
-                                    }
-                    }
+  assert t.container.case_one_container.case_one_leaf == 0, "object does not have the correct value for case_one_leaf, %s" % t.container.case_one_container.case_one_leaf
+  assert t.container.case_two_container.case_two_leaf == 0, "object does not have the correct value for case_two_leaf, %s" % t.container.case_two_container.case_two_leaf
 
-  for i in structure_dict.keys():
-    assert hasattr(test_instance, i), "top level %s does not exist" % i
-    if hasattr(test_instance, i):
-      c = getattr(test_instance, i)
-      if isinstance(structure_dict[i], dict):
-        for j in structure_dict[i].keys():
-          assert hasattr(c, j), "second level %s does not exist" % j
-          d = getattr(c, j)
-          if isinstance(structure_dict[i][j], dict):
-            for k in structure_dict[i][j].keys():
-              assert hasattr(d, k), "third-level %s does not exist" % k
-              e = getattr(d, k)
-              if isinstance(structure_dict[i][j][k], dict):
-                for l in structure_dict[i][j][k].keys():
-                  assert hasattr(e, l), "fourth level %s does not exist" % l
+  t.container.case_one_container.case_one_leaf = 42
+  assert t.container.case_one_container.case_one_leaf == 42, "object did not specify a value within the choice correctly, %s" % t.container.case_one_container.case_one_leaf
+  assert t.container.case_two_container.case_two_leaf == 0, "object erroneously set another value wtihin the choice, %s" % t.container.case_two_container.case_two_leaf
 
-  # tests
-  passed = True
-  try:
-    test_instance.container.subone.a_leaf = 1
-  except AttributeError:
-    passed = False
-
-  assert passed == structure_dict["container"]["subone"]["a_leaf"], "setting a_leaf did not result in expected outcome (%s != %s)" \
-        % (structure_dict["container"]["subone"]["a_leaf"], passed)
-
-  passed = True
-  try:
-    test_instance.container.subone.d_leaf = 1
-  except AttributeError:
-    passed = False
-
-  assert passed == structure_dict["container"]["subone"]["d_leaf"], "setting d_leaf did not result in expected outcome (%s != %s)" \
-        % (structure_dict["container"]["subone"]["d_leaf"], passed)
-
-  passed = True
-  try:
-    test_instance.container.subtwo.b_leaf = 1
-  except AttributeError:
-    passed = False
-
-  assert passed == structure_dict["container"]["subtwo"]["b_leaf"], "setting b_leaf did not result in expected outcome (%s != %s)" \
-        % (structure_dict["container"]["subtwo"]["b_leaf"], passed)
-
-  passed = True
-  try:
-    test_instance.container.subtwo.subsubtwo.c_leaf = 1
-  except AttributeError:
-    passed = False
-
-  assert passed == structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"], "setting c_leaf did not result in expected outcome (%s != %s)" \
-        % (structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"], passed)
+  t.container.case_two_container.case_two_leaf = 42
+  assert t.container.case_two_container.case_two_leaf == 42, "object did not allow the other half of the choice to be specified, %s" % t.container.case_two_container.case_two_leaf
+  assert t.container.case_one_container.case_one_leaf == 0, "object did not reset the value of the case-one side of the choice, %s" % t.container.case_one_container.case_one_leaf
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)

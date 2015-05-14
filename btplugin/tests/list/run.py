@@ -57,8 +57,9 @@ def main():
   test_instance.list_container.list_element[2].another_value == "aSecondDefaultValue"
 
   assert test_instance.get() == \
-    {'list-container': {'list-element': {1: {'another-value': 'defaultValue', 'keyval': 1}, \
-      2: {'another-value': 'defaultValue', 'keyval': 2}}}}, \
+    {'list-container': {'list-two': {}, 'list-three': {},
+    'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
+    2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
     "incorrect get() output returned: %s" % test_instance.get()
   del test_instance.list_container.list_element[2]
 
@@ -77,8 +78,25 @@ def main():
   assert len(test_instance.list_container.list_element) == 0, \
     "item that was invalid was added to the list"
 
+  # check union keys
+  for i in ["aardvark", "bear", "chicken"]:
+    try:
+      test_instance.list_container.list_two.add(i)
+    except:
+      if i not in ["bear", "chicken"]:
+        assert False, "invalid item added to a list with a restricted key, %s" % i
+    try:
+      test_instance.list_container.list_three.add(i)
+    except:
+      if i not in ["chicken"]:
+        assert False, "invalid item added to a list with a union restricted key, %s" % i
 
-  ### TODO: need a test for changing keyval and the index in the list changing
+  passed = True
+  try:
+    test_instance.list_container.list_element.keyval = 14
+  except:
+    passed = False
+  assert passed, "keyvalue of a list was read-write when it should be read-only"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

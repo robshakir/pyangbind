@@ -351,6 +351,10 @@ def TypedListType(*args, **kwargs):
 def YANGListType(*args,**kwargs):
   keyname = args[0]
   listclass = args[1]
+  is_container = kwargs.pop("is_container", False)
+  parent = kwargs.pop("parent", False)
+  yang_name = kwargs.pop("yang_name", False)
+  print kwargs
   class YANGList(object):
     _keyval = keyname
     _members = {}
@@ -389,7 +393,10 @@ def YANGListType(*args,**kwargs):
     def __setitem__(self, k, v):
       if self.__check__(v):
         try:
-          self._members[k] = YANGDynClass(v,base=self._contained_class)
+          tmp = YANGDynClass(v, base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+          key = getattr(tmp, "_set_%s" % self._keyval)
+          key(k)
+          self._members[k] = tmp
         except TypeError, m:
           raise ValueError, "key value must be valid, %s" % m
       else:
@@ -405,14 +412,13 @@ def YANGListType(*args,**kwargs):
 
     def add(self, k):
       try:
-        self._members[k] = YANGDynClass(base=self._contained_class)
-        setattr(self._members[k], self._keyval, k)
+        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+        key = getattr(tmp, "_set_%s" % self._keyval)
+        key(k)
+        self._members[k] = tmp
       except TypeError, m:
-        try:
-          del self._members[k]
-        except:
-          pass
         raise ValueError, "key value must be valid, %s" % m
+      self.set()
 
     def delete(self, k):
       try:
@@ -428,6 +434,7 @@ def YANGListType(*args,**kwargs):
         else:
           d[i] = self._members[i]
       return d
+
 
   return type(YANGList(*args,**kwargs))
 
@@ -455,9 +462,9 @@ def YANGDynClass(*args,**kwargs):
   yang_name = kwargs.pop("yang_name", False)
   parent_instance = kwargs.pop("parent", False)
   choice_member = kwargs.pop("choice", False)
+  is_container = kwargs.pop("is_container", False)
   if not base_type:
     raise AttributeError, "must have a base type"
-  print "check %s => %s" % (base_type, len(args))
   if base_type in NUMPY_INTEGER_TYPES and len(args):
     if isinstance(args[0], list):
       raise TypeError, "do not support creating numpy ndarrays!"
@@ -483,7 +490,8 @@ def YANGDynClass(*args,**kwargs):
       base_type = candidate_type
 
   class YANGBaseClass(base_type):
-    __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent')
+    if is_container:
+      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent')
     def __new__(self, *args, **kwargs):
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -511,29 +519,27 @@ def YANGDynClass(*args,**kwargs):
       return self._changed
 
     def set(self,choice=False):
-      print "deal with %s @ %s" % (repr(choice), self._yang_name)
+      #print "deal with %s @ %s" % (repr(choice), self._yang_name)
       if hasattr(self, '__choices__') and choice:
-        print "my choices: %s" % repr(self.__choices__)
+        #print "my choices: %s" % repr(self.__choices__)
         for ch in self.__choices__.keys():
           if ch == choice[0]:
             for case in self.__choices__[ch]:
               if not case == choice[1]:
-                print case
+                #print case
                 for elem in self.__choices__[ch][case]:
                   method = "_unset_%s" % elem
                   if not hasattr(self, method):
                     raise AttributeError, "unmapped choice!"
                   x = getattr(self, method)
                   x()
-      print self._choice
+      #print self._choice
       if self._choice and not choice:
-        print self._choice
+        #print self._choice
         choice=self._choice
       self._changed = True
-      print "new choice: %s" % repr(choice)
-      print "parent: %s" % repr(self._parent)
       if self._parent and hasattr(self._parent, "set"):
-        print "my parent had a set!"
+        #print "my parent had a set!"
         self._parent.set(choice=choice)
 
     def yang_name(self):
@@ -926,6 +932,7 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
 
 def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False):
   used_types,elements = [],[]
+  choices = False
 
   if parent_cfg:
     # the first time we find a container that has config false set on it
@@ -940,7 +947,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
 
   #choices = {}
   for ch in i_children:
-    print "calling get_element for %s" % ch.arg
+    #print "calling get_element for %s" % ch.arg
     if ch.keyword == "choice":
       #print "processing %s..." % ch.arg
       #choices[ch.arg] = []
@@ -949,7 +956,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         #choices[ch.arg].append(choice_ch.arg)
         # these are case statements
         for case_ch in choice_ch.i_children:
-          print "calling get_element for %s" % case_ch.arg
+          #print "calling get_element for %s" % case_ch.arg
           elements += get_element(fd, case_ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=(ch.arg,choice_ch.arg))
     else:
       elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
@@ -962,6 +969,10 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         safe_name(path.replace("/", "_"))))
     else:
       fd.write("class %s(object):\n" % safe_name(parent.arg))
+
+    keyval = False
+    if parent.keyword == "list":
+      keyval = parent.search_one('key').arg
 
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
@@ -1021,7 +1032,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       elif i["class"] == "list":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=YANGListType("
-        class_str += "\"%s\",%s)" % (i["key"], i["type"])
+        class_str += "\"%s\",%s" % (i["key"], i["type"])
+        class_str += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
+        if i["choice"]:
+          class_str += ", choice=%s" % repr(choice)
+        class_str += ")"
       elif i["class"] == "union":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=["
@@ -1044,6 +1059,8 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str += "base=%s" % i["type"]
         if "default" in i.keys() and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+        if i["class"] in ["container"]:
+          class_str += ", is_container=True"
       if class_str:
         class_str += ", yang_name=\"%s\"" % i["yang_name"]
         class_str += ", parent=self"
@@ -1057,7 +1074,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str += ")\n"
         classes.append(class_str)
-    print "my choice attrs: %s" % choice_attrs
+    #print "my choice attrs: %s" % choice_attrs
     fd.write("""
   def __init__(self, *args, **kwargs):\n""")
     for c in classes:
@@ -1115,6 +1132,8 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       set_str += default_s
       set_str += ", yang_name=\"%s\"" % i["yang_name"]
       set_str += ", parent=self"
+      if i["class"] in ["container"]:
+        set_str += ", is_container=True"
       if i["choice"]:
         set_str += ", choice=%s" % repr(i["choice"])
       fd.write("""
@@ -1140,16 +1159,25 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         fd.write("""
   def _unset_%s(self):
     self.__%s = YANGDynClass(%s)
-    print "this dude was unset! %s"\n\n""" % (i["name"], i["name"], set_str, i["name"]))
+    #print "this dude was unset! %s"\n\n""" % (i["name"], i["name"], set_str, i["name"]))
     for i in elements:
-      if i["config"] and parent_cfg:
+      rw = True
+      if not i["config"]:
+        rw = False
+      elif not parent_cfg:
+        rw = False
+      elif i["yang_name"] == keyval:
+        rw = False
+
+      if not rw:
+        fd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
+      else:
         fd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
                           (i["name"], i["name"], i["name"]))
-      else:
-        fd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
 
   fd.write("\n")
-  fd.write("  __choices__ = %s" % repr(choices))
+  if choices:
+    fd.write("  __choices__ = %s" % repr(choices))
   fd.write("""
 
   %s
@@ -1356,7 +1384,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       npath=path
     if element.i_children:
       chs = element.i_children
-      print "calling get_children for %s" %  [i.arg for i in chs]
+      #print "calling get_children for %s" %  [i.arg for i in chs]
       get_children(fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
