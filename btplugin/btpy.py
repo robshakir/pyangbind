@@ -354,7 +354,6 @@ def YANGListType(*args,**kwargs):
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
-  print kwargs
   class YANGList(object):
     _keyval = keyname
     _members = {}
@@ -510,36 +509,27 @@ def YANGDynClass(*args,**kwargs):
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except:
-        #print args
-        #print kwargs
-        #print base_type
         raise TypeError, "couldn't generate dynamic type"
 
     def changed(self):
       return self._changed
 
     def set(self,choice=False):
-      #print "deal with %s @ %s" % (repr(choice), self._yang_name)
       if hasattr(self, '__choices__') and choice:
-        #print "my choices: %s" % repr(self.__choices__)
         for ch in self.__choices__.keys():
           if ch == choice[0]:
             for case in self.__choices__[ch]:
               if not case == choice[1]:
-                #print case
                 for elem in self.__choices__[ch][case]:
                   method = "_unset_%s" % elem
                   if not hasattr(self, method):
                     raise AttributeError, "unmapped choice!"
                   x = getattr(self, method)
                   x()
-      #print self._choice
       if self._choice and not choice:
-        #print self._choice
         choice=self._choice
       self._changed = True
       if self._parent and hasattr(self._parent, "set"):
-        #print "my parent had a set!"
         self._parent.set(choice=choice)
 
     def yang_name(self):
@@ -588,7 +578,6 @@ def YANGDynClass(*args,**kwargs):
   #   foreach import:
   #      record dependencies for the module - along with prefix
   dependency_d = {}
-  #pp.pprint(modules)
   original_modules = [i.arg for i in modules]
   to_process = copy.deepcopy(modules)
   module_d = {}
@@ -596,15 +585,7 @@ def YANGDynClass(*args,**kwargs):
     module = to_process.pop(0)
     if not module.arg in dependency_d.keys():
       dependency_d[module.arg] = list()
-    #print "searched %s for dependencies" % (module.arg)
     dependencies = module.search('import')
-    #print "and got %s" % [i.arg for i in dependencies]
-    #print dir(module)
-    #try:
-    #  print "import %s for %s" % (module.i_is_safe_import, module.arg)
-    #except:
-    #  pass
-    #print "dependencies for %s are %s" % (module.arg, [i.arg for i in dependencies])
     if not module.arg in module_d.keys():
       module_d[module.arg] = module
     if not dependencies is None:
@@ -621,9 +602,6 @@ def YANGDynClass(*args,**kwargs):
       sys.stderr.write("you may need to specify the path to this module ")
       sys.stderr.write("for all dependencies to be resolved.\n")
 
-  #print "dependency dictionary"
-  #pp.pprint(dependency_d)
-  #print "\n\n"
   known_modules = {}
   module_process_order = []
   to_process = dependency_d.keys()
@@ -633,22 +611,14 @@ def YANGDynClass(*args,**kwargs):
       known_modules[module] = [None,]
       module_process_order.append(module)
       if module in original_modules:
-        #known_modules[module].append('')
         known_modules[module].append(module_d[module].search_one('prefix').arg)
     else:
       unknown_dependencies = False
-      #known_modules[module].append('')
       for dep in dependency_d[module]:
-        #print "dependencies: "
-        #print dep
-        #print "known"
-        #print known_modules.keys()
-        #print "\n\n"
         if dep[0] in known_modules.keys():
-          #print "adding %s as %s" % (dep[0], dep[1])
           if not dep[1] in known_modules[dep[0]]:
             known_modules[dep[0]].append(dep[1]) # add this module to process with
-                                               # the local prefix
+                                                 # the local prefix
         else:
           unknown_dependencies = True
       if not unknown_dependencies:
@@ -656,19 +626,9 @@ def YANGDynClass(*args,**kwargs):
         known_modules[module] = [None,]
         if module in original_modules:
           known_modules[module].append(module_d[module].search_one('prefix').arg)
-          #print "Asked to process %s with no prefix" % (module)
       else:
         to_process.append(module)
 
-  #print known_modules
-  #print module_process_order
-  #pp.pprint(dependency_d)
-  #pp.pprint(known_modules)
-  #pp.pprint(module_process_order)
-  #assert False, "TODO"
-
-  #print "got to building %s" % module_process_order
-  #print known_modules
   built = []
   for module in module_process_order:
     chkd_build = []
@@ -677,40 +637,9 @@ def YANGDynClass(*args,**kwargs):
         chkd_build.append(prefix)
     get_typedefs(ctx, module_d[module], prefix_list=chkd_build)
     get_identityrefs(ctx, module_d[module], prefix_list=chkd_build)
-    # TODO: same for identityrefs
     for pfx in chkd_build:
       built.append("%s%s" % ("%s:" % prefix if prefix else "", module))
-    #for prefix in known_modules[module]:
-    #  print "processing %s:%s" % (prefix, module)
-    #  if not "%s:%s" % (prefix, module) in built:
-    #    get_typedefs(ctx, module_d[module], prefix=prefix)
-    #    get_identityrefs(ctx, module_d[module], prefix=prefix)
-    #    built.append("%s:%s" % (prefix,module))
-  #print "got out of building"
-  #processed_modules = []
-  #for module in modules:
-    #typedefs = get_typedefs(ctx, module)
-    #mods = module.search('import')
-    # we have to do this module last, since it may
-    # have typedef dependencies elsewhere
-    #mods.append(module)
-    #for i in mods:
-    #  if i.arg in processed_modules:
-    #    continue
-    #  prefix = i.search_one('prefix').arg
-    #  if i == module:
-    #    get_typedefs(ctx, i, prefix=False)
-    #    get_identityrefs(ctx, i, prefix=False)
-    #  if not get_typedefs(ctx, i, prefix=prefix):
-    #    raise TypeError, "Invalid specification of typedefs"
-    #  if not get_identityrefs(ctx, i, prefix=prefix):
-    #    raise TypeError, "Invalid specification of identityrefs"
-    #  processed_modules.append(i.arg)
-  #print [i.arg for i in modules]
-  # we need to parse each module
   for module in modules:
-    #print "processing %s...." % module.arg
-    # we need to parse each sub-module
     mods = [module]
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
@@ -811,17 +740,6 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
       name = "%s%s" % ("%s:" % p if p is not None else "", i.arg)
       definition_dict[name] = i
       remaining_typedefs.append(name)
-    #if not i.arg == "%s:%s" % (prefix, i.arg) and prefix:
-    #  name = "%s:%s" % (prefix, i.arg)
-    #else:
-    #  name = i.arg
-    #definition_dict[name] = i
-    #print "added %s as %s" % (i.arg, name)
-    #remaining_typedefs.append(name)
-
-
-  #pp.pprint(definition_dict.keys())
-  #assert False, "TODO"
   # for each remaining typedef definition that we
   # do not know about - retrieve the definition
   # check whether it references a type that we now
@@ -839,7 +757,6 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
       sys.stderr.write("\nCHECK WARNINGS!\n")
       sys.exit(127)
     i_name = remaining_typedefs.pop(0)
-    #print "handling %s" % i_name
     item = definition_dict[i_name]
 
     this_type = item.search_one('type').arg
@@ -847,17 +764,12 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
       subtypes = [i.arg for i in item.search_one('type').search('type')]
     else:
       subtypes = [this_type,]
-    #print "and it had ... %s" % subtypes
-    #print known_typedefs
     any_unknown = False
     for i in subtypes:
       if not i in known_typedefs:
         # check whether this type was actually local to the module that
         # we are looking at too
         tmp_name = "%s:%s" % (prefix, i)
-        #print prefix
-        #print tmp_name
-        #print known_typedefs
         if not tmp_name in known_typedefs:
           any_unknown = True
     if not any_unknown:
@@ -871,18 +783,15 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
     type_name = i_tuple[0]
-    #print "building %s..." % item.arg
     mapped_type = False
     restricted_arg = False
     cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type'), \
                                     prefix=prefix))
-    #pp.pprint(elemtype)
     known_types = class_map.keys()
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
 
-    #type_name = "%s%s" % ("%s:" % prefix if prefix else "", item.arg)
     if type_name in known_types:
       raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
@@ -945,23 +854,14 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         # this container is config false
         parent_cfg = False
 
-  #choices = {}
   for ch in i_children:
-    #print "calling get_element for %s" % ch.arg
     if ch.keyword == "choice":
-      #print "processing %s..." % ch.arg
-      #choices[ch.arg] = []
       for choice_ch in ch.i_children:
-        #print "processing %s..." % choice_ch.arg
-        #choices[ch.arg].append(choice_ch.arg)
         # these are case statements
         for case_ch in choice_ch.i_children:
-          #print "calling get_element for %s" % case_ch.arg
           elements += get_element(fd, case_ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=(ch.arg,choice_ch.arg))
     else:
       elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
-
-  #pp.pprint(choices)
 
   if parent.keyword in ["container", "module", "list"]:
     if not path == "":
@@ -994,7 +894,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
   if len(elements) == 0:
     fd.write("  pass\n")
   else:
-
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
     e_str = "__elements = {"
@@ -1007,18 +906,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     fd.write(slots_str)
     fd.write("\n")
 
-    #if len(choices.keys()):
-    #  choices_str = "  __choices__ = "
-    #  choices_str += repr(choices)
-    #  fd.write(choices_str)
-    #  fd.write("\n")
-
     choices = {}
     choice_attrs = []
     classes = []
     for i in elements:
       class_str = False
-      #rint "looping elements"
       if "default" in i.keys() and not i["default"] is None:
         default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
@@ -1074,7 +966,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str += ")\n"
         classes.append(class_str)
-    #print "my choice attrs: %s" % choice_attrs
     fd.write("""
   def __init__(self, *args, **kwargs):\n""")
     for c in classes:
@@ -1101,7 +992,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
              description_str, i["name"]))
 
       if i["class"] == "leaf-list":
-        #native_type = i["type"]["native_type"]
         native_type = "%s(allowed_type=%s)" % i["type"]["native_type"]
       elif i["class"] == "union":
         native_type = "["
@@ -1158,8 +1048,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       if i["name"] in choice_attrs:
         fd.write("""
   def _unset_%s(self):
-    self.__%s = YANGDynClass(%s)
-    #print "this dude was unset! %s"\n\n""" % (i["name"], i["name"], set_str, i["name"]))
+    self.__%s = YANGDynClass(%s)\n\n""" % (i["name"], i["name"], set_str,))
     for i in elements:
       rw = True
       if not i["config"]:
@@ -1174,7 +1063,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       else:
         fd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
                           (i["name"], i["name"], i["name"]))
-
   fd.write("\n")
   if choices:
     fd.write("  __choices__ = %s" % repr(choices))
@@ -1261,10 +1149,8 @@ def build_elemtype(et, prefix=False):
                                      "parent_type": et.arg, \
                                      "base_type": False,}
       restricted = True
-      #default_type = class_map["string"][0]
     else:
       elemtype = class_map[et.arg]
-      #default_type = et.arg
   elif et.arg in INT_RANGE_TYPES:
     range_stmt = et.search_one('range')
     if not range_stmt is None:
@@ -1278,7 +1164,6 @@ def build_elemtype(et, prefix=False):
                                       "restriction_type": "range", \
                                       "parent_type": et.arg, \
                                       "base_type": False,}
-      #default_type = class_map[et.arg][0]
       restricted = True
     else:
       elemtype = class_map[et.arg]
@@ -1379,12 +1264,10 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       for i in range(0,len(path_parts)-1):
         npath += "%s/" % path_parts[i]
       npath.rstrip("/")
-      #print "MONKEY new path was %s from %s" % (npath,path)
     else:
       npath=path
     if element.i_children:
       chs = element.i_children
-      #print "calling get_children for %s" %  [i.arg for i in chs]
       get_children(fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "type": "yc_%s_%s" % (safe_name(element.arg),
@@ -1402,8 +1285,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
   if not p:
     if element.keyword in ["leaf-list"]:
       create_list = True
-    #print "element: %s %s" % (element.keyword, element.arg)
-    #print "was building %s" % element.arg
     cls,elemtype = copy.deepcopy(build_elemtype(element.search_one('type')))
 
     # build a tree that is rooted on this class.
@@ -1413,7 +1294,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
 
     # then starting at the selected default node, traverse
     # until we find a node that is declared to be a base_type
-
     elemdefault = element.search_one('default')
     default_type = False
     quote_arg = False
@@ -1434,7 +1314,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       # this
       elemdefault = elemtype["default"]
       default_type = elemtype
-
 
     # we need to indicate that the default type for the class_map
     # is str
@@ -1511,7 +1390,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
               else:
                 to_visit.append(tmp_class_map[check]["parent_type"])
         default_type = tmp_class_map[checked.pop()]
-        #print default_type
         if not default_type["base_type"]:
           raise TypeError, "default type was not a base type"
 
@@ -1533,8 +1411,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
         for subtype in elemtype:
           # nested union within a leaf-list type
           if isinstance(subtype, tuple):
-            #print subtype[0]
-            #print subtype[1]
             if subtype[0] == "leaf-union":
               for subelemtype in subtype[1]["native_type"]:
                 allowed_types.append(subelemtype)
@@ -1545,8 +1421,6 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       else:
         allowed_types = elemtype["native_type"]
 
-      #print "%s: %s" % (elemname, elemtype)
-      #pp.pprint(elemtype)
       elemtype = {"class": cls, "native_type": ("TypedListType", \
                   allowed_types)}
     else:
