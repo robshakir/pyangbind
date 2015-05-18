@@ -15,10 +15,10 @@ module list {
     typedef string-with-a-or-b-first {
         type union {
             type string {
-                pattern "^a";
+                pattern "^a.*";
             }
             type string {
-                pattern "^b";
+                pattern "^b.*";
             }
         }
     }
@@ -53,7 +53,7 @@ module list {
 
             leaf keyval {
                 type string {
-                    pattern "^a";
+                    pattern "^a.*";
                 }
             }
 

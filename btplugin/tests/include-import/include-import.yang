@@ -1,0 +1,45 @@
+module include-import {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/typedef/remote";
+    prefix "iil";
+    include subm;
+    import remote { prefix rem; }
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    typedef ii-definition {
+        type string;
+    }
+
+    identity fish;
+    
+    identity mackerel {
+        base "fish";
+    }
+
+    identity bear {
+        base "rem:mammal";
+    }
+
+    container c {
+        leaf t1 { 
+            type ii-definition;
+        }
+        
+        leaf t2 {
+            type subm-definition;
+        }
+
+        leaf t3 {
+            type rem:remote-definition;
+        }
+    }
+}

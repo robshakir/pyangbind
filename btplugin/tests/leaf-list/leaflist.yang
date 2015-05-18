@@ -14,7 +14,7 @@ module leaflist {
 
     typedef restricted-string {
         type string {
-            pattern "^a";
+            pattern "^a.*";
         }
     }
 

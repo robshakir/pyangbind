@@ -229,9 +229,9 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       \"\"\"
       if restriction_type == "pattern":
-        p = re.compile(restriction_arg)
+        p = re.compile(restriction_arg + "$")
         self._restriction_test = p.match
-        self._restriction_arg = restriction_arg
+        self._restriction_arg = restriction_arg + "$"
         self._restriction_type = restriction_type
       elif restriction_type == "range":
         x = [base_type(i) for i in \
@@ -573,72 +573,33 @@ def YANGDynClass(*args,**kwargs):
   return YANGBaseClass(*args, **kwargs)
 """)
 
-  # we need to build a dependency map
-  # foreach module:
-  #   foreach import:
-  #      record dependencies for the module - along with prefix
-  dependency_d = {}
-  original_modules = [i.arg for i in modules]
-  to_process = copy.deepcopy(modules)
-  module_d = {}
-  while len(to_process):
-    module = to_process.pop(0)
-    if not module.arg in dependency_d.keys():
-      dependency_d[module.arg] = list()
-    dependencies = module.search('import')
-    if not module.arg in module_d.keys():
-      module_d[module.arg] = module
-    if not dependencies is None:
-      for dep in dependencies:
-        prefix = dep.search_one('prefix').arg
-        dependency_d[module.arg].append((dep.arg, prefix))
-        to_process.append(dep)
-        if not dep.arg in module_d.keys():
-          module_d[dep.arg] = dep
+  all_mods = []
+  for module in modules:
+    local_module_prefix = module.search_one('prefix').arg
+    mods = [(local_module_prefix,module)]
+    for i in module.search('include'):
+      subm = ctx.get_module(i.arg)
+      if subm is not None:
+        mods.append((local_module_prefix, subm))
+    for j in module.search('import'):
+      mod = ctx.get_module(j.arg)
+      if mod is not None:
+        imported_module_prefix = j.search_one('prefix').arg
+        mods.append((imported_module_prefix, mod))
+    all_mods.extend(mods)
 
-  for dependency in dependency_d:
-    if len(dependency_d[dependency]) == 0:
-      sys.stderr.write("WARNING: did not find module imports for %s, " % dependency)
-      sys.stderr.write("you may need to specify the path to this module ")
-      sys.stderr.write("for all dependencies to be resolved.\n")
+  defn = {}
+  for defnt in ['typedef', 'identity']:
+    defn[defnt] = {}
+    for m in all_mods:
+      t = find_definitions(defnt, ctx, m[1], m[0])
+      for k in t.keys():
+        if not k in defn[defnt].keys():
+          defn[defnt][k] = t[k]
 
-  known_modules = {}
-  module_process_order = []
-  to_process = dependency_d.keys()
-  while len(to_process):
-    module = to_process.pop(0)
-    if len(dependency_d[module]) == 0:
-      known_modules[module] = [None,]
-      module_process_order.append(module)
-      if module in original_modules:
-        known_modules[module].append(module_d[module].search_one('prefix').arg)
-    else:
-      unknown_dependencies = False
-      for dep in dependency_d[module]:
-        if dep[0] in known_modules.keys():
-          if not dep[1] in known_modules[dep[0]]:
-            known_modules[dep[0]].append(dep[1]) # add this module to process with
-                                                 # the local prefix
-        else:
-          unknown_dependencies = True
-      if not unknown_dependencies:
-        module_process_order.append(module)
-        known_modules[module] = [None,]
-        if module in original_modules:
-          known_modules[module].append(module_d[module].search_one('prefix').arg)
-      else:
-        to_process.append(module)
+  build_identities(defn['identity'])
+  build_typedefs(defn['typedef'])
 
-  built = []
-  for module in module_process_order:
-    chkd_build = []
-    for prefix in known_modules[module]:
-      if not "%s%s" % ("%s:" % prefix if prefix else "", module) in built:
-        chkd_build.append(prefix)
-    get_typedefs(ctx, module_d[module], prefix_list=chkd_build)
-    get_identityrefs(ctx, module_d[module], prefix_list=chkd_build)
-    for pfx in chkd_build:
-      built.append("%s%s" % ("%s:" % prefix if prefix else "", module))
   for module in modules:
     mods = [module]
     for i in module.search('include'):
@@ -651,142 +612,100 @@ def YANGDynClass(*args,**kwargs):
             if ch.keyword in statements.data_definition_keywords]
       get_children(fd, children, m, m)
 
-def get_identityrefs(ctx, module, prefix=False, prefix_list=False):
-
-  mod = ctx.get_module(module.arg)
-  if mod is None:
-    raise AttributeError, "unmapped identities, please specify path to %s!" \
-                                % (module.arg)
-
-  pfx = []
-  if prefix:
-    pfx.append(prefix)
-  if prefix_list:
-    pfx.extend(prefix_list)
-  if not None in pfx:
-    pfx.append(None)
-
-  identities = mod.search('identity')
-  definition_dict = {}
-  remaining_identities = []
-  for i in identities:
-    for p in pfx:
-      name = "%s%s" % ("%s:" % p if p is not None else "", i.arg)
-      definition_dict[name] = i
-      remaining_identities.append(name)
-
-  known_identities = []
+def build_identities(defnd):
+  unresolved_idc = {}
+  for i in defnd.keys():
+    unresolved_idc[i] = 0
+  unresolved_ids = defnd.keys()
+  error_ids = []
   identity_d = {}
-  while remaining_identities:
-    item = remaining_identities.pop(0)
-    definition = definition_dict[item]
-    base = definition.search_one('base')
-    if base is None:
-      identity_d[item] = {}
-      known_identities.append(item)
-    else:
-      for p in pfx:
-        base_name = "%s%s" % ("%s:" % p if p is not None else "", base.arg)
-        if base_name in known_identities:
-          val = item.split(":")[1] if ":" in item else item
-          identity_d[base_name][val] = {}
-        else:
-          remaining_identities.append(item)
 
+  while len(unresolved_ids):
+    ident = unresolved_ids.pop(0)
+    base = defnd[ident].search_one('base')
+    if base is None:
+      identity_d[ident] = {}
+    else:
+      if base.arg in identity_d.keys():
+        val = ident
+        if ":" in ident:
+          parts = ident.split(":")
+          val = parts[1]
+          pfx = parts[0]
+          if "%s:%s" % (pfx, base.arg) in identity_d.keys():
+            identity_d["%s:%s" % (pfx, base.arg)][val] = {}
+        if ":" in base.arg and base.arg.split(":")[1] in identity_d.keys():
+          identity_d[base.arg.split(":")[1]][val] = {}
+        identity_d[base.arg][val] = {}
+        # everything that is a value can also be a base
+        if not val in identity_d.keys():
+          identity_d[val] = {}
+      else:
+        if unresolved_idc[ident] > 1000:
+          # looked at this id a lot, it's a problem
+          sys.stderr.write("could not find a match for %s base: %s\n" % (ident, base.arg))
+          error_ids.append(ident)
+        else:
+          unresolved_ids.append(ident)
+          unresolved_idc[ident] += 1
+
+  for potential_identity in identity_d.keys():
+    if len(identity_d[potential_identity].keys()) == 0:
+      del identity_d[potential_identity]
+
+  if error_ids:
+    raise TypeError, "could not resolve identities %s" % error_ids
 
   for i in identity_d.keys():
-    id_type = {"native_type": """RestrictedClassType(base_type=str, \
-                    restriction_type="dict_key", \
-                    restriction_arg=%s,)""" % identity_d[i], \
+    id_type = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
                 "restriction_argument": identity_d[i], \
                 "restriction_type": "dict_key",
                 "parent_type": "string",
                 "base_type": False,}
     class_map[i] = id_type
 
-  return True
-
-
-def get_typedefs(ctx, module, prefix=False, prefix_list=False):
-  mod = ctx.get_module(module.arg)
-  if mod is None:
-    raise AttributeError, "unmapped types, please specify path to %s!" \
-                                % (module.arg)
-  typedefs = mod.search('typedef')
-  restricted_arg = False
-  default = False
-
-  # we need to check whether there are any dependencies between
-  # the typedefs that we have within the module.
+def build_typedefs(defnd):
+  unresolved_tc = {}
+  for i in defnd.keys():
+    unresolved_tc[i] = 0
+  unresolved_t = defnd.keys()
+  error_ids = []
+  known_types = class_map.keys()
+  known_types.append('enumeration')
   process_typedefs_ordered = []
-  known_typedefs = class_map.keys()
-  # we always know enumerations even though they are non-native
-  # because they cannot have subtypes
-  known_typedefs.append("enumeration")
-  remaining_typedefs = []
-  definition_dict = {}
+  while len(unresolved_t):
 
-  pfx = []
-  if prefix:
-    pfx.append(prefix)
-  if prefix_list:
-    pfx.extend(prefix_list)
-  if not None in pfx:
-    pfx.append(None)
-
-
-  for i in typedefs:
-    for p in pfx:
-      name = "%s%s" % ("%s:" % p if p is not None else "", i.arg)
-      definition_dict[name] = i
-      remaining_typedefs.append(name)
-  # for each remaining typedef definition that we
-  # do not know about - retrieve the definition
-  # check whether it references a type that we now
-  # know about, and if not, re-queue it. if so
-  # add it to the queue
-  c = 0
-  while remaining_typedefs:
-    if c > 500:
-      # this is a safety net, we have unresolved
-      # dependencies, and it is not possible to
-      # fix it -- one of the warnings we gave
-      # earlier needs to be listened to.
-      sys.stderr.write("UNRESOLVED DEPENCIES: %s" % remaining_typedefs)
-      sys.stderr.write("%s \n" % subtypes)
-      sys.stderr.write("\nCHECK WARNINGS!\n")
-      sys.exit(127)
-    i_name = remaining_typedefs.pop(0)
-    item = definition_dict[i_name]
-
-    this_type = item.search_one('type').arg
-    if this_type == "union":
-      subtypes = [i.arg for i in item.search_one('type').search('type')]
+    t = unresolved_t.pop(0)
+    base_t = defnd[t].search_one('type')
+    if base_t.arg == "union":
+      subtypes = [i for i in base_t.search('type')]
     else:
-      subtypes = [this_type,]
+      subtypes = [base_t,]
+
     any_unknown = False
     for i in subtypes:
-      if not i in known_typedefs:
-        # check whether this type was actually local to the module that
-        # we are looking at too
-        tmp_name = "%s:%s" % (prefix, i)
-        if not tmp_name in known_typedefs:
-          any_unknown = True
+      if not i.arg in known_types:
+        any_unknown=True
     if not any_unknown:
-      process_typedefs_ordered.append((i_name,item))
-      known_typedefs.append(i_name)
+      process_typedefs_ordered.append((t, defnd[t]))
+      known_types.append(t)
     else:
-      if not i_name in remaining_typedefs:
-        remaining_typedefs.append(i_name)
-    c += 1
+      unresolved_tc[t] += 1
+      if unresolved_tc[t] > 1000:
+        error_ids.append(t)
+        sys.stderr.write("could not find a match for %s type\n" % t)
+      else:
+        unresolved_t.append(t)
+
+  if error_ids:
+    raise TypeError, "could not resolve typedefs %s" % error_ids
 
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
     type_name = i_tuple[0]
     mapped_type = False
     restricted_arg = False
-    cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type'), \
-                                    prefix=prefix))
+    cls,elemtype = copy.deepcopy(build_elemtype(item.search_one('type')))
     known_types = class_map.keys()
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
@@ -837,7 +756,21 @@ def get_typedefs(ctx, module, prefix=False, prefix_list=False):
       if default:
         class_map[type_name]["default"] = default[0]
         class_map[type_name]["quote_default"] = default[1]
-  return True
+
+
+def find_definitions(defn, ctx, module, prefix):
+  mod = ctx.get_module(module.arg)
+  if mod is None:
+    raise AttributeError, "expected to be able to find module %s, but could not" % (module.arg)
+
+  type_definitions = {}
+  for i in mod.search(defn):
+    if i.arg in type_definitions:
+      sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
+    else:
+      type_definitions["%s:%s" % (prefix, i.arg)] = i
+      type_definitions[i.arg] = i
+  return type_definitions
 
 def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False):
   used_types,elements = [],[]
@@ -863,7 +796,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     else:
       elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
 
-  if parent.keyword in ["container", "module", "list"]:
+  if parent.keyword in ["container", "module", "submodule", "list"]:
     if not path == "":
       fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
         safe_name(path.replace("/", "_"))))
@@ -1222,7 +1155,6 @@ def build_elemtype(et, prefix=False):
       passed = False
       if prefix:
         try:
-          #print "trying %s:%s..." % (prefix, et.arg)
           tmp_name = "%s:%s" % (prefix, et.arg)
           elemtype = class_map[tmp_name]
           passed = True

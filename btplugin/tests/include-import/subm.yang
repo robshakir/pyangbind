@@ -1,0 +1,14 @@
+submodule subm {
+    belongs-to include-import { prefix ii; }
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    typedef subm-definition {
+        type string;
+    }
+}

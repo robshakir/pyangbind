@@ -31,7 +31,7 @@ module string {
 
         leaf restricted-string {
             type string {
-                pattern "^a";
+                pattern "^a.*";
             }
             description
                 "A test leaf with a restriction that
@@ -40,7 +40,7 @@ module string {
 
         leaf restricted-string-default {
             type string {
-                pattern "^b";
+                pattern "^b.*";
             }
             description
                 "A test leaf with a restriction that
