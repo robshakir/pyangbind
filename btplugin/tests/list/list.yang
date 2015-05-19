@@ -74,5 +74,19 @@ module list {
                 type string;
             }
         }
+
+        list list-four {
+            key "valone valtwo";
+
+            leaf valone {
+                type string-with-a-or-b-first;
+            }
+
+            leaf valtwo {
+                type uint8 {
+                    range 1..10;
+                }
+            }
+        }
     }
 }

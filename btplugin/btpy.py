@@ -228,6 +228,11 @@ def RestrictedClassType(*args, **kwargs):
         Create a new class instance, and dynamically define the
         _restriction_test method so that it can be called by other functions.
       \"\"\"
+      val = False
+      try:
+        val = args[0]
+      except IndexError:
+        pass
       if restriction_type == "pattern":
         p = re.compile(restriction_arg + "$")
         self._restriction_test = p.match
@@ -240,6 +245,10 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_test = staticmethod(lambda i: i > x[0] and i < x[1])
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
+        try:
+          val = int(val)
+        except:
+          raise ValueError, "must specify a numeric type for a range argument"
       elif restriction_type == "dict_key":
         # populate enum values
         used_values = []
@@ -259,11 +268,9 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_type = restriction_type
       else:
         raise ValueError, "unsupported restriction type"
-      try:
-        if not self._restriction_test(args[0]):
+      if not val == False:
+        if not self._restriction_test(val):
           raise ValueError, "did not match restricted type"
-      except IndexError:
-        pass
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
 
@@ -272,10 +279,10 @@ def RestrictedClassType(*args, **kwargs):
         Run the _restriction_test static method against the argument v,
         returning an error if the value does not validate.
       \"\"\"
-      if self._restriction_type == "pattern":
-        if not self._restriction_test(v):
-          raise ValueError, "did not match restricted type"
-        return True
+      v = base_type(v)
+      if not self._restriction_test(v):
+        raise ValueError, "did not match restricted type"
+      return True
 
     def getValue(self, *args, **kwargs):
       \"\"\"
@@ -349,8 +356,11 @@ def TypedListType(*args, **kwargs):
   return type(TypedList(*args,**kwargs))
 
 def YANGListType(*args,**kwargs):
-  keyname = args[0]
-  listclass = args[1]
+  try:
+    keyname = args[0]
+    listclass = args[1]
+  except:
+    raise AttributeError, "A YANGList must be specified with a key value and a contained class"
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
@@ -390,17 +400,28 @@ def YANGListType(*args,**kwargs):
       return self._members[k]
 
     def __setitem__(self, k, v):
-      if self.__check__(v):
-        try:
-          tmp = YANGDynClass(v, base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
-          key = getattr(tmp, "_set_%s" % self._keyval)
-          key(k)
-          self._members[k] = tmp
-        except TypeError, m:
-          raise ValueError, "key value must be valid, %s" % m
-      else:
+      self.__set(k,v)
+
+    def __set(self, k, v=False):
+      if v and not self.__check__(v):
         raise ValueError, "value must be set to an instance of %s" % \
           (self._contained_class)
+      try:
+        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+        if " " in self._keyval:
+          keys = self._keyval.split(" ")
+          keyparts = k.split(" ")
+          if not len(keyparts) == len(keys):
+            raise KeyError, "YANGList key must contain all key elements (%s)" % (self._keyval.split(" "))
+        else:
+          keys = [self._keyval,]
+          keyparts = [k,]
+        for i in range(0,len(keys)):
+          key = getattr(tmp, "_set_%s" % keys[i])
+          key(keyparts[i])
+        self._members[k] = tmp
+      except TypeError, m:
+        raise ValueError, "key value must be valid, %s" % m
 
     def __delitem__(self, k):
       del self._members[k]
@@ -410,14 +431,8 @@ def YANGListType(*args,**kwargs):
     def keys(self): return self._members.keys()
 
     def add(self, k):
-      try:
-        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
-        key = getattr(tmp, "_set_%s" % self._keyval)
-        key(k)
-        self._members[k] = tmp
-      except TypeError, m:
-        raise ValueError, "key value must be valid, %s" % m
-      self.set()
+      self.__set(k)
+      #self.set()
 
     def delete(self, k):
       try:
@@ -903,12 +918,12 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
   def __init__(self, *args, **kwargs):\n""")
     for c in classes:
       fd.write("    self.%s" % c)
-    fd.write("""
-    if args:
-      # we do not support creating a new instance of a container
-      # object with an argument.
-      raise TypeError, "YANG containers cannot be initiated with an argument"
-""")
+#    fd.write("""
+#    #if args:
+#      # we do not support creating a new instance of a container
+#      # object with an argument.
+#    #  raise TypeError, "YANG containers cannot be initiated with an argument"
+#""")
 
     node = {}
     for i in elements:
