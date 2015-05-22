@@ -1,10 +1,10 @@
 #!/bin/bash
 FAIL=0
-TESTDIR=/Users/rjs/Code/pyangbind/btplugin/tests/
-PLUGINDIR=/Users/rjs/Code/pyangbind/btplugin
+TESTDIR=/Users/rjs/Code/pyangbind/tests/
+PLUGINDIR=/Users/rjs/Code/pyangbind/
 
 echo "RUNNING BASE"
-/usr/local/bin/pyang --plugindir $PLUGINDIR -f bt $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
+/usr/local/bin/pyang --plugindir $PLUGINDIR -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
 if [ $? -ne 0 ]; then
 	echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
 	exit

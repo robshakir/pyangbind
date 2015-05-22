@@ -19,9 +19,8 @@ def main():
       keepfiles = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/usr/local/bin/pyang \
-            --plugindir /Users/rjs/Code/pyangbind/btplugin \
-            -p %s -f bt \
+  os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind -f pybind \
+            -p %s \
             -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, this_dir, TESTNAME))
 
   from bindings import identityref

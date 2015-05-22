@@ -19,7 +19,7 @@ def main():
       k = True
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind/btplugin -f bt -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
+  os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind -f pybind -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, TESTNAME))
 
   from bindings import decimal_ as d
   from decimal import Decimal
