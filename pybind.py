@@ -1,9 +1,17 @@
-"""Generate YANG Python Bindings from a YANG model.
+"""
+Copyright 2015, Rob Shakir (rob.shakir@bt.com, rjs@rob.sh)
 
-(c) Rob Shakir (rob.shakir@bt.com, rjs@rob.sh) - 2015.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-This module is tentatively licensed under the Apache licence.
+    http://www.apache.org/licenses/LICENSE-2.0
 
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 import optparse
@@ -17,15 +25,11 @@ import copy
 from pyang import plugin
 from pyang import statements
 
-USED_TYPES = []
-
 DEBUG = True
-
 if DEBUG:
   import pprint
   pp = pprint.PrettyPrinter(indent=2)
 
-# TODO, move this to a header file
 class YANGBool(int):
   def __new__(self, *args, **kwargs):
     false_args = ["false", "False", False, 0, "0"]
@@ -142,13 +146,13 @@ def pyang_plugin_init():
 class BTPyClass(plugin.PyangPlugin):
     def add_output_format(self, fmts):
         self.multiple_modules = True
-        fmts['bt'] = self
+        fmts['pybind'] = self
 
     def emit(self, ctx, modules, fd):
-        build_btclass(ctx, modules, fd)
+        build_pybind(ctx, modules, fd)
 
 
-def build_btclass(ctx, modules, fd):
+def build_pybind(ctx, modules, fd):
   # output the base code that we need to re-use with dynamically generated
   # objects.
   fd.write("from operator import attrgetter\n")
@@ -555,6 +559,9 @@ def YANGDynClass(*args,**kwargs):
 
     def yang_name(self):
       return self._yang_name
+
+    def default(self):
+      return self._default
 
     # we need to overload the set methods
     def __setitem__(self, *args, **kwargs):
