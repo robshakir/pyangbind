@@ -66,6 +66,25 @@ def main():
     "incorrect value for remote definition which had local definition (%s)" % \
       t.container.remote_local_type
 
+  for i in [("aardvark", True), ("ant", False), ("duck",False)]:
+    wset = True
+    try:
+      t.container.inheritance = i[0]
+    except:
+      wset = False
+    assert wset == i[1], \
+      "inherited pattern was not correctly followed for %s (%s != %s)" \
+        % (i[0],i[1],wset)
+
+  for i in [(2,True),(10,False),(1,False)]:
+    wset = True
+    try:
+      t.container.int_inheritance = i[0]
+    except:
+      wset = False
+    assert wset == i[1], \
+      "inherited range was not correctly followed for %s (%s != %s)" \
+        % (i[0], i[1], wset)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

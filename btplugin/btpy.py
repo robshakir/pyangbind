@@ -234,15 +234,21 @@ def RestrictedClassType(*args, **kwargs):
       except IndexError:
         pass
       if restriction_type == "pattern":
-        p = re.compile(restriction_arg + "$")
-        self._restriction_test = p.match
-        self._restriction_arg = restriction_arg + "$"
+        tests = []
+        if isinstance(restriction_arg, list):
+          for pattern in restriction_arg:
+            tests.append(re.compile(pattern + "$").match)
+        else:
+          tests.append(re.compile(restriction_arg + "$").match)
+        self._tests = tests
+        self._restriction_test = staticmethod(lambda val: False if False in [True if t(val) else False for t in tests] else True)
+        self._restriction_arg = [i + "$" for i in restriction_arg] if isinstance(restriction_arg,list) else [restriction_arg+"$"]
         self._restriction_type = restriction_type
       elif restriction_type == "range":
         x = [base_type(i) for i in \
           re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", \
             "\g<low>,\g<high>", restriction_arg).split(",")]
-        self._restriction_test = staticmethod(lambda i: i > x[0] and i < x[1])
+        self._restriction_test = staticmethod(lambda i: i >= x[0] and i <= x[1])
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
         try:
@@ -318,7 +324,7 @@ def TypedListType(*args, **kwargs):
         if isinstance(v, i):
           passed = True
         try:
-          tmp_t = RestrictedClassType(base_type=str, restriction_type="pattern", restriction_arg="^a")
+          tmp_t = RestrictedClassType(base_type=str, restriction_type="pattern", restriction_arg=".*")
           if i.__bases__ == tmp_t.__bases__:
             tmp = i(v)
             passed = True
@@ -1083,29 +1089,30 @@ def build_elemtype(et, prefix=False):
   #et = element.search_one('type')
   restricted = False
 
-  if et.arg == "string":
+  pattern =  et.search_one('pattern') if not et.search_one('pattern') is None else False
+  range_stmt = et.search_one('range') if not et.search_one('range') is None else False
+
+  if pattern:
     pattern = et.search_one('pattern')
     if not pattern is None:
+      # this must be a string type
       cls = "restricted-string"
-      elemtype = {"native_type": """RestrictedClassType(base_type=%s, \
-                                    restriction_type="pattern",
-                                    restriction_arg="%s")""" % \
-                                    (class_map[et.arg]["native_type"], \
-                                     pattern.arg), \
-                                     "restriction_argument": pattern.arg, \
+      restriction_arg = pattern.arg
+      elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern", restriction_arg="%s")""" % \
+                                    (class_map[et.arg]["native_type"], restriction_arg), \
+                                     "restriction_argument": restriction_arg, \
                                      "restriction_type": "pattern", \
                                      "parent_type": et.arg, \
                                      "base_type": False,}
       restricted = True
     else:
       elemtype = class_map[et.arg]
-  elif et.arg in INT_RANGE_TYPES:
+  elif range_stmt:
+    # this must be an integer type
     range_stmt = et.search_one('range')
     if not range_stmt is None:
       cls = "restricted-%s" % et.arg
-      elemtype = {"native_type":  """RestrictedClassType(base_type=%s, \
-                                     restriction_type="range", \
-                                     restriction_arg="%s")"""  % \
+      elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range", restriction_arg="%s")"""  % \
                                      (class_map[et.arg]["native_type"], \
                                       range_stmt.arg), \
                                       "restriction_argument": range_stmt.arg, \

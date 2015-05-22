@@ -37,6 +37,18 @@ module typedef {
         default "defaultValue";
     }
 
+    typedef restricted-inherit {
+        type string {
+            pattern "^a.*";
+        }
+    }
+
+    typedef restricted-int-inherit {
+        type int8 {
+            range 0..100;
+        }
+    }
+
     container container {
         description
             "A container";
@@ -73,6 +85,18 @@ module typedef {
 
         leaf remote-local-type {
             type defn:remote-local-definition;
+        }
+
+        leaf inheritance {
+            type restricted-inherit {
+                pattern ".*k";
+            }
+        }
+
+        leaf int-inheritance {
+            type restricted-int-inherit {
+                range 2..5;
+            }
         }
     }
 }

@@ -85,7 +85,7 @@ def main():
     pass
   assert test_instance.string_container.restricted_string == "aardvark", \
         "restricted string was changed in value to invalid (value: %s)" % \
-          test_intsance.string_container.restricted_string
+          test_instance.string_container.restricted_string
   assert exception_raised == True, "exception was not raised when invalid value set"
 
   if not k:
