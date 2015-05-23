@@ -232,6 +232,13 @@ def RestrictedClassType(*args, **kwargs):
         Create a new class instance, and dynamically define the
         _restriction_test method so that it can be called by other functions.
       \"\"\"
+      def convert_regexp(pattern):
+        if not pattern[0] == "^":
+          pattern = "^%s" % pattern
+        if not pattern[len(pattern)-1] == "$":
+          pattern = "%s$" % pattern
+        return pattern
+
       val = False
       try:
         val = args[0]
@@ -241,9 +248,9 @@ def RestrictedClassType(*args, **kwargs):
         tests = []
         if isinstance(restriction_arg, list):
           for pattern in restriction_arg:
-            tests.append(re.compile(pattern + "$").match)
+            tests.append(re.compile(convert_regexp(pattern)).match)
         else:
-          tests.append(re.compile(restriction_arg + "$").match)
+          tests.append(re.compile(convert_regexp(restriction_arg)).match)
         self._tests = tests
         self._restriction_test = staticmethod(lambda val: False if False in [True if t(val) else False for t in tests] else True)
         self._restriction_arg = [i + "$" for i in restriction_arg] if isinstance(restriction_arg,list) else [restriction_arg+"$"]

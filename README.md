@@ -16,7 +16,7 @@ All output is written to ```stdout``` or the file handle specified with ```-o```
 
 Once bindings have been generated, each YANG module is included as a top-level class within the output bindings file. Using the following module as an example:
 
-```
+```javascript
 module pyangbind-example {
     yang-version "1";
     namespace "http://rob.sh/pyangbind/example";
@@ -57,7 +57,7 @@ bindings.parent.integer = 12
 
 Each data leaf can be referred to via the path described in the YANG module. Each leaf is represented by the base class that is described in the [type support](#type-support) section of this document.
 
-Where nodes of the data model's tree are not Python-safe names - for example, global or as,  an underscore ("\_") is appended to the data node's name. Additionally, where characters that are considered operators are included in the node's name, these are translated to underscores (e.g., "-" becomes "\_").
+Where nodes of the data model's tree are not Python-safe names - for example, ```global``` or ```as```,  an underscore ("\_") is appended to the data node's name. Additionally, where characters that are considered operators are included in the node's name, these are translated to underscores (e.g., "-" becomes "\_").
 
 ### Generic Wrapper Class Methods
 Each native type is wrapped in a YANGDynClass dynamic type - which provides helper methods for YANG leaves:
@@ -71,14 +71,19 @@ Each native type is wrapped in a YANGDynClass dynamic type - which provides help
 Each YANG container is represented as an individual ```class``` within the hierarchy, wrapped with the generic wrappers described above.
 
 In addition, a YANG container provides a set of methods to determine properties of the container:
+
  * ```elements()``` - which provides a list of the elements of the YANG-described tree which branch from this container.
- * ```get(filter=False)``` - providing a means to return a Python dictionary hiearchy showing the tree branching from the container node. Where the ```filter``` argument is set to ```True``` only elements that have changed from their default values due to manipulation of the model are returned - by default, default values are returned.
+ * ```get(filter=False)``` - providing a means to return a Python dictionary hiearchy showing the tree branching from the container node. Where the ```filter``` argument is set to ```True``` only elements that have changed from their default values due to manipulation of the model are returned - when filter is not specified the default values of all leaves are returned.
 
 ### YANG List Methods
 
 The special ```add()``` and ```delete()``` methods can be used to create and remove entries from the list. Utilising the ```add()``` method will also set the associated key values.
 
 Since YANG lists are essentially keyed - as per Python dictionaries - a ```keys()``` method is provided to retrieve list members. In addition, iterations over a YANGList behave as would be expected from a dictionary in Python (rather than a list).
+
+### YANG String 'pattern' Restrictions
+
+Where a ```pattern``` restriction is specified in the definition of a string leaf, the Python ```re``` library is used to compile this regular expression. As per the definition in RFC6020, ```pattern``` regexps are assumed to be compatible with the definition in [XSD-TYPES](http://www.w3.org/TR/2004/REC-xmlschema-2-20041028/). To this end, all regexps provided have "^" prepended and "$" appended to them if not already specified. This behaviour is different to the default behaviour of ```re.match()``` which will usually allow a user to match a partial string.
 
 ## <a anchor="type-support"></a>YANG Type Support
 
