@@ -1,4 +1,4 @@
-#PyangBind
+![#PyangBind](http://rob.sh/img/pyangbind.png)
 
 **PyangBind** is a plugin for [Pyang](https://github.com/mbj4668/pyang) which converts YANG data models into a Python class hierarchy, such that Python can be used to manipulate data which conforms with a YANG data model.
 
