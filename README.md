@@ -135,3 +135,6 @@ limitations under the License.
 ## Bugs and Comments
 
 Please send bug-reports or comments to rjs@rob.sh.
+
+## ACKs
+* This project was developed as part of BT plc. Network Architecture future network management projects.

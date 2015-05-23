@@ -1,13 +1,14 @@
 #!/bin/bash
 FAIL=0
-TESTDIR=/Users/rjs/Code/pyangbind/tests/
-PLUGINDIR=/Users/rjs/Code/pyangbind/
+TESTDIR=`pwd`
+export PYANGBINDPATH=$TESTDIR/..
+export PYANGPATH=`which pyang`
 
 echo "RUNNING BASE"
-/usr/local/bin/pyang --plugindir $PLUGINDIR -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
+$PYANGPATH --plugindir $PYANGBINDPATH -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
 if [ $? -ne 0 ]; then
-	echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
-	exit
+    echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
+    exit
 fi
 rm /tmp/chkplugin.pyang
 

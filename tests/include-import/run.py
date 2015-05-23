@@ -18,10 +18,15 @@ def main():
     if o in ["-k", "--keepfiles"]:
       keepfiles = True
 
+  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
+  assert not pyangpath == False, "could not find path to pyang"
+  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("/usr/local/bin/pyang --plugindir /Users/rjs/Code/pyangbind -f pybind \
+  os.system("%s --plugindir %s -f pybind \
             -p %s \
-            -o %s/bindings.py %s/%s.yang" % (this_dir, this_dir, this_dir, TESTNAME))
+            -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, this_dir, TESTNAME))
 
   from bindings import include_import
 
