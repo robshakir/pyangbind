@@ -59,6 +59,17 @@ Each data leaf can be referred to via the path described in the YANG module. Eac
 
 Where nodes of the data model's tree are not Python-safe names - for example, ```global``` or ```as```,  an underscore ("\_") is appended to the data node's name. Additionally, where characters that are considered operators are included in the node's name, these are translated to underscores (e.g., "-" becomes "\_").
 
+### YANG Dependencies
+With some outputs (e.g., ```tree``` or ```jstree```), Pyang does not require the ability to resolve all typedefs (e.g., it can just display that the type is inet:ip-address). PyangBind **requires** the ability to resolve all typedefs to their underlying definition, such that a new datatype can be defined. In some cases, this will lead to needing to include 'types' YANG files on the command line, such that pyang can load them - and they are made available to PyangBind to build types.
+
+For example; openconfig-bgp will require the path to ietf-yang-types to be specified via:
+
+```
+/usr/local/bin/pyang --plugindir ~/Code/pyangbind -f pybind \
+-o bindings.py -p ../policy/ bgp.yang ~/path/to/ietf-yang-types.yang 
+```
+The error messages when a type is not correctly resolved are not very pretty currently and will be made more so in the future.
+
 ### Generic Wrapper Class Methods
 Each native type is wrapped in a YANGDynClass dynamic type - which provides helper methods for YANG leaves:
 
@@ -84,6 +95,33 @@ Since YANG lists are essentially keyed - as per Python dictionaries - a ```keys(
 ### YANG String 'pattern' Restrictions
 
 Where a ```pattern``` restriction is specified in the definition of a string leaf, the Python ```re``` library is used to compile this regular expression. As per the definition in RFC6020, ```pattern``` regexps are assumed to be compatible with the definition in [XSD-TYPES](http://www.w3.org/TR/2004/REC-xmlschema-2-20041028/). To this end, all regexps provided have "^" prepended and "$" appended to them if not already specified. This behaviour is different to the default behaviour of ```re.match()``` which will usually allow a user to match a partial string.
+
+### Errors thrown by PyangBind
+
+A number of the errors that PyangBind raises are based on the YANG model input - and are thrown from ```YANGDynClass```. In general, these will be raised when initiating an instance of the generated class (rather than during the initial generation of the bindings) -- in general, PyangBind expects Pyang's validation to have thrown errors *before* the model is parsed (it remains to be seen whether this is a safe assumption!).
+
+Otherwise, PyangBind's generated classes try to be consistent with the error type that a Python programmer would expect from the native types Python provides. That is to say:
+
+* ```KeyError``` is raised when a ```__getitem__``` call results in a member not being found in the referenced item, this includes where members of a YANG ```list``` are not found.
+* ```TypeError``` is raised when a value does not conform with the YANG datatype. Since the intention is that a Python programmer does not need to care what types are used 'behind the scenes' by PyangBind ```TypeError``` will only be raised where the input cannot be cast to the  native type (for example, a YANG ```uint32``` will accept ```True``` as an input value, but really store the value of '1' in the leaf).
+* ```AttributeError``` will be thrown where a method that does not exist in the encapsulated type is used (as per standard Python errors); a leaf that does not exist in the YANG model is referenced; or an attempt to set a non-configurable value is made. Note that in some cases, ```dir(...)``` on the object may show that the method is available in the YANGDynClass object, since the requirement to capture calls where the data value is changed results in the need to generically overload these methods. 
+
+
+### Setting ```config: false``` Leaves
+
+```AttributeError``` is also thrown when an attempt to set a ```config: false``` leaf value is made. Backend systems that are populating a model (when reading state from a device for example) should call the ```_set_FOO()``` method directly (which is generated independently of the ```config``` state of the leaf) to set the value.
+
+For example:
+
+```
+>>> b.bgp.global_.state.as_ = 12
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+AttributeError: can't set attribute
+>>> b.bgp.global_.state._set_as_(12)
+>>> b.bgp.global_.state.as_
+12
+```
 
 ## <a anchor="type-support"></a>YANG Type Support
 
