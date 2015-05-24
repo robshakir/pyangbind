@@ -88,5 +88,14 @@ module list {
                 }
             }
         }
+
+        list list-five {
+            key "val";
+            ordered-by user;
+            
+            leaf val { 
+                type uint8;
+            }
+        }
     }
 }

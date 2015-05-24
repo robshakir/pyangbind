@@ -61,10 +61,8 @@ def main():
   test_instance.list_container.list_element.add(2)
   test_instance.list_container.list_element[2].another_value == "aSecondDefaultValue"
 
-  print test_instance.get()
-  print test_instance.get(filter=True)
   assert test_instance.get() == \
-    {'list-container': {'list-two': {}, 'list-three': {}, 'list-four': {},
+    {'list-container': {'list-five': {}, 'list-two': {}, 'list-three': {}, 'list-four': {},
     'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
     2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
     "incorrect get() output returned: %s" % test_instance.get()
@@ -113,6 +111,11 @@ def main():
       added = False
     assert added == i[1], "list element erroneously added to multiple-key list (%s,%s)" % i
 
+  for i in range(1,10):
+    test_instance.list_container.list_five.add(i)
+
+  for i,j in zip(test_instance.list_container.list_five.keys(), range(1,10)):
+    assert i == j, "ordered list had incorret key ordering (%d != %d)" % (i,j)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -12,18 +12,28 @@ if [ $? -ne 0 ]; then
 fi
 rm /tmp/chkplugin.pyang
 
-FAIL=0
-for i in `find $TESTDIR -mindepth 1 -maxdepth 1 -type d`; do
-    echo "TESTING $i..."
-    $i/run.py > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "TEST FAILED $i";
-        FAIL=$((FAIL+1))
+if [ $# -eq 0 ]; then
+    FAIL=0
+    for i in `find $TESTDIR -mindepth 1 -maxdepth 1 -type d`; do
+        echo "TESTING $i..."
+        $i/run.py > /dev/null
+        if [ $? -ne 0 ]; then
+            echo "TEST FAILED $i";
+            FAIL=$((FAIL+1))
+        fi
+    done
+    if [ $FAIL -eq 0 ]; then
+        echo "RESULT: all tests passed"
+    else
+        echo "RESULT: $FAIL tests failed"
     fi
-done
-if [ $FAIL -eq 0 ]; then
-    echo "RESULT: all tests passed"
 else
-    echo "RESULT: $FAIL tests failed"
+    for i in "$@"; do
+        echo "TESTING $i..."
+        $i/run.py > /dev/null
+        if [ $? -ne 0 ]; then
+            echo "TEST FAILED $i";
+        fi
+    done
 fi
 

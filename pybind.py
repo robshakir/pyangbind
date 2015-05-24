@@ -1,5 +1,5 @@
 """
-Copyright 2015, Rob Shakir (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015, Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -381,12 +381,13 @@ def YANGListType(*args,**kwargs):
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
+  user_ordered = kwargs.pop("user_ordered", False)
   class YANGList(object):
-    _keyval = keyname
-    _members = {}
-    _contained_class = listclass
-
     def __init__(self, *args, **kwargs):
+      if user_ordered:
+        self._members = collections.OrderedDict()
+      else:
+        self._members = dict()
       self._keyval = keyname
       if not type(listclass) == type(int):
         raise ValueError, "contained class of a YANGList must be a class"
@@ -458,14 +459,16 @@ def YANGListType(*args,**kwargs):
         raise KeyError, "key %s was not in list (%s)" % (k,m)
 
     def get(self, filter=False):
-      d = {}
+      if user_ordered:
+        d = collections.OrderedDict()
+      else:
+        d = {}
       for i in self._members:
         if hasattr(self._members[i], "get"):
           d[i] = self._members[i].get(filter=filter)
         else:
           d[i] = self._members[i]
       return d
-
 
   return type(YANGList(*args,**kwargs))
 
@@ -894,6 +897,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str += " = YANGDynClass(base=YANGListType("
         class_str += "\"%s\",%s" % (i["key"], i["type"])
         class_str += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
+        class_str += ", user_ordered=%s" % i["user_ordered"]
         if i["choice"]:
           class_str += ", choice=%s" % repr(choice)
         class_str += ")"
@@ -1248,6 +1252,9 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                  }
       if element.keyword == "list":
         elemdict["key"] = safe_name(element.search_one("key").arg)
+        user_ordered = element.search_one('ordered-by')
+        elemdict["user_ordered"] = True if user_ordered is not None \
+          and user_ordered.arg.upper() == "USER" else False
       this_object.append(elemdict)
       p = True
   if not p:
