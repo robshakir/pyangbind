@@ -62,7 +62,7 @@ def main():
   test_instance.list_container.list_element[2].another_value == "aSecondDefaultValue"
 
   assert test_instance.get() == \
-    {'list-container': {'list-five': {}, 'list-two': {}, 'list-three': {}, 'list-four': {},
+    {'list-container': {'list-six': {}, 'list-five': {}, 'list-two': {}, 'list-three': {}, 'list-four': {},
     'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
     2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
     "incorrect get() output returned: %s" % test_instance.get()
@@ -116,6 +116,20 @@ def main():
 
   for i,j in zip(test_instance.list_container.list_five.keys(), range(1,10)):
     assert i == j, "ordered list had incorret key ordering (%d != %d)" % (i,j)
+
+  passed = False
+  try:
+    test_instance.list_container.list_five.add()
+  except KeyError:
+    passed = True
+  assert passed == True, "a list with a key value allowed an key-less value to be set"
+
+  x = test_instance.list_container.list_six.add()
+  test_instance.list_container.list_six[x]._set_val(10)
+
+  assert test_instance.list_container.list_six[x].val == 10, \
+    "a key-less list did not have the correct value set (%s %d != 10)" % \
+      (x,test_instance.list_container.list_six[x].val)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

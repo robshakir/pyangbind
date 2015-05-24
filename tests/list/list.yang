@@ -92,8 +92,16 @@ module list {
         list list-five {
             key "val";
             ordered-by user;
-            
-            leaf val { 
+
+            leaf val {
+                type uint8;
+            }
+        }
+
+        list list-six {
+            config false;
+
+            leaf val {
                 type uint8;
             }
         }

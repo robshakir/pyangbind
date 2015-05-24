@@ -158,7 +158,9 @@ def build_pybind(ctx, modules, fd):
   fd.write("from operator import attrgetter\n")
   fd.write("import numpy as np\n")
   fd.write("from decimal import Decimal\n")
-  fd.write("""import collections, re
+  fd.write("import uuid\n")
+  fd.write("""import collections
+import re
 
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
                     np.int8, np.int16, np.int32, np.int64]
@@ -420,26 +422,34 @@ def YANGListType(*args,**kwargs):
     def __setitem__(self, k, v):
       self.__set(k,v)
 
-    def __set(self, k, v=False):
+    def __set(self, k=False, v=False):
       if v and not self.__check__(v):
         raise ValueError, "value must be set to an instance of %s" % \
           (self._contained_class)
-      try:
-        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
-        if " " in self._keyval:
-          keys = self._keyval.split(" ")
-          keyparts = k.split(" ")
-          if not len(keyparts) == len(keys):
-            raise KeyError, "YANGList key must contain all key elements (%s)" % (self._keyval.split(" "))
-        else:
-          keys = [self._keyval,]
-          keyparts = [k,]
-        for i in range(0,len(keys)):
-          key = getattr(tmp, "_set_%s" % keys[i])
-          key(keyparts[i])
-        self._members[k] = tmp
-      except TypeError, m:
-        raise ValueError, "key value must be valid, %s" % m
+      if self._keyval:
+        try:
+          tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+          if " " in self._keyval:
+            keys = self._keyval.split(" ")
+            keyparts = k.split(" ")
+            if not len(keyparts) == len(keys):
+              raise KeyError, "YANGList key must contain all key elements (%s)" % (self._keyval.split(" "))
+          else:
+            keys = [self._keyval,]
+            keyparts = [k,]
+          for i in range(0,len(keys)):
+            key = getattr(tmp, "_set_%s" % keys[i])
+            key(keyparts[i])
+          self._members[k] = tmp
+        except TypeError, m:
+          raise ValueError, "key value must be valid, %s" % m
+      else:
+        # this is a list that does not have a key specified, and hence
+        # we generate a uuid that is used as the key, the method then
+        # returns the uuid for the upstream process to use
+        k = str(uuid.uuid1())
+        self._members[k] = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+        return k
 
     def __delitem__(self, k):
       del self._members[k]
@@ -448,9 +458,14 @@ def YANGListType(*args,**kwargs):
 
     def keys(self): return self._members.keys()
 
-    def add(self, k):
-      self.__set(k)
-      #self.set()
+    def add(self, k=False):
+      if self._keyval:
+        if not k:
+          raise KeyError, "a list with a key value must have a key specified"
+        self.__set(k)
+      else:
+        k = self.__set()
+        return k
 
     def delete(self, k):
       try:
@@ -843,7 +858,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
 
     keyval = False
     if parent.keyword == "list":
-      keyval = parent.search_one('key').arg
+      keyval = parent.search_one('key').arg if parent.search_one('key') is not None else False
 
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
@@ -895,7 +910,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       elif i["class"] == "list":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=YANGListType("
-        class_str += "\"%s\",%s" % (i["key"], i["type"])
+        class_str += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
         class_str += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
         class_str += ", user_ordered=%s" % i["user_ordered"]
         if i["choice"]:
@@ -1251,7 +1266,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                           "choice": choice,
                  }
       if element.keyword == "list":
-        elemdict["key"] = safe_name(element.search_one("key").arg)
+        elemdict["key"] = safe_name(element.search_one("key").arg) if element.search_one("key") is not None else False
         user_ordered = element.search_one('ordered-by')
         elemdict["user_ordered"] = True if user_ordered is not None \
           and user_ordered.arg.upper() == "USER" else False
