@@ -49,6 +49,26 @@ module typedef {
         }
     }
 
+    typedef parent-union {
+        type union {
+            type string {
+                pattern "a.*";
+            }
+            type string {
+                pattern "b.*";
+            }
+        }
+    }
+
+    typedef child-union {
+        type union {
+            type parent-union;
+            type string {
+                pattern "z.*";
+            }
+        }
+    }
+
     container container {
         description
             "A container";
@@ -97,6 +117,10 @@ module typedef {
             type restricted-int-inherit {
                 range 2..5;
             }
+        }
+
+        leaf-list stacked-union {
+            type child-union;
         }
     }
 }

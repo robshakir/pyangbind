@@ -49,7 +49,7 @@ def main():
 
   try:
     leaflist_instance.container.leaflist.append(int(1))
-  except TypeError, m:
+  except ValueError, m:
     pass
 
   assert len(leaflist_instance.container.leaflist) == 1, \
@@ -79,7 +79,7 @@ def main():
 
   try:
     leaflist_instance.container.leaflist = ["one", "two"]
-  except TypeError:
+  except ValueError:
     pass
 
   assert leaflist_instance.container.leaflist == ["one", "two"], \
@@ -88,7 +88,7 @@ def main():
   passed = False
   try:
     leaflist_instance.container.leaflist = [1,2]
-  except TypeError:
+  except ValueError:
     passed = True
   assert passed == True, "an erroneous value was assigned to the list"
 
@@ -98,7 +98,7 @@ def main():
   passed = False
   try:
     leaflist_instance.container.listtwo.append("broken-string")
-  except TypeError:
+  except ValueError:
     passed = True
   assert passed == True, "an erroneous value was assigned to the list (restricted type)"
 
@@ -108,7 +108,7 @@ def main():
     try:
       leaflist_instance.container.listthree.append(i[0])
       passed = True
-    except:
+    except ValueError:
       pass
     assert passed == i[1], "leaf-list of union type had invalid result (%s != %s for %s)" \
       % (passed, i[1], i[0])

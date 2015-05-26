@@ -41,7 +41,7 @@ def main():
   passed = True
   try:
     i.test_container.id1 = "hello"
-  except:
+  except ValueError:
     passed = False
   assert passed == False, "id1 leaf set to invalid value"
 
@@ -50,7 +50,7 @@ def main():
     i.test_container.id1 = k
     try:
       i.test_container.id1 = k
-    except:
+    except ValueError:
       passed = False
     assert passed == True, "id1 leaf was set to an invalid value (%s, %s)" % (passed,k)
 
@@ -59,7 +59,7 @@ def main():
     passed = True
     try:
       i.test_container.idr1 = k
-    except:
+    except ValueError:
       passed = False
     assert passed == True, "idr1 leaf was set to an invalid value (%s)" % k
 

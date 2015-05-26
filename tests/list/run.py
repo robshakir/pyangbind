@@ -43,7 +43,7 @@ def main():
 
   try:
     test_instance.list_container.list_element.add("wrong-key-type")
-  except ValueError, m:
+  except KeyError, m:
     pass
   assert len(test_instance.list_container.list_element) == 0, \
     "list item erroneously added with wrong key type"
@@ -87,19 +87,19 @@ def main():
   for i in ["aardvark", "bear", "chicken"]:
     try:
       test_instance.list_container.list_two.add(i)
-    except:
+    except KeyError:
       if i not in ["bear", "chicken"]:
         assert False, "invalid item added to a list with a restricted key, %s" % i
     try:
       test_instance.list_container.list_three.add(i)
-    except:
+    except KeyError:
       if i not in ["chicken"]:
         assert False, "invalid item added to a list with a union restricted key, %s" % i
 
   passed = True
   try:
     test_instance.list_container.list_element.keyval = 14
-  except:
+  except TypeError:
     passed = False
   assert passed, "keyvalue of a list was read-write when it should be read-only"
 
@@ -107,7 +107,7 @@ def main():
     try:
       test_instance.list_container.list_four.add(i[0])
       added = True
-    except:
+    except KeyError:
       added = False
     assert added == i[1], "list element erroneously added to multiple-key list (%s,%s)" % i
 
@@ -115,7 +115,7 @@ def main():
     test_instance.list_container.list_five.add(i)
 
   for i,j in zip(test_instance.list_container.list_five.keys(), range(1,10)):
-    assert i == j, "ordered list had incorret key ordering (%d != %d)" % (i,j)
+    assert i == j, "ordered list had incorrect key ordering (%d != %d)" % (i,j)
 
   passed = False
   try:

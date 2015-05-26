@@ -72,56 +72,56 @@ def main():
   e = False
   try:
     u.int_container.eightrestricted = -100
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for eightrestricted (-100)"
 
   e = False
   try:
     u.int_container.eightrestricted = 1001
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for eightrestricted (1001)"
 
   e = False
   try:
     u.int_container.sixteenrestricted = -43
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (-43)"
 
   e = False
   try:
     u.int_container.sixteenrestricted = 1001
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (1001)"
 
   e = False
   try:
     u.int_container.thirtytworestricted = 500001
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (500001)"
 
   e = False
   try:
     u.int_container.thirtytworestricted = -43
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (9999)"
 
   e = False
   try:
     u.int_container.sixtyfourrestricted = 72036854775809
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (72036854775809)"
 
   e = False
   try:
     u.int_container.sixtyfourrestricted = -43
-  except:
+  except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (-43)"
 

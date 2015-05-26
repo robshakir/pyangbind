@@ -85,7 +85,7 @@ def main():
   exception_raised = False
   try:
     test_instance.string_container.restricted_string = "bear"
-  except:
+  except ValueError:
     exception_raised = True
     pass
   assert test_instance.string_container.restricted_string == "aardvark", \

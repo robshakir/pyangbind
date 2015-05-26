@@ -55,7 +55,7 @@ def main():
   passed = False
   try:
     t.container.integer = 65 # outside of range
-  except:
+  except ValueError:
     passed = True
 
   assert passed == True, "restricted int from typedef was set to invalid value"
@@ -74,7 +74,7 @@ def main():
     wset = True
     try:
       t.container.inheritance = i[0]
-    except:
+    except ValueError:
       wset = False
     assert wset == i[1], \
       "inherited pattern was not correctly followed for %s (%s != %s)" \
@@ -84,11 +84,19 @@ def main():
     wset = True
     try:
       t.container.int_inheritance = i[0]
-    except:
+    except ValueError:
       wset = False
     assert wset == i[1], \
       "inherited range was not correctly followed for %s (%s != %s)" \
         % (i[0], i[1], wset)
+
+  for i in [("aardvark", True), ("bear", True), ("chicken", False), ("deer", False), ("zebra", True)]:
+    try:
+      t.container.stacked_union.append(i[0])
+      passed = True
+    except ValueError:
+      passed = False
+    assert passed == i[1], "incorrectly dealt with %s when added as a list key (%s != %s)" % (i[0], passed, i[1])
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

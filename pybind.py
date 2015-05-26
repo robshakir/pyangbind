@@ -267,7 +267,7 @@ def RestrictedClassType(*args, **kwargs):
         try:
           val = int(val)
         except:
-          raise ValueError, "must specify a numeric type for a range argument"
+          raise TypeError, "must specify a numeric type for a range argument"
       elif restriction_type == "dict_key":
         # populate enum values
         used_values = []
@@ -286,7 +286,7 @@ def RestrictedClassType(*args, **kwargs):
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       else:
-        raise ValueError, "unsupported restriction type"
+        raise TypeError, "unsupported restriction type"
       if not val == False:
         if not self._restriction_test(val):
           raise ValueError, "did not match restricted type"
@@ -356,7 +356,7 @@ def TypedListType(*args, **kwargs):
         except:
             pass
       if not passed:
-        raise TypeError("Cannot add %s to TypedList (accepts only %s)" % \
+        raise ValueError("Cannot add %s to TypedList (accepts only %s)" % \
           (v, self._allowed_type))
 
     def __len__(self): return len(self._list)
@@ -394,7 +394,7 @@ def YANGListType(*args,**kwargs):
     keyname = args[0]
     listclass = args[1]
   except:
-    raise AttributeError, "A YANGList must be specified with a key value and a contained class"
+    raise TypeError, "A YANGList must be specified with a key value and a contained class"
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
@@ -456,8 +456,8 @@ def YANGListType(*args,**kwargs):
             key = getattr(tmp, "_set_%s" % keys[i])
             key(keyparts[i])
           self._members[k] = tmp
-        except TypeError, m:
-          raise ValueError, "key value must be valid, %s" % m
+        except ValueError, m:
+          raise KeyError, "key value must be valid, %s" % m
       else:
         # this is a list that does not have a key specified, and hence
         # we generate a uuid that is used as the key, the method then
@@ -528,7 +528,7 @@ def YANGDynClass(*args,**kwargs):
   choice_member = kwargs.pop("choice", False)
   is_container = kwargs.pop("is_container", False)
   if not base_type:
-    raise AttributeError, "must have a base type"
+    raise TypeError, "must have a base type"
   if base_type in NUMPY_INTEGER_TYPES and len(args):
     if isinstance(args[0], list):
       raise TypeError, "do not support creating numpy ndarrays!"
@@ -782,7 +782,7 @@ def build_typedefs(defnd):
     if type_name in known_types:
       raise TypeError, "Duplicate definition of %s" % type_name
     default_stmt = item.search_one('default')
-    if not type(elemtype) == type(list()):
+    if not isinstance(elemtype,list):
       restricted = False
       class_map[type_name] = {"native_type": elemtype["native_type"], \
                                 "base_type": False,}
@@ -808,7 +808,10 @@ def build_typedefs(defnd):
       parent_type = []
       default = False if default_stmt is None else default_stmt.arg
       for i in elemtype:
-        native_type.append(i[1]["native_type"])
+        if isinstance(i[1]["native_type"], list):
+          native_type.extend(i[1]["native_type"])
+        else:
+          native_type.append(i[1]["native_type"])
         if i[1]["yang_type"] in known_types:
           parent_type.append(i[1]["yang_type"])
         else:
@@ -1056,7 +1059,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     try:
       t = YANGDynClass(v,%s)
     except (TypeError, ValueError):
-      raise TypeError(\"\"\"%s must be of a type compatible with %s\"\"\")
+      raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (set_str, i["name"], \
                           native_type, i["name"]))
       fd.write("    self.set()\n")
@@ -1446,6 +1449,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       if cls == "union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
       elemtype = elemtype["native_type"]
+
     elemdict = {"name": elemname, "type": elemtype,
                         "origtype": element.search_one('type').arg, "path": \
                         safe_name(path),
