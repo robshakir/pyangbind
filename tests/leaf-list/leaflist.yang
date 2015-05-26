@@ -12,6 +12,13 @@ module leaflist {
         reference "fooled-you";
     }
 
+    typedef union-key {
+        type union {
+            type string;
+            type int8;
+        }
+    }
+
     typedef restricted-string {
         type string {
             pattern "^a.*";
@@ -32,6 +39,12 @@ module leaflist {
             type restricted-string;
             description
                 "A restricted leaflist";
+        }
+
+        leaf-list listthree {
+            type union-key;
+            description
+                "A leaflist with a union key";
         }
     }
 }

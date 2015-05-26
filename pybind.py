@@ -322,10 +322,10 @@ def TypedListType(*args, **kwargs):
     allowed_type = [allowed_type,]
   # this was from collections.MutableSequence
   class TypedList(collections.MutableSequence):
-    _list = list()
-    _allowed_type = allowed_type
 
     def __init__(self, *args, **kwargs):
+      self._allowed_type = allowed_type
+      self._list = list()
       if len(args):
         for i in args[0]:
           self.check(i)
@@ -337,14 +337,25 @@ def TypedListType(*args, **kwargs):
         if isinstance(v, i):
           passed = True
         try:
+          # specific checks are required where there is a
+          # restricted class, so we generate a tmp type to
+          # be able to check the __bases__ of.
           tmp_t = RestrictedClassType(base_type=str, restriction_type="pattern", restriction_arg=".*")
           if i.__bases__ == tmp_t.__bases__:
             tmp = i(v)
             passed = True
+            break
+          elif i in NUMPY_INTEGER_TYPES:
+            # numpy has odd characteristics where
+            # it supports lists, so we check against
+            # int as well.
+            tmp = int(v)
+            tmp = i(v)
+            passed = True
+            break
         except:
             pass
       if not passed:
-      #if not isinstance(v, self._allowed_type):
         raise TypeError("Cannot add %s to TypedList (accepts only %s)" % \
           (v, self._allowed_type))
 
@@ -358,6 +369,10 @@ def TypedListType(*args, **kwargs):
     def insert(self, i, v):
       self.check(v)
       self._list.insert(i,v)
+
+    def append(self, v):
+      self.check(v)
+      self._list.append(v)
 
     def __str__(self):
       return str(self._list)
@@ -904,7 +919,14 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       if i["class"] == "leaf-list":
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base="
-        class_str += "%s(allowed_type=%s)" % i["type"]["native_type"]
+        if isinstance(i["type"]["native_type"][1], list):
+          allowed_type = "["
+          for subtype in i["type"]["native_type"][1]:
+            allowed_type += "%s," % subtype
+          allowed_type += "]"
+        else:
+          allowed_type = "%s" % (i["type"]["native_type"][1])
+        class_str += "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
         if "default" in i.keys() and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       elif i["class"] == "list":
@@ -979,7 +1001,14 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
              description_str, i["name"]))
 
       if i["class"] == "leaf-list":
-        native_type = "%s(allowed_type=%s)" % i["type"]["native_type"]
+        if isinstance(i["type"]["native_type"][1], list):
+          allowed_type = "["
+          for subtype in i["type"]["native_type"]:
+            allowed_type += "%s," % subtype
+          allowed_type += "]"
+        else:
+          allowed_type = "%s" % (i["type"]["native_type"][1])
+        native_type = "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
       elif i["class"] == "union":
         native_type = "["
         for u in i["type"][1]:

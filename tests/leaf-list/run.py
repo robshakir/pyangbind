@@ -74,7 +74,7 @@ def main():
     "list item not succesfully removed by delitem"
 
   assert leaflist_instance.get() == \
-    {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'], 'listtwo': []}}, \
+    {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'], 'listtwo': [], 'listthree': []}}, \
     "get did not correctly return the dictionary"
 
   try:
@@ -100,8 +100,20 @@ def main():
     leaflist_instance.container.listtwo.append("broken-string")
   except TypeError:
     passed = True
-
   assert passed == True, "an erroneous value was assigned to the list (restricted type)"
+
+
+  for i in [(1,True), ("fish", True), ([], False)]:
+    passed = False
+    try:
+      leaflist_instance.container.listthree.append(i[0])
+      passed = True
+    except:
+      pass
+    assert passed == i[1], "leaf-list of union type had invalid result (%s != %s for %s)" \
+      % (passed, i[1], i[0])
+
+
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
