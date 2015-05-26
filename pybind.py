@@ -160,7 +160,7 @@ def build_pybind(ctx, modules, fd):
   fd.write("from decimal import Decimal\n")
   fd.write("import uuid\n")
   fd.write("""import collections
-
+from xpathhelper import YANGPathHelper
 import re
 
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -400,6 +400,8 @@ def YANGListType(*args,**kwargs):
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
   user_ordered = kwargs.pop("user_ordered", False)
+  path_helper = kwargs.pop("path_helper", False)
+  path = kwargs.pop("path", False)
   class YANGList(object):
     def __init__(self, *args, **kwargs):
       if user_ordered:
@@ -410,6 +412,7 @@ def YANGListType(*args,**kwargs):
       if not type(listclass) == type(int):
         raise ValueError, "contained class of a YANGList must be a class"
       self._contained_class = listclass
+      self._path_helper = path_helper
 
     def __str__(self):
       return self._members.__str__()
@@ -442,9 +445,12 @@ def YANGListType(*args,**kwargs):
       if v and not self.__check__(v):
         raise ValueError, "value must be set to an instance of %s" % \
           (self._contained_class)
+      print "in __set: %s" % self._keyval
       if self._keyval:
         try:
-          tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+          print path+"[%s=%s]"% (self._keyval, k)
+          tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
+                  is_container=is_container, path_helper=path_helper, path=path+"[%s=%s]" % (self._keyval, k))
           if " " in self._keyval:
             keys = self._keyval.split(" ")
             keyparts = k.split(" ")
@@ -464,7 +470,8 @@ def YANGListType(*args,**kwargs):
         # we generate a uuid that is used as the key, the method then
         # returns the uuid for the upstream process to use
         k = str(uuid.uuid1())
-        self._members[k] = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, is_container=is_container)
+        self._members[k] = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
+                            is_container=is_container, path_helper=path_helper, path=path)
         return k
 
     def __delitem__(self, k):
@@ -475,6 +482,7 @@ def YANGListType(*args,**kwargs):
     def keys(self): return self._members.keys()
 
     def add(self, k=False):
+      print "in add(): %s" % self._keyval
       if self._keyval:
         if not k:
           raise KeyError, "a list with a key value must have a key specified"
@@ -528,6 +536,9 @@ def YANGDynClass(*args,**kwargs):
   parent_instance = kwargs.pop("parent", False)
   choice_member = kwargs.pop("choice", False)
   is_container = kwargs.pop("is_container", False)
+  path_helper = kwargs.pop("path_helper", False)
+  path = kwargs.pop("path", False)
+  print "path_helper was %s @ %s -- %s" % (path_helper, yang_name, path)
   if not base_type:
     raise TypeError, "must have a base type"
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -567,6 +578,9 @@ def YANGDynClass(*args,**kwargs):
       self._yang_name = yang_name
       self._parent = parent_instance
       self._choice = choice_member
+      self._path_helper = path_helper
+      if self._path_helper:
+        self._path_helper.register(path, self)
       if default:
         self._default = default
       if len(args):
@@ -614,30 +628,41 @@ def YANGDynClass(*args,**kwargs):
         raise AttributeError("%s object has no attribute append" % base_type)
       self.set()
       super(YANGBaseClass, self).append(*args,**kwargs)
+      if self._path_helper:
+        register_path = path+"/"+args[0]
+        super_class = super(YANGBaseClass, self)
+        self._path_helper.register(register_path, super_class.__getitem__(super_class.__len__()-1))
 
     def pop(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
       self.set()
       super(YANGBaseClass, self).pop(*args, **kwargs)
+      # TODO: remove element from helper
 
     def remove(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
       self.set()
       super(YANGBaseClass, self).remove(*args, **kwargs)
+      # TODO: remove element from helper
 
     def extend(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "extend"):
         raise AttributeError("%s object has no attribute extend" % base_type)
       self.set()
       super(YANGBaseClass, self).extend(*args, **kwargs)
+      # Note we do not call register() here for a path_helper as extend()
+      # will call append.
 
     def insert(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass,self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
       self.set()
       super(YANGBaseClass, self).insert(*args, **kwargs)
+      if self._path_helper:
+        register_path = path+"/"+args[1]
+        self._path_helper.register(register_path, super(YANGBaseClass, self).__getitem__(args[0]))
 
   return YANGBaseClass(*args, **kwargs)
 """)
@@ -880,6 +905,10 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     keyval = False
     if parent.keyword == "list":
       keyval = parent.search_one('key').arg if parent.search_one('key') is not None else False
+      if keyval and " " in keyval:
+        keyval = keyval.split(" ")
+      else:
+        keyval = [keyval,]
 
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
@@ -904,7 +933,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
     e_str = "__elements = {"
-    slots_str = "  __slots__ = ("
+    slots_str = "  __slots__ = ('_path_helper', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
       e_str +=  "'%s': %s, " % (i["name"], i["name"])
@@ -941,6 +970,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
         class_str += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
         class_str += ", user_ordered=%s" % i["user_ordered"]
+        class_str += ", path_helper=self._path_helper, path=\'%s\'" % (path+"/"+i["yang_name"])
         if i["choice"]:
           class_str += ", choice=%s" % repr(choice)
         class_str += ")"
@@ -979,10 +1009,22 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           if not i["choice"][1] in choices[i["choice"][0]]:
             choices[i["choice"][0]][i["choice"][1]] = []
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
+        class_str += ", path_helper=self._path_helper"
+        class_str += ", path='%s'" % (path+"/"+i["yang_name"])
         class_str += ")\n"
         classes.append(class_str)
     fd.write("""
   def __init__(self, *args, **kwargs):\n""")
+    if path == "":
+      fd.write("""
+    helper = kwargs.pop("path_helper", False)
+    if helper and isinstance(helper, YANGPathHelper):
+      self._path_helper = helper
+    else:
+      self._path_helper = False
+    if self._path_helper:
+      print "registering %s"
+      self._path_helper.register(\'%s\', self)\n""" % (path, path if not path == "" else "root"))
     for c in classes:
       fd.write("    self.%s" % c)
     fd.write("""
@@ -1052,6 +1094,8 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       set_str += default_s
       set_str += ", yang_name=\"%s\"" % i["yang_name"]
       set_str += ", parent=self"
+      set_str += ", path_helper=self._path_helper"
+      set_str += ",   path='%s'" % (path+"/"+i["yang_name"])
       if i["class"] in ["container"]:
         set_str += ", is_container=True"
       if i["choice"]:
@@ -1085,7 +1129,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         rw = False
       elif not parent_cfg:
         rw = False
-      elif i["yang_name"] == keyval:
+      elif keyval and i["yang_name"] in keyval:
         rw = False
 
       if not rw:
@@ -1096,6 +1140,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
   fd.write("\n")
   if choices:
     fd.write("  __choices__ = %s" % repr(choices))
+
   fd.write("""
 
   %s

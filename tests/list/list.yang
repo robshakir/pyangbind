@@ -96,6 +96,10 @@ module list {
             leaf val {
                 type uint8;
             }
+
+            leaf adjunct {
+                type uint8;
+            }
         }
 
         list list-six {

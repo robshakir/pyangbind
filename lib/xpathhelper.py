@@ -26,6 +26,8 @@ class XPathError(Exception):
 
 class YANGPathHelper(object):
   _attr_re = re.compile("(?P<tagname>.*)\[(?P<attr>.*)[ ]?=[ ]?(?P<val>.*)\]")
+  _numeric_re = re.compile("^[0-9]+$")
+  _numeric_fix_re = re.compile("^(?P<added>i\_\_)(?P<numeric>[0-9]+)$")
 
   def __init__(self):
     self._root = etree.Element("root")
@@ -42,13 +44,17 @@ class YANGPathHelper(object):
         if not re.match("^[\'\"].*[\'\"]$", val):
           val = "'%s'" % val
         path_p = "%s[@%s=%s]" % (tagname, key, val)
+      if self._numeric_re.match(path_p):
+        path_p = "i__%s" % path_p
+      elif self._numeric_fix_re.match(path_p):
+        path_p = self._numeric_fix_re.sub('\g<numeric>',path_p)
       path += path_p + "/"
-
-
     path = path.rstrip("/")
     return path
 
   def register(self, object_path, ptr, caller=False):
+    if object_path == "root":
+      return True
     if not re.match("^(\.|\.\.|\/)", object_path):
       raise XPathError("A valid relative or absolute path must start with '.', '..', or '/'")
     fx_object_path = self._fix_query_string(object_path)
@@ -70,6 +76,7 @@ class YANGPathHelper(object):
       key = re.sub("^@", "", key)
       elemname = tagname
       setk = True
+    print "REGISTERING AT %s/%s" % (parent, elemname)
     added_item = etree.SubElement(parent, elemname, obj=object_path)
     if setk:
       added_item.set(key, val)
@@ -83,6 +90,6 @@ class YANGPathHelper(object):
       raise KeyError, "object specified (%s) does not exist in tree" % object_path
     return self._library[retr_obj.get("obj")]
 
-  def tostring(self):
-    return etree.tostring(self._root)
+  def tostring(self,pretty_print=False):
+    return etree.tostring(self._root,pretty_print=pretty_print)
 
