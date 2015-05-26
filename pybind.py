@@ -982,12 +982,20 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
   def __init__(self, *args, **kwargs):\n""")
     for c in classes:
       fd.write("    self.%s" % c)
-#    fd.write("""
-#    #if args:
-#      # we do not support creating a new instance of a container
-#      # object with an argument.
-#    #  raise TypeError, "YANG containers cannot be initiated with an argument"
-#""")
+    fd.write("""
+    if args:
+      if len(args) > 1:
+        raise TypeError, "cannot create a YANG container with >1 argument"
+      all_attr = True
+      for e in self.__elements:
+        if not hasattr(args[0], e):
+          all_attr = False
+          break
+      if not all_attr:
+        raise TypeError, "object did not have the correct attributes"
+      for e in self.__elements:
+        setattr(self, getattr(args[0], e))
+""")
 
     node = {}
     for i in elements:
