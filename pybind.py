@@ -992,7 +992,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           all_attr = False
           break
       if not all_attr:
-        raise TypeError, "object did not have the correct attributes"
+        raise ValueError, "Supplied object did not have the correct attributes"
       for e in self.__elements:
         setattr(self, getattr(args[0], e))
 """)
