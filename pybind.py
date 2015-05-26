@@ -160,6 +160,7 @@ def build_pybind(ctx, modules, fd):
   fd.write("from decimal import Decimal\n")
   fd.write("import uuid\n")
   fd.write("""import collections
+
 import re
 
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -271,18 +272,18 @@ def RestrictedClassType(*args, **kwargs):
       elif restriction_type == "dict_key":
         # populate enum values
         used_values = []
-        for k in restriction_arg.keys():
-          if "value" in restriction_arg[k].keys():
+        for k in restriction_arg:
+          if "value" in restriction_arg[k]:
             used_values.append(int(restriction_arg[k]["value"]))
         c = 0
-        for k in restriction_arg.keys():
+        for k in restriction_arg:
           while c in used_values:
             c += 1
-          if not "value" in restriction_arg[k].keys():
+          if not "value" in restriction_arg[k]:
             restriction_arg[k]["value"] = c
           c += 1
         self._restriction_test = staticmethod(lambda i: i in \
-                                              restriction_arg.keys())
+                                              restriction_arg)
         self._restriction_arg = restriction_arg
         self._restriction_type = restriction_type
       else:
@@ -424,10 +425,10 @@ def YANGListType(*args,**kwargs):
       return True
 
     def __iter__(self):
-      return iter(self._members.keys())
+      return iter(self._members)
 
     def __contains__(self,k):
-      if k in self._members.keys():
+      if k in self._members:
         return True
       return False
 
@@ -581,7 +582,7 @@ def YANGDynClass(*args,**kwargs):
 
     def set(self,choice=False):
       if hasattr(self, '__choices__') and choice:
-        for ch in self.__choices__.keys():
+        for ch in self.__choices__:
           if ch == choice[0]:
             for case in self.__choices__[ch]:
               if not case == choice[1]:
@@ -661,8 +662,8 @@ def YANGDynClass(*args,**kwargs):
     defn[defnt] = {}
     for m in all_mods:
       t = find_definitions(defnt, ctx, m[1], m[0])
-      for k in t.keys():
-        if not k in defn[defnt].keys():
+      for k in t:
+        if not k in defn[defnt]:
           defn[defnt][k] = t[k]
 
   build_identities(defn['identity'])
@@ -682,7 +683,7 @@ def YANGDynClass(*args,**kwargs):
 
 def build_identities(defnd):
   unresolved_idc = {}
-  for i in defnd.keys():
+  for i in defnd:
     unresolved_idc[i] = 0
   unresolved_ids = defnd.keys()
   error_ids = []
@@ -694,19 +695,19 @@ def build_identities(defnd):
     if base is None:
       identity_d[ident] = {}
     else:
-      if base.arg in identity_d.keys():
+      if base.arg in identity_d:
         val = ident
         if ":" in ident:
           parts = ident.split(":")
           val = parts[1]
           pfx = parts[0]
-          if "%s:%s" % (pfx, base.arg) in identity_d.keys():
+          if "%s:%s" % (pfx, base.arg) in identity_d:
             identity_d["%s:%s" % (pfx, base.arg)][val] = {}
-        if ":" in base.arg and base.arg.split(":")[1] in identity_d.keys():
+        if ":" in base.arg and base.arg.split(":")[1] in identity_d:
           identity_d[base.arg.split(":")[1]][val] = {}
         identity_d[base.arg][val] = {}
         # everything that is a value can also be a base
-        if not val in identity_d.keys():
+        if not val in identity_d:
           identity_d[val] = {}
       else:
         if unresolved_idc[ident] > 1000:
@@ -717,14 +718,16 @@ def build_identities(defnd):
           unresolved_ids.append(ident)
           unresolved_idc[ident] += 1
 
+  # use keys() as the dictionary will change size when we
+  # del an item.
   for potential_identity in identity_d.keys():
-    if len(identity_d[potential_identity].keys()) == 0:
+    if len(identity_d[potential_identity]) == 0:
       del identity_d[potential_identity]
 
   if error_ids:
     raise TypeError, "could not resolve identities %s" % error_ids
 
-  for i in identity_d.keys():
+  for i in identity_d:
     id_type = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
                 "restriction_argument": identity_d[i], \
                 "restriction_type": "dict_key",
@@ -734,7 +737,7 @@ def build_identities(defnd):
 
 def build_typedefs(defnd):
   unresolved_tc = {}
-  for i in defnd.keys():
+  for i in defnd:
     unresolved_tc[i] = 0
   unresolved_t = defnd.keys()
   error_ids = []
@@ -786,7 +789,7 @@ def build_typedefs(defnd):
       restricted = False
       class_map[type_name] = {"native_type": elemtype["native_type"], \
                                 "base_type": False,}
-      if "parent_type" in elemtype.keys():
+      if "parent_type" in elemtype:
         class_map[type_name]["parent_type"] = elemtype["parent_type"]
       else:
         yang_type = item.search_one('type').arg
@@ -796,12 +799,12 @@ def build_typedefs(defnd):
         class_map[type_name]["parent_type"] = yang_type
       if default_stmt is not None:
         class_map[type_name]["default"] = default_stmt.arg
-      if "restriction_type" in elemtype.keys():
+      if "restriction_type" in elemtype:
         class_map[type_name]["restriction_type"] = \
                                               elemtype["restriction_type"]
         class_map[type_name]["restriction_argument"] = \
                                               elemtype["restriction_argument"]
-      if "quote_arg" in elemtype.keys():
+      if "quote_arg" in elemtype:
         class_map[type_name]["quote_arg"] = elemtype["quote_arg"]
     else:
       native_type = []
@@ -818,9 +821,9 @@ def build_typedefs(defnd):
           msg = "typedef in a union specified a native type that was not"
           msg += "supported (%s in %s)" % (i[1]["yang_type"], item.arg)
           raise TypeError, msg
-        if "default" in i[1].keys() and not default:
+        if "default" in i[1] and not default:
           # we do strict ordering, so only the first default wins
-          q = True if "quote_arg" in i[1].keys() else False
+          q = True if "quote_arg" in i[1] else False
           default = (i[1]["default"], q)
       class_map[type_name] = {"native_type": native_type, "base_type": False,
                               "parent_type": parent_type,}
@@ -867,7 +870,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     else:
       elements += get_element(fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
 
-  if parent.keyword in ["container", "module", "submodule", "list"]:
+  if parent.keyword in ["container", "module", "list", "submodule"]:
     if not path == "":
       fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
         safe_name(path.replace("/", "_"))))
@@ -915,7 +918,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     classes = []
     for i in elements:
       class_str = False
-      if "default" in i.keys() and not i["default"] is None:
+      if "default" in i and not i["default"] is None:
         default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
@@ -930,7 +933,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         else:
           allowed_type = "%s" % (i["type"]["native_type"][1])
         class_str += "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
-        if "default" in i.keys() and not i["default"] is None:
+        if "default" in i and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       elif i["class"] == "list":
         class_str = "__%s" % (i["name"])
@@ -947,7 +950,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         for u in i["type"][1]:
           class_str += "%s," % u[1]["native_type"]
         class_str += "]"
-        if "default" in i.keys() and not i["default"] is None:
+        if "default" in i and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       elif i["class"] == "leaf-union":
         class_str = "__%s" % (i["name"])
@@ -955,13 +958,13 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         for u in i["type"]:
           class_str += "%s," % u
         class_str += "]"
-        if "default" in i.keys() and not i["default"] is None:
+        if "default" in i and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       else:
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass("
         class_str += "base=%s" % i["type"]
-        if "default" in i.keys() and not i["default"] is None:
+        if "default" in i and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         if i["class"] in ["container"]:
           class_str += ", is_container=True"
@@ -971,9 +974,9 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         if i["choice"]:
           class_str += ", choice=%s" % repr(i["choice"])
           choice_attrs.append(i["name"])
-          if not i["choice"][0] in choices.keys():
+          if not i["choice"][0] in choices:
             choices[i["choice"][0]] = {}
-          if not i["choice"][1] in choices[i["choice"][0]].keys():
+          if not i["choice"][1] in choices[i["choice"][0]]:
             choices[i["choice"][0]][i["choice"][1]] = []
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str += ")\n"
@@ -1033,7 +1036,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       else:
         native_type = i["type"]
 
-      if "default" in i.keys() and not i["default"] is None:
+      if "default" in i and not i["default"] is None:
         if i["quote_arg"]:
           default_arg = repr(i["default"])
         else:
@@ -1108,7 +1111,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       return NameError, "element does not exist"
     d = {}
     # for each YANG element within this container.
-    for element_name in self.__elements.keys():
+    for element_name in self.__elements:
       element = getattr(self, element_name, error)
       if hasattr(element, "yang_name"):
         # retrieve the YANG name method
@@ -1125,11 +1128,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           # filtering unchanged elements, remove it
           # from the dictionary
           if isinstance(d[element_id], dict):
-            for entry in d[element_id].keys():
+            for entry in d[element_id]:
               if hasattr(d[element_id][entry], "changed"):
                 if not d[element_id][entry].changed():
                   del d[element_id][entry]
-            if len(d[element_id].keys()) == 0:
+            if len(d[element_id]) == 0:
               del d[element_id]
           elif isinstance(d[element_id], list):
             for list_entry in d[element_id]:
@@ -1334,12 +1337,12 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       # this is a union, we should check whether any of the types
       # immediately has a default
       for i in elemtype:
-        if "default" in i[1].keys():
+        if "default" in i[1]:
           elemdefault = i[1]["default"]
           default_type = i[1]
           #default_type = i[1]
           #mapped_elemtype = i[1]
-    elif "default" in elemtype.keys():
+    elif "default" in elemtype:
       # if the actual type defines the default, then we need to maintain
       # this
       elemdefault = elemtype["default"]
@@ -1354,12 +1357,12 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       if isinstance(elemtype, list):
         # this type has multiple parents
         for i in elemtype:
-          if "parent_type" in i[1].keys():
+          if "parent_type" in i[1]:
             if isinstance(i[1]["parent_type"], list):
               to_visit = [j for j in i[1]["parent_type"]]
             else:
               to_visit = [i[1]["parent_type"],]
-      elif "parent_type" in elemtype.keys():
+      elif "parent_type" in elemtype:
         if isinstance(elemtype["parent_type"], list):
           to_visit = [i for i in elemtype["parent_type"]]
         else:
@@ -1370,7 +1373,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
           check = to_visit.pop(0)
           if check not in checked:
             checked.append(check)
-            if "parent_type" in tmp_class_map[check].keys():
+            if "parent_type" in tmp_class_map[check]:
               if isinstance(tmp_class_map[check]["parent_type"], list):
                 to_visit.extend(tmp_class_map[check]["parent_type"])
               else:
@@ -1379,7 +1382,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
         # checked now has the breadth-first search result
         if elemdefault is None:
           for option in checked:
-            if "default" in tmp_class_map[option].keys():
+            if "default" in tmp_class_map[option]:
               elemdefault = tmp_class_map[option]["default"]
               default_type = tmp_class_map[option]
               break
@@ -1404,7 +1407,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
             pass
 
       if not default_type["base_type"]:
-        if "parent_type" in default_type.keys():
+        if "parent_type" in default_type:
           if isinstance(default_type["parent_type"], list):
             to_visit = [i for i in default_type["parent_type"]]
           else:
@@ -1414,7 +1417,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
           check = to_visit.pop(0) # remove from the top of stack - depth first
           if not check in checked:
             checked.append(check)
-            if "parent_type" in tmp_class_map[check].keys():
+            if "parent_type" in tmp_class_map[check]:
               if isinstance(tmp_class_map[check]["parent_type"], list):
                 to_visit.expand(tmp_class_map[check]["parent_type"])
               else:
@@ -1425,7 +1428,7 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
 
     if default_type:
       quote_arg = default_type["quote_arg"] if "quote_arg" in \
-                    default_type.keys() else False
+                    default_type else False
       default_type = default_type["native_type"]
 
     elemconfig = class_bool_map[element.search_one('config').arg] if \
