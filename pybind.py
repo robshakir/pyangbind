@@ -655,6 +655,7 @@ def YANGDynClass(*args,**kwargs):
       if mod is not None:
         imported_module_prefix = j.search_one('prefix').arg
         mods.append((imported_module_prefix, mod))
+        modules.append(mod)
     all_mods.extend(mods)
 
   defn = {}

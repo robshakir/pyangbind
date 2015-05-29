@@ -98,6 +98,16 @@ def main():
       passed = False
     assert passed == i[1], "incorrectly dealt with %s when added as a list key (%s != %s)" % (i[0], passed, i[1])
 
+  for i in [("zebra", True), ("yak", False)]:
+    try:
+      t.container.include_of_include_definition = i[0]
+      wset = True
+    except:
+      wset = False
+    assert wset == i[1], \
+      "definition with hybrid typedef across two modules was not set correctly for %s (%s != %s)" \
+        % (i[0], i[1], wset)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
