@@ -102,10 +102,20 @@ def main():
     try:
       t.container.include_of_include_definition = i[0]
       wset = True
-    except:
+    except ValueError:
       wset = False
     assert wset == i[1], \
       "definition with hybrid typedef across two modules was not set correctly for %s (%s != %s)" \
+        % (i[0], i[1], wset)
+
+  for i in [("IDONE", True), ("IDTWO", True), ("IDTHREE", False)]:
+    try:
+      t.container.identity_one_typedef = i[0]
+      wset = True
+    except ValueError:
+      wset = False
+    assert wset == i[1], \
+      "definition with a typedef which references an identity was not set correctly for %s (%s != %s)" \
         % (i[0], i[1], wset)
 
   if not k:

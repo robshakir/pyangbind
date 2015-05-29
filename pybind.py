@@ -751,6 +751,8 @@ def build_typedefs(defnd):
     base_t = defnd[t].search_one('type')
     if base_t.arg == "union":
       subtypes = [i for i in base_t.search('type')]
+    elif base_t.arg == "identityref":
+      subtypes = [base_t.search_one('base'),]
     else:
       subtypes = [base_t,]
 

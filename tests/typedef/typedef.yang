@@ -69,6 +69,21 @@ module typedef {
         }
     }
 
+    identity identity_base;
+    identity IDONE {
+        base "identity_base";
+    }
+
+    identity IDTWO {
+        base "identity_base";
+    }
+
+    typedef identity_one {
+        type identityref {
+            base identity_base;
+        }
+    }
+
     container container {
         description
             "A container";
@@ -125,6 +140,10 @@ module typedef {
 
         leaf include-of-include-definition {
             type defn:hybrid-definition;
+        }
+
+        leaf identity-one-typedef {
+            type identity_one;
         }
     }
 }
