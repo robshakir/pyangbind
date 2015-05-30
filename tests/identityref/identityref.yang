@@ -29,6 +29,18 @@ module identityref {
         description "option two on the base";
     }
 
+    identity base-identity-no-exts;
+
+    identity base-identity-with-refs;
+
+    identity base-identity-ref-one {
+        base "base-identity-with-refs";
+    }
+
+    identity base-identity-ref-stacked {
+        base "base-identity-ref-one";
+    }
+
     container test-container {
         leaf id1 {
             type identityref {
@@ -39,6 +51,24 @@ module identityref {
         leaf idr1 {
             type identityref {
                 base defn:remote-base;
+            }
+        }
+
+        leaf no-ext-leaf {
+            type identityref {
+                base base-identity-no-exts;
+            }
+        }
+
+        leaf ref-one-leaf {
+            type identityref {
+                base base-identity-ref-one;
+            }
+        }
+
+        leaf stacked-id-leaf {
+            type identityref {
+                base base-identity-ref-stacked;
             }
         }
     }

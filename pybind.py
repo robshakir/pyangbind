@@ -719,12 +719,6 @@ def build_identities(defnd):
           unresolved_ids.append(ident)
           unresolved_idc[ident] += 1
 
-  # use keys() as the dictionary will change size when we
-  # del an item.
-  for potential_identity in identity_d.keys():
-    if len(identity_d[potential_identity]) == 0:
-      del identity_d[potential_identity]
-
   if error_ids:
     raise TypeError, "could not resolve identities %s" % error_ids
 
@@ -1243,7 +1237,7 @@ def build_elemtype(et, prefix=False):
     try:
       elemtype = class_map[base_stmt.arg]
     except KeyError:
-      sys.stderr.write("FATAL: identityref with an unknown base\n")
+      sys.stderr.write("FATAL: identityref with an unknown base (%s)\n" % base_stmt.arg)
       if DEBUG:
         pp.pprint(class_map.keys())
         pp.pprint(et.arg)
