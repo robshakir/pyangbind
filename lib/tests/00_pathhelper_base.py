@@ -26,9 +26,11 @@ def t1_add_retr_object_plain(tree=False):
   obj_one = TestObject("t1_ObjOneTest")
   tree.register("/obj_one", obj_one)
   retr_obj = tree.get("/obj_one")
-  assert isinstance(retr_obj, TestObject), ("retrieved object was not the " +
+  assert len(retr_obj) == 1, ("retrieved path matched the wrong number of objects (%d != 1)"
+    % (len(retr_obj)))
+  assert isinstance(retr_obj[0], TestObject), ("retrieved object was not the " +
             "correct class")
-  assert retr_obj.name() == "t1_ObjOneTest", ("retrieved object had an " +
+  assert retr_obj[0].name() == "t1_ObjOneTest", ("retrieved object had an " +
             "invalid name specified (%s != t1_ObjOneTest)" % retr_obj.name())
   if del_tree:
     del tree
@@ -39,16 +41,17 @@ def t2_add_retr_object_with_attr(tree=False):
     del_tree = True
     tree = YANGPathHelper()
   for p in ["/container", "/container/deeper"]:
-    tree.register(p, TestContainer())
+    tree.register("%s" % p, TestObject("container"))
     for q_style in ["'", '"', ""]:
       for i in range(0,5):
-        tree.register("%s[id=%s%d%s]" % (p, q_style, i, q_style,), TestObject("t2_ObjTest%d" % i))
+        tree.register("%s/foo[id=%s%d%s]" % (p, q_style, i, q_style,), TestObject("t2_ObjTest%d" % i))
       for q_style in ["'", '"', ""]:
         for j in range(0,5):
-          retr_obj = tree.get("%s[id=%s%d%s]" % (p, q_style, j, q_style,))
-          assert isinstance(retr_obj, TestObject), ("retrieved object was not " +
+          retr_obj = tree.get("%s/foo[id=%s%d%s]" % (p, q_style, j, q_style,))
+          assert len(retr_obj) == 1, ("retrieved the wrong number of objects (%d != 1)" % len(retr_obj))
+          assert isinstance(retr_obj[0], TestObject), ("retrieved object was not " +
                     "the correct class")
-          assert retr_obj.name() == "t2_ObjTest%d" % j, ("retrieved object had an " +
+          assert retr_obj[0].name() == "t2_ObjTest%d" % j, ("retrieved object had an " +
                   "invalid name specified (%s != t2_ObjTest%d, q_style=%s)" % (retr_obj.name(), j ,q_style))
   if del_tree:
     del tree
@@ -68,7 +71,9 @@ def t3_add_retr_object_hierarchy(tree=False):
   for j in range(0,10):
     path += "/node%d"% j
     retr_obj = tree.get(path)
-    assert retr_obj.name() == j, ("retrieved object did not " +
+    assert len(retr_obj) == 1, ("incorrect number of objects retrieved for %s (%d != 1)" %
+      (path,len(retr_obj)))
+    assert retr_obj[0].name() == j, ("retrieved object did not " +
               "have a valid name (%s != %s)" % (j, retr_obj.name()))
 
 def t4_retr_obj_error(tree=False):
@@ -77,12 +82,10 @@ def t4_retr_obj_error(tree=False):
     del_tree = True
     tree = YANGPathHelper()
 
-  try:
-    tree.get("/a/non-existant/path")
-  except KeyError:
-    passed = True
-  assert passed == True, ("getting a non-existant path should raise KeyError" +
-            "but did not!")
+  retr = tree.get("/a/non-existant/path")
+
+  assert len(retr) == 0, ("getting a non-existant path returned the wrong number" +
+            "of objects (%d != 0)" % (len(retr)))
 
   passed = False
   try:

@@ -62,7 +62,7 @@ def main():
   test_instance.list_container.list_element[2].another_value == "aSecondDefaultValue"
 
   assert test_instance.get() == \
-    {'list-container': {'list-six': {}, 'list-five': {}, 'list-two': {}, 'list-three': {}, 'list-four': {},
+    {'list-container': {'list-seven': {}, 'list-six': {}, 'list-five': {}, 'list-two': {}, 'list-three': {}, 'list-four': {},
     'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
     2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
     "incorrect get() output returned: %s" % test_instance.get()
