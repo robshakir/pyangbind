@@ -29,55 +29,53 @@ class XPathError(Exception):
 class YANGPathHelper(object):
   _attr_re = re.compile("^(?P<tagname>.*)\[(?P<arg>.*)\]$")
   _arg_re = re.compile("^[@]?(?P<cmd>[a-zA-Z0-9\-\_]+)([ ]+)?=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?(?P<remainder>.*)")
+  _relative_path_re = re.compile("^(\.|\.\.)")
 
   def __init__(self):
     self._root = etree.Element("root")
     self._library = {}
 
+  def _encode_path(self, path, mode="search", find_parent=False):
+      if not mode in ["search", "set"]:
+        raise XPathError, "Path can only be encoded based on searching or setting attributes"
+      epath = ""
+      parts = path.split("/")
+
+      if find_parent and len(parts) == 2:
+        return "/"
+
+      lastelem = len(parts)-1 if find_parent else len(parts)
+      for i in range(1,lastelem):
+        (tagname, attributes) = self._tagname_attributes(parts[i])
+        if attributes is not None:
+          epath += "/" + tagname + "["
+          #print "ATTRS WAS %s" % attributes
+          for k,v in attributes.iteritems():
+            epath += "@%s='%s' " % (k,v)
+            if mode == "search":
+              epath += "and "
+          if mode == "search":
+            epath = epath.rstrip("and ")
+          epath = epath.rstrip(" ") + "]"
+        else:
+          epath += "/" + tagname
+      return epath
 
   def _tagname_attributes(self, tag):
-    tagname,attributes = tag,None
-    if self._attr_re.match(tag):
-      tagname,arg = self._attr_re.sub('\g<tagname>||\g<arg>', tag).split("||")
-      attributes = {}
-      cmd_arg_pairs = []
-      tmp_arg = arg
-      while len(tmp_arg):
-        if self._arg_re.match(tmp_arg):
-          c,a,r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>', tmp_arg).split("||")
-          attributes[c] = a
-          tmp_arg = r
-        else:
-          raise XPathError, "invalid attribute string specified for %s - %s" % (tagname, arg)
-
-    return (tagname, attributes)
-
-  def _encode_path(self, path, mode="search", find_parent=False):
-    if not mode in ["search", "set"]:
-      raise XPathError, "Path can only be encoded based on searching or setting attributes"
-    epath = ""
-    parts = path.split("/")
-
-    if find_parent and len(parts) == 2:
-      return "/"
-
-    lastelem = len(parts)-1 if find_parent else len(parts)
-    for i in range(1,lastelem):
-      (tagname, attributes) = self._tagname_attributes(parts[i])
-      if attributes is not None:
-        epath += "/" + tagname + "["
-        #print "ATTRS WAS %s" % attributes
-        for k,v in attributes.iteritems():
-          epath += "@%s='%s' " % (k,v)
-          if mode == "search":
-            epath += "and "
-        if mode == "search":
-          epath = epath.rstrip("and ")
-        epath = epath.rstrip(" ") + "]"
-      else:
-        epath += "/" + tagname
-    return epath
-
+      tagname,attributes = tag,None
+      if self._attr_re.match(tag):
+        tagname,arg = self._attr_re.sub('\g<tagname>||\g<arg>', tag).split("||")
+        attributes = {}
+        cmd_arg_pairs = []
+        tmp_arg = arg
+        while len(tmp_arg):
+          if self._arg_re.match(tmp_arg):
+            c,a,r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>', tmp_arg).split("||")
+            attributes[c] = a
+            tmp_arg = r
+          else:
+            raise XPathError, "invalid attribute string specified for %s - %s" % (tagname, arg)
+      return (tagname, attributes)
 
   def register(self, object_path, ptr, caller=False):
     #print "REGISTERING %s" % object_path
@@ -126,12 +124,17 @@ class YANGPathHelper(object):
 
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
-    if not caller:
+    if  self._relative_path_re.match(object_path) and caller:
+      fx_q = "." + caller + "/" + object_path
+    else:
       fx_q = "."+fx_q
+    print "fx_q is %s" % fx_q
     retr_obj = self._root.xpath(fx_q)
+    print retr_obj
     return retr_obj
 
   def get(self, object_path, caller=False):
+    print caller
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
 
 

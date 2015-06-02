@@ -1,4 +1,5 @@
 #!/bin/bash
+# set to true or false
 DEL=true
 FAIL=0
 TESTDIR=`pwd`

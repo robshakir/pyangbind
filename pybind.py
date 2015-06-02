@@ -160,7 +160,7 @@ def build_pybind(ctx, modules, fd):
   fd.write("from decimal import Decimal\n")
   fd.write("import uuid\n")
   fd.write("""import collections
-from xpathhelper import YANGPathHelper
+import xpathhelper
 import re
 
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
@@ -196,6 +196,55 @@ def RestrictedPrecisionDecimalType(*args, **kwargs):
       obj = Decimal.__new__(self, value, **kwargs)
       return obj
   return type(RestrictedPrecisionDecimal(*args, **kwargs))
+
+def ReferenceType(*args,**kwargs):
+  ref_path = kwargs.pop("referenced_path", False)
+  path_helper = kwargs.pop("path_helper", False)
+  caller = kwargs.pop("caller", False)
+  class ReferencePathType(object):
+
+    def __init__(self, *args, **kwargs):
+      self._referenced_path = ref_path
+      self._path_helper = path_helper
+      self._referenced_object = False
+      self._caller = caller
+
+      print self._caller
+
+      if len(args):
+        value = args[0]
+      else:
+        value = False
+
+      if not value:
+        self._referenced_object = None
+      else:
+        lookup_o = []
+        path_chk = self._path_helper.get(self._referenced_path)
+
+        found = False
+        #print "%s was %s (%s -> %s)" % (self._referenced_path, type(path_chk), [type(i) for i in path_chk], [i.__bases__ for i in path_chk])
+        if value in path_chk:
+          self._referenced_object = path_chk[path_chk.index(value)]
+          found = True
+        else:
+          for i in path_chk:
+            try:
+              self._referenced_object = i[i.index(value)]
+              found = True
+            except ValueError:
+              pass
+        if not found:
+          raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
+
+    def __repr__(self):
+      return repr(self._referenced_object)
+
+    def __str__(self):
+      return str(self._referenced_object)
+
+  return type(ReferencePathType(*args,**kwargs))
+
 
 def RestrictedClassType(*args, **kwargs):
   \"\"\"
@@ -438,7 +487,6 @@ def YANGListType(*args,**kwargs):
       if v and not self.__check__(v):
         raise ValueError, "value must be set to an instance of %s" % \
           (self._contained_class)
-      #print "in __set: %s" % self._keyval
       if self._keyval:
         try:
           tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name,
@@ -969,16 +1017,17 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
 
     choices = {}
     choice_attrs = []
-    classes = []
+    classes = {}
     for i in elements:
-      class_str = False
+      class_str = {}
       if "default" in i and not i["default"] is None:
         default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
       if i["class"] == "leaf-list":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base="
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base="
         if isinstance(i["type"]["native_type"][1], list):
           allowed_type = "["
           for subtype in i["type"]["native_type"][1]:
@@ -986,73 +1035,79 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
           allowed_type += "]"
         else:
           allowed_type = "%s" % (i["type"]["native_type"][1])
-        class_str += "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
+        class_str["arg"] += "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
         if "default" in i and not i["default"] is None:
-          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       elif i["class"] == "list":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=YANGListType("
-        class_str += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
-        class_str += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
-        class_str += ", user_ordered=%s" % i["user_ordered"]
-        class_str += ", path_helper=self._path_helper"
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=YANGListType("
+        class_str["arg"] += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
+        class_str["arg"] += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
+        class_str["arg"] += ", user_ordered=%s" % i["user_ordered"]
+        class_str["arg"] += ", path_helper=self._path_helper"
         if i["choice"]:
-          class_str += ", choice=%s" % repr(choice)
-        class_str += ")"
+          class_str["arg"] += ", choice=%s" % repr(choice)
+        class_str["arg"] += ")"
       elif i["class"] == "union":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=["
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=["
         for u in i["type"][1]:
-          class_str += "%s," % u[1]["native_type"]
-        class_str += "]"
+          class_str["arg"] += "%s," % u[1]["native_type"]
+        class_str["arg"] += "]"
         if "default" in i and not i["default"] is None:
-          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
       elif i["class"] == "leaf-union":
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass(base=["
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=["
         for u in i["type"]:
-          class_str += "%s," % u
-        class_str += "]"
+          class_str["arg"] += "%s," % u
+        class_str["arg"] += "]"
         if "default" in i and not i["default"] is None:
-          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+      elif i["class"] == "leafref":
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=%s" % i["type"]
+        class_str["arg"] += "(referenced_path='%s', caller='%s', path_helper=self._path_helper)" % (i["referenced_path"], path+"/"+i["yang_name"])
       else:
-        class_str = "__%s" % (i["name"])
-        class_str += " = YANGDynClass("
-        class_str += "base=%s" % i["type"]
+        class_str["name"] = "__%s" % (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=%s" % i["type"]
         if "default" in i and not i["default"] is None:
-          class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         if i["class"] in ["container"]:
-          class_str += ", is_container=True"
-      if class_str:
-        class_str += ", yang_name=\"%s\"" % i["yang_name"]
-        class_str += ", parent=self"
+          class_str["arg"] += ", is_container=True"
+      if class_str["arg"]:
+        class_str["arg"] += ", yang_name=\"%s\"" % i["yang_name"]
+        class_str["arg"] += ", parent=self"
         if i["choice"]:
-          class_str += ", choice=%s" % repr(i["choice"])
+          class_str["arg"] += ", choice=%s" % repr(i["choice"])
           choice_attrs.append(i["name"])
           if not i["choice"][0] in choices:
             choices[i["choice"][0]] = {}
           if not i["choice"][1] in choices[i["choice"][0]]:
             choices[i["choice"][0]][i["choice"][1]] = []
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
-        class_str += ", path_helper=self._path_helper"
+        class_str["arg"] += ", path_helper=self._path_helper"
         #class_str += ", path='%s'" % (path+"/"+i["yang_name"])
-        class_str += ")\n"
-        classes.append(class_str)
+        #class_str["arg"] += ")\n"
+        classes[i["name"]] = class_str
+        # TODO: NEED TO CLEAN UP HOW BASE ERRORS ARE REPORTED
+        # WILL BE FIXED LATER.
     fd.write("""
   def __init__(self, *args, **kwargs):\n""")
     if path == "":
       fd.write("""
     helper = kwargs.pop("path_helper", False)
-    if helper and isinstance(helper, YANGPathHelper):
+    if helper and isinstance(helper, xpathhelper.YANGPathHelper):
       self._path_helper = helper
     else:
-      self._path_helper = False
-    #print "registering in %s"
-    #if self._path_helper:
-    #  print "registering %s"
-    #  self._path_helper.register(\'%s\', self)\n""" % (parent.arg, path, path if not path == "" else "/%s" % parent.arg))
+      self._path_helper = False\n""")
     for c in classes:
-      fd.write("    self.%s" % c)
+      fd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
     fd.write("""
     if args:
       if len(args) > 1:
@@ -1073,6 +1128,7 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
     return ""\n""")
     node = {}
     for i in elements:
+      c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
         description_str = "\n\n      YANG Description: %s" % i["description"]
@@ -1085,50 +1141,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       """ % (i["name"], i["name"], i["path"], i["origtype"],
              description_str, i["name"]))
 
-      if i["class"] == "leaf-list":
-        if isinstance(i["type"]["native_type"][1], list):
-          allowed_type = "["
-          for subtype in i["type"]["native_type"]:
-            allowed_type += "%s," % subtype
-          allowed_type += "]"
-        else:
-          allowed_type = "%s" % (i["type"]["native_type"][1])
-        native_type = "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
-      elif i["class"] == "union":
-        native_type = "["
-        for u in i["type"][1]:
-          native_type += "%s," % u[1]["native_type"]
-        native_type += "]"
-      elif i["class"] == "leaf-union":
-        native_type = "["
-        for u in i["type"]:
-          native_type += "%s," % u
-        native_type += "]"
-      else:
-        native_type = i["type"]
-
-      if "default" in i and not i["default"] is None:
-        if i["quote_arg"]:
-          default_arg = repr(i["default"])
-        else:
-          default_arg = i["default"]
-        if not i["class"] == "union":
-          default_s = ",default=%s(%s)" % (i["defaulttype"], default_arg)
-        else:
-          default_s = ",default=%s(%s)" % (i["defaulttype"], default_arg)
-      else:
-        default_s = ""
-
-      set_str = "base=%s" % native_type
-      set_str += default_s
-      set_str += ", yang_name=\"%s\"" % i["yang_name"]
-      set_str += ", parent=self"
-      set_str += ", path_helper=self._path_helper"
-      #set_str += ",   path='%s'" % (path+"/"+i["yang_name"])
-      if i["class"] in ["container"]:
-        set_str += ", is_container=True"
-      if i["choice"]:
-        set_str += ", choice=%s" % repr(i["choice"])
       fd.write("""
   def _set_%s(self,v):
     \"\"\"
@@ -1141,17 +1153,17 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
                           i["origtype"], i["name"], i["name"], description_str,))
       fd.write("""
     try:
-      t = YANGDynClass(v,%s)
+      t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
+      fd.write("""
     except (TypeError, ValueError):
       raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
-    self.__%s = t\n""" % (set_str, i["name"], \
-                          native_type, i["name"]))
+    self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
       fd.write("    self.set()\n")
 
       if i["name"] in choice_attrs:
         fd.write("""
   def _unset_%s(self):
-    self.__%s = YANGDynClass(%s)\n\n""" % (i["name"], i["name"], set_str,))
+    self.__%s = %s(%s)\n\n""" % (i["name"], i["name"], c_str["type"], c_str["arg"],))
     for i in elements:
       rw = True
       if not i["config"]:
@@ -1236,8 +1248,6 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
 
 def build_elemtype(et, prefix=False):
   cls = "leaf"
-  #et = element.search_one('type')
-  restricted = False
 
   pattern =  et.search_one('pattern') if not et.search_one('pattern') is None else False
   range_stmt = et.search_one('range') if not et.search_one('range') is None else False
@@ -1254,7 +1264,6 @@ def build_elemtype(et, prefix=False):
                                      "restriction_type": "pattern", \
                                      "parent_type": et.arg, \
                                      "base_type": False,}
-      restricted = True
     else:
       elemtype = class_map[et.arg]
   elif range_stmt:
@@ -1269,7 +1278,6 @@ def build_elemtype(et, prefix=False):
                                       "restriction_type": "range", \
                                       "parent_type": et.arg, \
                                       "base_type": False,}
-      restricted = True
     else:
       elemtype = class_map[et.arg]
   elif et.arg == "enumeration":
@@ -1283,12 +1291,10 @@ def build_elemtype(et, prefix=False):
                                   restriction_type="dict_key", \
                                   restriction_arg=%s,)""" % \
                                   (enumeration_dict), \
-                                  "restriction_argument": \
-                                  enumeration_dict, \
-                                  "restriction_type": "dict_key", \
-                                  "parent_type": "string", \
-                                  "base_type": False,}
-    restricted = True
+                "restriction_argument": enumeration_dict, \
+                "restriction_type": "dict_key", \
+                "parent_type": "string", \
+                "base_type": False,}
   elif et.arg == "decimal64":
     fd_stmt = et.search_one('fraction-digits')
     if not fd_stmt is None:
@@ -1297,7 +1303,6 @@ def build_elemtype(et, prefix=False):
                     """RestrictedPrecisionDecimalType(precision=%s)""" % \
                     fd_stmt.arg, "base_type": False, \
                     "parent_type": "decimal64",}
-      restricted = True
     else:
       elemtype = class_map[et.arg]
   elif et.arg == "union":
@@ -1307,6 +1312,15 @@ def build_elemtype(et, prefix=False):
       elemtype_s[1]["yang_type"] = uniontype.arg
       elemtype.append(elemtype_s)
     cls = "union"
+  elif et.arg == "leafref":
+    path_stmt = et.search_one('path')
+    if path_stmt is None:
+      raise ValueError, "leafref specified with no path statement"
+    elemtype = {"native_type": "ReferenceType",
+                "referenced_path": path_stmt.arg,
+                "parent_type": "string",
+                "base_type": False,}
+    cls = "leafref"
   elif et.arg == "identityref":
     base_stmt = et.search_one('base')
     if base_stmt is None:
@@ -1509,6 +1523,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                                   element.search_one('config') else True
 
     elemname = safe_name(element.arg)
+    if "referenced_path" in elemtype:
+      referenced_path = elemtype["referenced_path"]
 
     if create_list:
       cls = "leaf-list"
@@ -1544,6 +1560,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                         "description": elemdescr, "yang_name": element.arg,
                         "choice": choice,
                }
+    if cls == "leafref":
+      elemdict["referenced_path"] = referenced_path
     this_object.append(elemdict)
   return this_object
 

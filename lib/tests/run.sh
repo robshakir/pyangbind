@@ -2,9 +2,9 @@
 DEL=true
 FAIL=0
 TESTDIR=`pwd`
-export PYANGBINDPATH=$TESTDIR/..
+export PYANGBINDPATH=$TESTDIR/../..
 export PYANGPATH=`which pyang`
-export XPATHLIBDIR=$TESTDIR/../lib/
+export XPATHLIBDIR=$TESTDIR/../../lib/
 
 echo "RUNNING BASE"
 /usr/bin/env python $TESTDIR/00_pathhelper_base.py >/dev/null
@@ -35,7 +35,6 @@ if [ $# -eq 0 ]; then
 else
     for i in "$@"; do
         echo "TESTING $i..."
-        ln -s $XPATHLIBDIR/xpathhelper.py $i/xpathhelper.py
         if [ "$DEL" = true ]; then
             $i/run.py > /dev/null
         else

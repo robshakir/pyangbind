@@ -1,0 +1,61 @@
+module list-tc01 {
+    yang-version "1";
+    namespace "http://rob.sh/yang/xpathelper/tc01";
+    prefix "tc01";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+
+    container container {
+        leaf-list t1 {
+            type string;
+        }
+
+        list t2 {
+            key "keyval";
+
+            leaf keyval {
+                type string;
+            }
+        }
+    }
+
+    container reference {
+        leaf t1-ptr {
+            type leafref {
+                path "/container/t1";
+            }
+        }
+    
+        leaf t2-ptr {
+            type leafref {
+                path "/container/t2/keyval";
+            }
+        }
+    }
+
+    container odd-tests {
+        list l1 {
+            key "v1";
+            
+            leaf v1 {
+                type leafref {
+                    path "../config/t1";
+                }
+            }
+            container config {
+                leaf t1 {
+                    type int8;
+                }
+            }
+        }
+    }
+                    
+}
