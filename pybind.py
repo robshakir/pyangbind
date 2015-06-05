@@ -209,7 +209,7 @@ def ReferenceType(*args,**kwargs):
       self._referenced_object = False
       self._caller = caller
 
-      print self._caller
+      print "caller(%s) -> %s" % (self._referenced_path, self._caller)
 
       if len(args):
         value = args[0]
@@ -220,9 +220,11 @@ def ReferenceType(*args,**kwargs):
         self._referenced_object = None
       else:
         lookup_o = []
-        path_chk = self._path_helper.get(self._referenced_path)
+        path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
         found = False
+
+        print "%s was %s" % (self._referenced_path, type(path_chk))
         #print "%s was %s (%s -> %s)" % (self._referenced_path, type(path_chk), [type(i) for i in path_chk], [i.__bases__ for i in path_chk])
         if value in path_chk:
           self._referenced_object = path_chk[path_chk.index(value)]
@@ -618,7 +620,7 @@ def YANGDynClass(*args,**kwargs):
 
   class YANGBaseClass(base_type):
     if is_container:
-      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path', '_path_helper')
+      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path', '_path_helper', '_base_type')
     def __new__(self, *args, **kwargs):
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -631,6 +633,7 @@ def YANGDynClass(*args,**kwargs):
       self._choice = choice_member
       self._path_helper = path_helper
       self._supplied_register_path = supplied_register_path
+      self._base_type = base_type
       if self._path_helper:
         if self._supplied_register_path is None:
           self._path_helper.register(self._register_path(), self)
