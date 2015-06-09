@@ -201,6 +201,7 @@ def ReferenceType(*args,**kwargs):
   ref_path = kwargs.pop("referenced_path", False)
   path_helper = kwargs.pop("path_helper", False)
   caller = kwargs.pop("caller", False)
+  require_instance = kwargs.pop("require_instance", False)
   class ReferencePathType(object):
 
     def __init__(self, *args, **kwargs):
@@ -208,42 +209,66 @@ def ReferenceType(*args,**kwargs):
       self._path_helper = path_helper
       self._referenced_object = False
       self._caller = caller
-
-      print "caller(%s) -> %s" % (self._referenced_path, self._caller)
+      self._ptr = False
+      self._require_instance = require_instance
 
       if len(args):
         value = args[0]
       else:
-        value = False
+        value = None
 
-      if not value:
-        self._referenced_object = None
-      else:
-        lookup_o = []
+      if self._path_helper:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
-        found = False
+        if len(path_chk) == 1 and path_chk[0]._is_leaf == True:
+          # we are not checking whether this leaf exists, but rather
+          # this is a pointer to some other value.
+          if value:
+            path_parts = self._referenced_path.split("/")
+            leaf_name = path_parts[len(path_parts)-1]
+            set_method = getattr(path_chk[0]._parent, "_set_%s" % leaf_name)
+            set_method(value)
+          self._ptr = True
+        elif self._require_instance:
+          if not value:
+            self._referenced_object = None
+          elif self._require_instance:
+            lookup_o = []
+            path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
-        print "%s was %s" % (self._referenced_path, type(path_chk))
-        #print "%s was %s (%s -> %s)" % (self._referenced_path, type(path_chk), [type(i) for i in path_chk], [i.__bases__ for i in path_chk])
-        if value in path_chk:
-          self._referenced_object = path_chk[path_chk.index(value)]
-          found = True
-        else:
-          for i in path_chk:
-            try:
-              self._referenced_object = i[i.index(value)]
+            found = False
+            if value in path_chk:
+              self._referenced_object = path_chk[path_chk.index(value)]
               found = True
-            except ValueError:
-              pass
-        if not found:
-          raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
+            else:
+              for i in path_chk:
+                try:
+                  self._referenced_object = i[i.index(value)]
+                  found = True
+                except ValueError:
+                  pass
+            if not found:
+              raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
+        else:
+          # require instance is not set, so act like a string
+          self._referenced_object = value
+
+    def _get_ptr(self):
+      if self._ptr:
+        ptr = self._path_helper.get(self._referenced_path, caller=self._caller)
+        if len(ptr) == 1:
+          return ptr[0]
+      raise ValueError, "Invalid pointer specified"
 
     def __repr__(self):
-      return repr(self._referenced_object)
+      if not self._ptr:
+        return repr(self._referenced_object)
+      return repr(self._get_ptr())
 
     def __str__(self):
-      return str(self._referenced_object)
+      if not self._ptr:
+        return str(self._referenced_object)
+      return str(self._get_ptr())
 
   return type(ReferencePathType(*args,**kwargs))
 
@@ -453,6 +478,7 @@ def YANGListType(*args,**kwargs):
   user_ordered = kwargs.pop("user_ordered", False)
   path_helper = kwargs.pop("path_helper", False)
   class YANGList(object):
+    __slots__ = ('_members', '_keyval', '_contained_class', '_path_helper')
     def __init__(self, *args, **kwargs):
       if user_ordered:
         self._members = collections.OrderedDict()
@@ -590,6 +616,7 @@ def YANGDynClass(*args,**kwargs):
   parent_instance = kwargs.pop("parent", False)
   choice_member = kwargs.pop("choice", False)
   is_container = kwargs.pop("is_container", False)
+  is_leaf = kwargs.pop("is_leaf", False)
   path_helper = kwargs.pop("path_helper", False)
   supplied_register_path = kwargs.pop("register_path", None)
   if not base_type:
@@ -620,7 +647,8 @@ def YANGDynClass(*args,**kwargs):
 
   class YANGBaseClass(base_type):
     if is_container:
-      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path', '_path_helper', '_base_type')
+      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
+                   '_path_helper', '_base_type', '_is_leaf', '_is_container')
     def __new__(self, *args, **kwargs):
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -634,6 +662,8 @@ def YANGDynClass(*args,**kwargs):
       self._path_helper = path_helper
       self._supplied_register_path = supplied_register_path
       self._base_type = base_type
+      self._is_leaf = is_leaf
+      self._is_container = is_container
       if self._path_helper:
         if self._supplied_register_path is None:
           self._path_helper.register(self._register_path(), self)
@@ -852,6 +882,8 @@ def build_typedefs(defnd):
     base_t = defnd[t].search_one('type')
     if base_t.arg == "union":
       subtypes = [i for i in base_t.search('type')]
+    elif base_t.arg == "identityref":
+      subtypes = [base_t.search_one('base'),]
     else:
       subtypes = [base_t,]
 
@@ -875,6 +907,7 @@ def build_typedefs(defnd):
 
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
+    print "building %s" % item
     type_name = i_tuple[0]
     mapped_type = False
     restricted_arg = False
@@ -912,6 +945,7 @@ def build_typedefs(defnd):
       native_type = []
       parent_type = []
       default = False if default_stmt is None else default_stmt.arg
+      print "elemtype for %s -> %s" % (item, elemtype)
       for i in elemtype:
         if isinstance(i[1]["native_type"], list):
           native_type.extend(i[1]["native_type"])
@@ -1057,7 +1091,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=["
         for u in i["type"][1]:
-          class_str["arg"] += "%s," % u[1]["native_type"]
+          if isinstance(u[1]["native_type"], list):
+            for su_native_type in u[1]["native_type"]:
+              class_str["arg"] += "%s," % su_native_type
+          else:
+            class_str["arg"] += "%s," % u[1]["native_type"]
         class_str["arg"] += "]"
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
@@ -1074,15 +1112,19 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
-        class_str["arg"] += "(referenced_path='%s', caller='%s', path_helper=self._path_helper)" % (i["referenced_path"], path+"/"+i["yang_name"])
+        class_str["arg"] += "(referenced_path='%s', caller='%s', " % (i["referenced_path"], path+"/"+i["yang_name"])
+        class_str["arg"] += "path_helper=self._path_helper, "
+        class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
       else:
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        if i["class"] in ["container"]:
+        if i["class"] in ["container", "list"]:
           class_str["arg"] += ", is_container=True"
+        else:
+          class_str["arg"] += ", is_leaf=True"
       if class_str["arg"]:
         class_str["arg"] += ", yang_name=\"%s\"" % i["yang_name"]
         class_str["arg"] += ", parent=self"
@@ -1319,10 +1361,13 @@ def build_elemtype(et, prefix=False):
     path_stmt = et.search_one('path')
     if path_stmt is None:
       raise ValueError, "leafref specified with no path statement"
+    require_instance = class_bool_map[et.search_one('require-instance').arg] if et.search_one('require-instance') \
+                          is not None else False
     elemtype = {"native_type": "ReferenceType",
                 "referenced_path": path_stmt.arg,
                 "parent_type": "string",
-                "base_type": False,}
+                "base_type": False,
+                "require_instance": require_instance}
     cls = "leafref"
   elif et.arg == "identityref":
     base_stmt = et.search_one('base')
@@ -1526,8 +1571,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                                   element.search_one('config') else True
 
     elemname = safe_name(element.arg)
-    if "referenced_path" in elemtype:
-      referenced_path = elemtype["referenced_path"]
+    # if "referenced_path" in elemtype:
+    #   referenced_path = elemtype["referenced_path"]
 
     if create_list:
       cls = "leaf-list"
@@ -1547,14 +1592,14 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
       else:
         allowed_types = elemtype["native_type"]
 
-      elemtype = {"class": cls, "native_type": ("TypedListType", \
+      elemntype = {"class": cls, "native_type": ("TypedListType", \
                   allowed_types)}
     else:
       if cls == "union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
-      elemtype = elemtype["native_type"]
+      elemntype = elemtype["native_type"]
 
-    elemdict = {"name": elemname, "type": elemtype,
+    elemdict = {"name": elemname, "type": elemntype,
                         "origtype": element.search_one('type').arg, "path": \
                         safe_name(path),
                         "class": cls, "default": elemdefault, \
@@ -1564,7 +1609,8 @@ def get_element(fd, element, module, parent, path, parent_cfg=True,choice=False)
                         "choice": choice,
                }
     if cls == "leafref":
-      elemdict["referenced_path"] = referenced_path
+      elemdict["referenced_path"] = elemtype["referenced_path"]
+      elemdict["require_instance"] = elemtype["require_instance"]
     this_object.append(elemdict)
   return this_object
 

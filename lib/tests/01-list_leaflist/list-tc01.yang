@@ -33,29 +33,11 @@ module list-tc01 {
                 path "/container/t1";
             }
         }
-    
+
         leaf t2-ptr {
             type leafref {
                 path "/container/t2/keyval";
             }
         }
     }
-
-    container odd-tests {
-        list l1 {
-            key "v1";
-            
-            leaf v1 {
-                type leafref {
-                    path "../config/t1";
-                }
-            }
-            container config {
-                leaf t1 {
-                    type int8;
-                }
-            }
-        }
-    }
-                    
 }

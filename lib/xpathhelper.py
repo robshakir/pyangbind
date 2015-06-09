@@ -124,21 +124,20 @@ class YANGPathHelper(object):
 
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
-    print "caller: %s: %s -> match(%s)" % (object_path, caller, self._relative_path_re.match(object_path))
+    #print "caller: %s: %s -> match(%s)" % (object_path, caller, self._relative_path_re.match(object_path))
     if self._relative_path_re.match(object_path) and caller:
       fx_q = "." + caller + "/" + object_path
-      print "caller@_get_etree: fx_q: %s" % fx_q
+      #print "caller@_get_etree: fx_q: %s" % fx_q
     else:
       fx_q = "."+fx_q
-    print "caller: fx_q is %s" % fx_q
+    #print "caller: fx_q is %s" % fx_q
     retr_obj = self._root.xpath(fx_q)
-    print "caller: retr %s" % retr_obj
+    #print "caller: retr %s" % retr_obj
     return retr_obj
 
   def get(self, object_path, caller=False):
-    print "caller@get: %s" % caller
+    #print "caller@get: %s" % caller
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
-
 
   def tostring(self,pretty_print=False):
     return etree.tostring(self._root,pretty_print=pretty_print)
