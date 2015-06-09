@@ -63,6 +63,9 @@ def main():
       passed = False
     assert passed == True, "idr1 leaf was set to an invalid value (%s)" % k
 
+  for k in ["no_ext_leaf", "ref_one_leaf", "stacked_id_leaf"]:
+    assert hasattr(i.test_container, k), "%s leaf does not exist in the container" + \
+       " when checking stacked identities." % k
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
