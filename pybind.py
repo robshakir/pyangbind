@@ -951,7 +951,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
         class_str = "__%s" % (i["name"])
         class_str += " = YANGDynClass(base=["
         for u in i["type"][1]:
-          class_str += "%s," % u[1]["native_type"]
+          if isinstance(u[1]["native_type"],list):
+            for unionmember in u[1]["native_type"]:
+              class_str += "%s," % unionmember
+          else:
+            class_str += "%s," % u[1]["native_type"]
         class_str += "]"
         if "default" in i and not i["default"] is None:
           class_str += ", default=%s(%s)" % (i["defaulttype"], default_arg)
@@ -1029,7 +1033,11 @@ def get_children(fd, i_children, module, parent, path=str(), parent_cfg=True, ch
       elif i["class"] == "union":
         native_type = "["
         for u in i["type"][1]:
-          native_type += "%s," % u[1]["native_type"]
+          if isinstance(u[1]["native_type"],list):
+            for unionmember in u[1]["native_type"]:
+              native_type += "%s," % unionmember
+          else:
+            native_type += "%s," % u[1]["native_type"]
         native_type += "]"
       elif i["class"] == "leaf-union":
         native_type = "["

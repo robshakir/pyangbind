@@ -118,6 +118,17 @@ def main():
       "definition with a typedef which references an identity was not set correctly for %s (%s != %s)" \
         % (i[0], i[1], wset)
 
+  for i in [("aardvark", True), ("bear", True), ("chicken", False), ("quail", True), ("zebra", False)]:
+    #t.container.union_with_union = i[0]
+    try:
+      t.container.union_with_union = i[0]
+      wset = True
+    except ValueError:
+      wset = False
+    assert wset == i[1], \
+      "definition which was a union including a typedef was not set correctly for %s (%s != %s)"  \
+        % (i[0], i[1], wset)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
