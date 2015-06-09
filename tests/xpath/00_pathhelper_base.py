@@ -95,7 +95,7 @@ def t4_retr_obj_error(tree=False):
   assert passed == True, ("setting an invalid path did not throw an XPathError")
 
 if __name__ == '__main__':
-  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/..")
+  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../lib")
   sys.path.insert(0, import_path)
   from xpathhelper import YANGPathHelper, XPathError
   main()

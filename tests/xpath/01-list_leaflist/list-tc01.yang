@@ -31,12 +31,21 @@ module list-tc01 {
         leaf t1-ptr {
             type leafref {
                 path "/container/t1";
+                require-instance true;
+            }
+        }
+
+        leaf t1-ptr-noexist {
+            type leafref {
+                path "/container/t1";
+                require-instance false;
             }
         }
 
         leaf t2-ptr {
             type leafref {
                 path "/container/t2/keyval";
+                require-instance true;
             }
         }
     }

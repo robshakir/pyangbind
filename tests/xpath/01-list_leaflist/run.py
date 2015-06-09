@@ -24,12 +24,12 @@ def main():
   assert not pyangbindpath == False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  print "%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME)
-  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
+  print "%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME)
+  os.system("%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
 
 
   from bindings import list_tc01 as ytest
-  from xpathhelper import YANGPathHelper
+
   yhelper =  YANGPathHelper()
   yobj = ytest(path_helper=yhelper)
 
@@ -59,6 +59,16 @@ def t1_leaflist(yobj,tree=False):
     assert validref == tc[1], "Reference was incorrectly set for a leaflist" + \
         " (%s not in %s -> %s != %s)" % (tc[0], str(yobj.container.t1), validref, tc[1])
 
+  for tc in [("flounder", "exists"), ("minnow", "does not exist")]:
+    validref = False
+    try:
+      yobj.reference.t1_ptr_noexist = tc[0]
+      validref = True
+    except ValueError:
+      pass
+    assert validref == True, "Reference was incorrectly set for a leaflist with" + \
+      " require_instance set to false (%s threw error, but it %s)" % tc[1]
+
   if del_tree:
     del tree
 
@@ -83,7 +93,7 @@ def t2_list(yobj,tree=False):
 
 
 if __name__ == '__main__':
-  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../..")
+  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../../")
   sys.path.insert(0, import_path)
-  from xpathhelper import YANGPathHelper, XPathError
+  from lib.xpathhelper import YANGPathHelper, XPathError
   main()

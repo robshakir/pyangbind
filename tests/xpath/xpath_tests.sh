@@ -1,10 +1,9 @@
 #!/bin/bash
 DEL=true
 FAIL=0
-TESTDIR=`pwd`
+TESTDIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PYANGBINDPATH=$TESTDIR/../..
 export PYANGPATH=`which pyang`
-export XPATHLIBDIR=$TESTDIR/../../lib/
 
 echo "RUNNING BASE"
 /usr/bin/env python $TESTDIR/00_pathhelper_base.py >/dev/null
