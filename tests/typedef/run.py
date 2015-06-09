@@ -98,6 +98,37 @@ def main():
       passed = False
     assert passed == i[1], "incorrectly dealt with %s when added as a list key (%s != %s)" % (i[0], passed, i[1])
 
+  for i in [("zebra", True), ("yak", False)]:
+    try:
+      t.container.include_of_include_definition = i[0]
+      wset = True
+    except ValueError:
+      wset = False
+    assert wset == i[1], \
+      "definition with hybrid typedef across two modules was not set correctly for %s (%s != %s)" \
+        % (i[0], i[1], wset)
+
+  for i in [("IDONE", True), ("IDTWO", True), ("IDTHREE", False)]:
+    try:
+      t.container.identity_one_typedef = i[0]
+      wset = True
+    except ValueError:
+      wset = False
+    assert wset == i[1], \
+      "definition with a typedef which references an identity was not set correctly for %s (%s != %s)" \
+        % (i[0], i[1], wset)
+
+  for i in [("aardvark", True), ("bear", True), ("chicken", False), ("quail", True), ("zebra", False)]:
+    #t.container.union_with_union = i[0]
+    try:
+      t.container.union_with_union = i[0]
+      wset = True
+    except ValueError:
+      wset = False
+    assert wset == i[1], \
+      "definition which was a union including a typedef was not set correctly for %s (%s != %s)"  \
+        % (i[0], i[1], wset)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
