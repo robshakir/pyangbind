@@ -104,7 +104,6 @@ class YANGPathHelper(object):
     pparts = object_path.split("/")
     (tagname, attributes) = self._tagname_attributes(pparts[len(pparts)-1])
 
-    #print "CHECKING @ %s" % parent
     if parent == "/":
       parent_o = self._root
     else:
@@ -116,27 +115,34 @@ class YANGPathHelper(object):
         raise XPathError, "parent node did not exist for %s @ %s" % (tagname, parent)
       parent_o = parent_o[0]
 
-    #sys.stderr.write("registering %s @ %s - %s w/ %s\n" % (tagname, parent, parent_o, attributes))
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
       for k,v in attributes.iteritems():
         added_item.set(k,v)
 
+  def unregister(self, object_path, caller=False):
+    if not re.match("^(\.|\.\.|\/)", object_path):
+      raise XPathError("A valid relative or absolute path must start with '.', '..', or '/'")
+    existing_objs = self._get_etree(object_path)
+    if len(existing_objs) == 0:
+      raise XPathError, "object did not exist to unregister - %s" % object_path
+
+    for obj in existing_objs:
+      ref = obj.get("obj_ptr")
+      del self._library[ref]
+      obj.getparent().remove(obj)
+
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
-    #print "caller: %s: %s -> match(%s)" % (object_path, caller, self._relative_path_re.match(object_path))
     if self._relative_path_re.match(object_path) and caller:
       fx_q = "." + caller + "/" + object_path
-      #print "caller@_get_etree: fx_q: %s" % fx_q
     else:
       fx_q = "."+fx_q
-    #print "caller: fx_q is %s" % fx_q
+
     retr_obj = self._root.xpath(fx_q)
-    #print "caller: retr %s" % retr_obj
     return retr_obj
 
   def get(self, object_path, caller=False):
-    #print "caller@get: %s" % caller
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
 
   def tostring(self,pretty_print=False):

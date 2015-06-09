@@ -14,7 +14,7 @@ Development of **PyangBind** has been motivated by consumption of the [**OpenCon
 pyang --plugindir /path/to/repo -f pybind <yang-files>
 ```
 
-All output is written to ```stdout``` or the file handle specified with ```-o```.
+All output is written to ```stdout``` or the file handle specified with ```-o```. Optionally, the ```--xpath-helper``` command-line argument can be used to invoke a module to allow XPath expressions for leafrefs to be resolved ([see the relevant documentation](#leafref-helper)).
 
 Once bindings have been generated, each YANG module is included as a top-level class within the output bindings file. Using the following module as an example:
 
@@ -46,7 +46,9 @@ module pyangbind-example {
 }
 ```
 
-The module is compiled using ```pyang --plugindir <pyangbind-dir> -f pybind pyangbind-example.yang -o bindings.py``` from the command-line. A consuming application imports the Python module that is output, and can instantiate a new copy of the base YANG module class:
+The module is compiled using ```pyang --plugindir <pyangbind-dir> -f pybind pyangbind-example.yang -o bindings.py``` from the command-line. 
+
+A consuming application imports the Python module that is output, and can instantiate a new copy of the base YANG module class:
 
 ```python
 #!/usr/bin/env python
@@ -56,6 +58,8 @@ from bindings import pyangbind_example
 bindings = pyangbind_example()
 bindings.parent.integer = 12
 ```
+
+Note, that as of release.01, pyangbind expects a ```lib``` directory locally to the ```bindings.py``` file referenced above. This contains the ```xpathhelper``` and ```yangtypes``` modules - such that this code does not need to be duplicated across each ```bindings.py``` file. In the future, it is intended that these functions be provided as an installable module, but this is is still *TODO*.
 
 Each data leaf can be referred to via the path described in the YANG module. Each leaf is represented by the base class that is described in the [type support](#type-support) section of this document.
 
@@ -115,7 +119,7 @@ Otherwise, PyangBind's generated classes try to be consistent with the error typ
 
 For example:
 
-```
+```python
 >>> b.bgp.global_.state.as_ = 12
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
@@ -124,6 +128,73 @@ AttributeError: can't set attribute
 >>> b.bgp.global_.state.as_
 12
 ```
+
+### <a anchor="leafref-helper"></a>leafref Nodes and xpathhelper.YANGPathHelper
+
+The ```YANGPathHelper``` class in the xpathhelper module provides a lightweight means to be able to establish a tree structure against which pyangbind modules register themselves. In order to enable this behaviour use the ```---with-xpathhelper``` flag during code generation.
+
+When ```--with-xpathhelper``` modules will automatically register themselves against the tree structure that is provided using the ```path_helper``` keyword-argument. ```path_helper``` is expected to be set to an instance of ```lib.xpathhelper.YANGPathHelper``` - which is created independently to the root YANG module, as shown below:
+
+```python
+from lib.xpathhelper import YANGPathHelper
+from oc_bgp import bgp
+from oc_routing_policy import routing_policy as rpol
+
+# Create an instance of YANGPathHelper() acting as the "/"
+# node in the configuration hierarchy
+config_tree_helper = YANGPathHelper()
+
+# Create an instance of the OpenConfig BGP module
+# which will register itself at "/bgp" within the path helper.
+bgp_cfg = bgp(path_helper=config_tree_helper)
+
+# Create an instance of the OpenConfig routing policy module
+# which will register itself at "/routing-policy" within the path
+# helper.
+rpol_cfg = rpol(path_helper=config_tree_helper)
+```
+
+As well as providing PyangBind a means to internally validate the existance of leaves (and their values), the YANGPathHelper can be used to extract particular elements of the model hierarchy directly via XPath expressions, rather than using the ```.get()``` method to return a dictionary hiearchy. YANGPathHelper provides:
+
+ * ```get(object_path, caller=False)``` - where object_path is an XPath expression and caller indicates the calling object's path (such that relative paths can be resolved). For instance, ```object_path="../../uncle"``` and ```caller="/grandfather/father/son"``` will resolve to ```/grandfather/uncle```. Absolute paths can also be used.
+ * ```tostring(pretty_print=False)``` - prints a representation of the tree that is in use by the YANGPathHelper. It is not expected that this is of particular use to a consuming application as it simply stores a set of references to class instances (via an intermediate UUID identifier).
+ * Internal ```register()``` and ```deregister()``` methods exist, but are unlikely to be of significant use to consuming applications.
+
+```YANGPathHelper``` raises ```xpathhelper.XPathError``` when invalid paths are specified. 
+
+The intention of ensuring that the YANGPathHelper is external to any generated PyangBind classes is to allow an application to build an arbitrary model hierarchy via different modules, thus ensuring that it is not required to build a single PyangBind class hierarchy for all models (which can become cumbersome due to large files!).
+
+### leaf-ref Validation when path_helper is set.
+
+Leaves that are specified as ```type leafref``` will utilise the ```path_helper``` module in order to validate the content that they are set to. Three distinct validation cases exist:
+
+##### Cases where the leafref target is a single leaf
+
+When a leafref's target is a single leaf PyangBind essentially creates a pointer, such that the following module:
+
+```
+container test-container {
+	leaf target {
+		type string;
+	}
+	
+	leaf pointer {
+		type leafref {
+			path "../target";
+		}
+	}
+}
+```
+Results in the ```pointer``` leaf returning the same value as the value of ```target```. Setting the ```pointer``` leaf will also set the value of the ```target``` leaf.
+
+##### Cases where the leafref target is a list or leaf-list and require-instance is true
+
+When a leafref specifies that ```require-instance``` is true, PyangBind will ensure that the value that the ```leafref``` leaf is set to is a member of the ```leaf-list``` or ```list``` that is targeted by the leafref.
+
+##### Cases where the leafref target is a list or a leaf-list and require-instance is false
+
+When ```require-instance``` is set to false, PyangBind will simply treat the leafref like a string. In the future, this behaviour may change to ensure that the value that is set would be a valid element in the ```leaf-list``` or ```list``` but this is still *TODO*.
+
 
 ## <a anchor="type-support"></a>YANG Type Support
 
@@ -143,7 +214,7 @@ AttributeError: can't set attribute
 -                   | range               | Supported               | tests/int
 **uint{8,16,32,64}**| -                   | [numpy uint](http://docs.scipy.org/doc/numpy/user/basics.types.html) | tests/int
 -                   | range               | Supported               | tests/int    
-**leafref**         | -                   | (as string)             | N/A
+**leafref**         | -                   | Supported               | tests/xpath/...
 **string**          | -                   | *str*                   | tests/string
 -                   | pattern             | Using python *re.match* | tests/string
 -                   | length              | Not supported           | N/A
@@ -174,7 +245,8 @@ limitations under the License.
 
 ## Bugs and Comments
 
-Please send bug-reports or comments to rjs@rob.sh.
+Please send bug-reports or comments to rjs@rob.sh - or open an [issue on GitHub](https://github.com/robshakir/pyangbind/issues).
 
 ## ACKs
 * This project was developed as part of BT plc. Network Architecture 'future network management' projects.
+* Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.

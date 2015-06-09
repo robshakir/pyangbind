@@ -358,8 +358,23 @@ def YANGListType(*args,**kwargs):
         return k
 
     def delete(self, k):
+      if self._path_helper:
+        current_item = self._members[k]
+        keyparts = self._keyval.split(" ")
+
+        keyargs = k.split(" ")
+        key_string = "["
+        for key,val in zip(keyparts,keyargs):
+          key_string += "%s=%s " % (key,val)
+        key_string = key_string.rstrip(" ")
+        key_string += "]"
+
+        obj_path = self._parent.path() + "/" + self._yang_name + key_string
+
       try:
         del self._members[k]
+        if self._path_helper:
+          self._path_helper.unregister(obj_path)
       except KeyError, m:
         raise KeyError, "key %s was not in list (%s)" % (k,m)
 
@@ -529,15 +544,24 @@ def YANGDynClass(*args,**kwargs):
       if not hasattr(super(YANGBaseClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
       self.set()
-      super(YANGBaseClass, self).pop(*args, **kwargs)
+      item = super(YANGBaseClass, self).pop(*args, **kwargs)
       # TODO: remove element from helper
+      if self._path_helper:
+        register_path = self._register_path() + "/" + str(item)
+        self._path_helper.unregister(register_path)
+      return item
 
     def remove(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
       self.set()
+      if self._path_helper:
+        elem_index = super(YANGBaseClass, self).index(*args, **kwargs)
+        item = super(YANGBaseClass, self).__getitem__(elem_index)
       super(YANGBaseClass, self).remove(*args, **kwargs)
-      # TODO: remove element from helper
+      if self._path_helper:
+        register_path = self._register_path() + "/" + str(item)
+        self._path_helper.unregister(register_path)
 
     def extend(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "extend"):

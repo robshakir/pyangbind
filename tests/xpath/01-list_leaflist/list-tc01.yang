@@ -25,6 +25,17 @@ module list-tc01 {
                 type string;
             }
         }
+
+        leaf-list t3 {
+            type string;
+        }
+
+        list t4 {
+            key "keyval";
+            leaf keyval {
+                type string;
+            }
+        }
     }
 
     container reference {

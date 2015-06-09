@@ -118,9 +118,6 @@ class_map = {
                           "pytype": np.int32},
   'int64':            {"native_type": "np.int64", "base_type": True,
                           "pytype": np.int64},
-  # this is a temporary hack to support leafref, but it is still TODO
-  'leafref':          {"native_type": "str", "base_type": True,
-                          "pytype": str, "quote_arg": True,},
 }
 
 # all types that support range substmts
