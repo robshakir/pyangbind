@@ -93,6 +93,25 @@ def main():
           test_instance.string_container.restricted_string
   assert exception_raised == True, "exception was not raised when invalid value set"
 
+  for tc in [("a", True), ("ab", True), ("abc", False)]:
+    try:
+      test_instance.string_container.restricted_length_string = tc[0]
+      passed = True
+    except:
+      passed = False
+    assert passed == tc[1], "restricted len string was incorrectly set (%s -> %s exp: %s)" \
+        % (tc[0], passed, tc[1])
+
+
+  for tc in [("a", True), ("b", False), ("abc", False)]:
+    try:
+      test_instance.string_container.restricted_length_and_pattern_string = tc[0]
+      passed = True
+    except:
+      passed = False
+    assert passed == tc[1], "restricted len and pattern string was incorrectly set" + \
+      "(%s-> %s exp: %s)" % (tc[0], tc[1], passed)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

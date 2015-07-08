@@ -174,7 +174,14 @@ def build_pybind(ctx, modules, fd):
 
   all_mods = []
   for module in modules:
-    local_module_prefix = module.search_one('prefix').arg
+    local_module_prefix = module.search_one('prefix')
+    if local_module_prefix is None:
+      local_module_prefix = module.search_one('belongs-to').search_one('prefix')
+      if local_module_prefix is None:
+        raise AttributeError, "A module (%s) must have a prefix or parent module"
+      local_module_prefix = local_module_prefix.arg
+    else:
+      local_module_prefix = local_module_prefix.arg
     mods = [(local_module_prefix,module)]
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
@@ -306,7 +313,6 @@ def build_typedefs(ctx, defnd):
 
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
-    print "building %s" % item
     type_name = i_tuple[0]
     mapped_type = False
     restricted_arg = False
@@ -344,7 +350,6 @@ def build_typedefs(ctx, defnd):
       native_type = []
       parent_type = []
       default = False if default_stmt is None else default_stmt.arg
-      print "elemtype for %s -> %s" % (item, elemtype)
       for i in elemtype:
         if isinstance(i[1]["native_type"], list):
           native_type.extend(i[1]["native_type"])
@@ -485,7 +490,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         if i["choice"]:
           class_str["arg"] += ", choice=%s" % repr(choice)
         class_str["arg"] += ")"
-      elif i["class"] == "union":
+      elif i["class"] == "union" or i["class"] == "leaf-union":
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=["
@@ -495,15 +500,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
               class_str["arg"] += "%s," % su_native_type
           else:
             class_str["arg"] += "%s," % u[1]["native_type"]
-        class_str["arg"] += "]"
-        if "default" in i and not i["default"] is None:
-          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-      elif i["class"] == "leaf-union":
-        class_str["name"] = "__%s" % (i["name"])
-        class_str["type"] = "YANGDynClass"
-        class_str["arg"] = "base=["
-        for u in i["type"]:
-          class_str["arg"] += "%s," % u
         class_str["arg"] += "]"
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
@@ -517,7 +513,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       else:
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
-        class_str["arg"] = "base=%s" % i["type"]
+        if isinstance(i["type"],list):
+          class_str["arg"] = "base=["
+          for u in i["type"]:
+            class_str["arg"] += "%s," % u
+          class_str["arg"] += "]"
+        else:
+          class_str["arg"] = "base=%s" % i["type"]
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
         if i["class"] in ["container", "list"]:
@@ -695,119 +697,125 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
   return None
 
 def build_elemtype(ctx, et, prefix=False):
-  cls = "leaf"
+  cls = None
 
-  pattern =  et.search_one('pattern') if not et.search_one('pattern') is None else False
+  pattern_stmt =  et.search_one('pattern') if not et.search_one('pattern') is None else False
   range_stmt = et.search_one('range') if not et.search_one('range') is None else False
+  length_stmt = et.search_one('length') if not et.search_one('length') is None else False
 
-  if pattern:
-    pattern = et.search_one('pattern')
-    if not pattern is None:
-      # this must be a string type
+  restrictions = {}
+
+  if pattern_stmt:
+    restrictions['pattern'] = pattern_stmt.arg
+
+  if length_stmt:
+    restrictions['length'] = length_stmt.arg
+
+  if range_stmt:
+    restrictions['range'] = range_stmt.arg
+
+  if len(restrictions):
+    if 'length' in restrictions or 'pattern' in restrictions:
       cls = "restricted-string"
-      restriction_arg = pattern.arg
-      elemtype = {"native_type": """RestrictedClassType(base_type=%s, restriction_type="pattern", restriction_arg="%s")""" % \
-                                    (class_map[et.arg]["native_type"], restriction_arg), \
-                                     "restriction_argument": restriction_arg, \
-                                     "restriction_type": "pattern", \
-                                     "parent_type": et.arg, \
-                                     "base_type": False,}
-    else:
-      elemtype = class_map[et.arg]
-  elif range_stmt:
-    # this must be an integer type
-    range_stmt = et.search_one('range')
-    if not range_stmt is None:
+      elemtype = {
+                    "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
+                      % (class_map[et.arg]["native_type"], repr(restrictions)),
+                    "restriction_dict": restrictions,
+                    "parent_type": et.arg,
+                    "base_type": False,
+                  }
+    elif 'range' in restrictions:
       cls = "restricted-%s" % et.arg
-      elemtype = {"native_type":  """RestrictedClassType(base_type=%s, restriction_type="range", restriction_arg="%s")"""  % \
-                                     (class_map[et.arg]["native_type"], \
-                                      range_stmt.arg), \
-                                      "restriction_argument": range_stmt.arg, \
-                                      "restriction_type": "range", \
-                                      "parent_type": et.arg, \
-                                      "base_type": False,}
-    else:
-      elemtype = class_map[et.arg]
-  elif et.arg == "enumeration":
-    enumeration_dict = {}
-    for enum in et.search('enum'):
-      enumeration_dict[enum.arg] = {}
-      val = enum.search_one('value')
-      if val is not None:
-        enumeration_dict[enum.arg]["value"] = int(val.arg)
-    elemtype = {"native_type": """RestrictedClassType(base_type=str, \
-                                  restriction_type="dict_key", \
-                                  restriction_arg=%s,)""" % \
-                                  (enumeration_dict), \
-                "restriction_argument": enumeration_dict, \
-                "restriction_type": "dict_key", \
-                "parent_type": "string", \
-                "base_type": False,}
-  elif et.arg == "decimal64":
-    fd_stmt = et.search_one('fraction-digits')
-    if not fd_stmt is None:
-      cls = "restricted-decimal64"
-      elemtype = {"native_type": \
-                    """RestrictedPrecisionDecimalType(precision=%s)""" % \
-                    fd_stmt.arg, "base_type": False, \
-                    "parent_type": "decimal64",}
-    else:
-      elemtype = class_map[et.arg]
-  elif et.arg == "union":
-    elemtype = []
-    for uniontype in et.search('type'):
-      elemtype_s = copy.deepcopy(build_elemtype(ctx, uniontype))
-      elemtype_s[1]["yang_type"] = uniontype.arg
-      elemtype.append(elemtype_s)
-    cls = "union"
-  elif et.arg == "leafref":
-    path_stmt = et.search_one('path')
-    if path_stmt is None:
-      raise ValueError, "leafref specified with no path statement"
-    require_instance = class_bool_map[et.search_one('require-instance').arg] if et.search_one('require-instance') \
-                          is not None else False
-    if ctx.opts.use_xpathhelper:
-      elemtype = {"native_type": "ReferenceType",
-                  "referenced_path": path_stmt.arg,
-                  "parent_type": "string",
-                  "base_type": False,
-                  "require_instance": require_instance}
-      cls = "leafref"
-    else:
-      elemtype = class_map["string"]
-  elif et.arg == "identityref":
-    base_stmt = et.search_one('base')
-    if base_stmt is None:
-      raise ValueError, "identityref specified with no base statement"
-    try:
-      elemtype = class_map[base_stmt.arg]
-    except KeyError:
-      sys.stderr.write("FATAL: identityref with an unknown base\n")
-      if DEBUG:
-        pp.pprint(class_map.keys())
-        pp.pprint(et.arg)
-        pp.pprint(base_stmt.arg)
-      sys.exit(127)
-  else:
-    try:
-      elemtype = class_map[et.arg]
-    except KeyError:
-      passed = False
-      if prefix:
-        try:
-          tmp_name = "%s:%s" % (prefix, et.arg)
-          elemtype = class_map[tmp_name]
-          passed = True
-        except:
-          pass
-      if passed == False:
-        sys.stderr.write("FATAL: unmapped type (%s)\n" % (et.arg))
+      elemtype = {
+                    "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
+                      % (class_map[et.arg]["native_type"], repr(restrictions)),
+                    "restriction_dict": restrictions,
+                    "parent_type": et.arg,
+                    "base_type": False,
+      }
+
+  if cls is None:
+    cls = "leaf"
+    if et.arg == "enumeration":
+      enumeration_dict = {}
+      for enum in et.search('enum'):
+        enumeration_dict[enum.arg] = {}
+        val = enum.search_one('value')
+        if val is not None:
+          enumeration_dict[enum.arg]["value"] = int(val.arg)
+      elemtype = {"native_type": """RestrictedClassType(base_type=str, \
+                                    restriction_type="dict_key", \
+                                    restriction_arg=%s,)""" % \
+                                    (enumeration_dict), \
+                  "restriction_argument": enumeration_dict, \
+                  "restriction_type": "dict_key", \
+                  "parent_type": "string", \
+                  "base_type": False,}
+    elif et.arg == "decimal64":
+      fd_stmt = et.search_one('fraction-digits')
+      if not fd_stmt is None:
+        cls = "restricted-decimal64"
+        elemtype = {"native_type": \
+                      """RestrictedPrecisionDecimalType(precision=%s)""" % \
+                      fd_stmt.arg, "base_type": False, \
+                      "parent_type": "decimal64",}
+      else:
+        elemtype = class_map[et.arg]
+    elif et.arg == "union":
+      elemtype = []
+      for uniontype in et.search('type'):
+        elemtype_s = copy.deepcopy(build_elemtype(ctx, uniontype))
+        elemtype_s[1]["yang_type"] = uniontype.arg
+        elemtype.append(elemtype_s)
+      cls = "union"
+    elif et.arg == "leafref":
+      path_stmt = et.search_one('path')
+      if path_stmt is None:
+        raise ValueError, "leafref specified with no path statement"
+      require_instance = class_bool_map[et.search_one('require-instance').arg] if et.search_one('require-instance') \
+                            is not None else False
+      if ctx.opts.use_xpathhelper:
+        elemtype = {"native_type": "ReferenceType",
+                    "referenced_path": path_stmt.arg,
+                    "parent_type": "string",
+                    "base_type": False,
+                    "require_instance": require_instance}
+        cls = "leafref"
+      else:
+        elemtype = class_map["string"]
+    elif et.arg == "identityref":
+      base_stmt = et.search_one('base')
+      if base_stmt is None:
+        raise ValueError, "identityref specified with no base statement"
+      try:
+        elemtype = class_map[base_stmt.arg]
+      except KeyError:
+        sys.stderr.write("FATAL: identityref with an unknown base\n")
         if DEBUG:
           pp.pprint(class_map.keys())
           pp.pprint(et.arg)
-          pp.pprint(prefix)
+          pp.pprint(base_stmt.arg)
         sys.exit(127)
-    if type(elemtype["native_type"]) == type(list()):
+    else:
+      try:
+        elemtype = class_map[et.arg]
+      except KeyError:
+        passed = False
+        if prefix:
+          try:
+            tmp_name = "%s:%s" % (prefix, et.arg)
+            elemtype = class_map[tmp_name]
+            passed = True
+          except:
+            pass
+        if passed == False:
+          sys.stderr.write("FATAL: unmapped type (%s)\n" % (et.arg))
+          if DEBUG:
+            pp.pprint(class_map.keys())
+            pp.pprint(et.arg)
+            pp.pprint(prefix)
+          sys.exit(127)
+    if isinstance(elemtype, list):
       cls = "leaf-union"
   return (cls,elemtype)
 
@@ -1001,7 +1009,7 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       elemntype = {"class": cls, "native_type": ("TypedListType", \
                   allowed_types)}
     else:
-      if cls == "union":
+      if cls == "union" or cls == "leaf-union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
       elemntype = elemtype["native_type"]
 

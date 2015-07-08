@@ -18,6 +18,7 @@ from decimal import Decimal
 import uuid
 import re
 import collections
+import copy
 
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
                     np.int8, np.int16, np.int32, np.int64]
@@ -63,6 +64,7 @@ def RestrictedClassType(*args, **kwargs):
   base_type = kwargs.pop("base_type", str)
   restriction_type = kwargs.pop("restriction_type", None)
   restriction_arg = kwargs.pop("restriction_arg", None)
+  restriction_dict = kwargs.pop("restriction_dict", None)
 
   class RestrictedClass(base_type):
     """
@@ -70,9 +72,6 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
-    _restriction_type = restriction_type
-    _restriction_arg = restriction_arg
-    _restriction_test = None
 
     def __init__(self, *args, **kwargs):
       """
@@ -87,6 +86,9 @@ def RestrictedClassType(*args, **kwargs):
       super(RestrictedClass, self).__init__(*args, **kwargs)
 
     def __new__(self, *args, **kwargs):
+      self._restriction_dict = restriction_dict
+      self._restriction_tests = []
+
       """
         Create a new class instance, and dynamically define the
         _restriction_test method so that it can be called by other functions.
@@ -98,55 +100,69 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "%s$" % pattern
         return pattern
 
+      def in_range_check(low, high):
+        print "low was %s, high was %s" % (low, high)
+        return lambda i: i >= low and i <= high
+
+      def match_pattern_check(regexp):
+        return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
+
+      def in_dictionary_check(dictionary):
+        return lambda i: i in dictionary
+
+      def length_check(length):
+        return lambda i: len(i) <= int(length)
+
       val = False
       try:
         val = args[0]
       except IndexError:
         pass
-      if restriction_type == "pattern":
-        tests = []
-        if isinstance(restriction_arg, list):
-          for pattern in restriction_arg:
-            tests.append(re.compile(convert_regexp(pattern)).match)
+      if self._restriction_dict is None:
+        if restriction_type is not None and restriction_arg is not None:
+          self._restriction_dict = {restriction_type: restriction_arg}
         else:
-          tests.append(re.compile(convert_regexp(restriction_arg)).match)
-        self._tests = tests
-        self._restriction_test = staticmethod(lambda val: False if False in [True if t(val) else False for t in tests] else True)
-        self._restriction_arg = [i + "$" for i in restriction_arg] if isinstance(restriction_arg,list) else [restriction_arg+"$"]
-        self._restriction_type = restriction_type
-      elif restriction_type == "range":
-        x = [base_type(i) for i in \
-          re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", \
-            "\g<low>,\g<high>", restriction_arg).split(",")]
-        self._restriction_test = staticmethod(lambda i: i >= x[0] and i <= x[1])
-        self._restriction_arg = restriction_arg
-        self._restriction_type = restriction_type
-        try:
-          val = int(val)
-        except:
-          raise TypeError, "must specify a numeric type for a range argument"
-      elif restriction_type == "dict_key":
-        # populate enum values
-        used_values = []
-        for k in restriction_arg:
-          if "value" in restriction_arg[k]:
-            used_values.append(int(restriction_arg[k]["value"]))
-        c = 0
-        for k in restriction_arg:
-          while c in used_values:
+          raise ValueError, "must specify either a restriction dictionary or a type and argument"
+
+      for rtype,rarg in self._restriction_dict.iteritems():
+        if rtype == "pattern":
+          tests = []
+          self._restriction_tests.append(match_pattern_check(rarg))
+        elif rtype == "range":
+          x = [base_type(i) for i in \
+            re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", \
+              "\g<low>,\g<high>", rarg).split(",")]
+          self._restriction_tests.append(in_range_check(x[0], x[1]))
+          try:
+            val = int(val)
+          except:
+            raise TypeError, "must specify a numeric type for a range argument"
+        elif rtype == "length":
+          self._restriction_tests.append(length_check(rarg))
+        elif rtype == "dict_key":
+          new_rarg = copy.deepcopy(rarg)
+          # populate enum values
+          used_values = []
+          for k in new_rarg:
+            if "value" in new_rarg[k]:
+              used_values.append(int(new_rarg[k]["value"]))
+          c = 0
+          for k in new_rarg:
+            while c in used_values:
+              c += 1
+            if not "value" in new_rarg[k]:
+              new_rarg[k]["value"] = c
             c += 1
-          if not "value" in restriction_arg[k]:
-            restriction_arg[k]["value"] = c
-          c += 1
-        self._restriction_test = staticmethod(lambda i: i in \
-                                              restriction_arg)
-        self._restriction_arg = restriction_arg
-        self._restriction_type = restriction_type
-      else:
-        raise TypeError, "unsupported restriction type"
+          self._restriction_tests.append(in_dictionary_check(new_rarg))
+          self._enumeration_dict = new_rarg
+        else:
+          raise TypeError, "unsupported restriction type"
+
       if not val == False:
-        if not self._restriction_test(val):
-          raise ValueError, "did not match restricted type"
+        for test in self._restriction_tests:
+          if not test(val):
+            raise ValueError, "%s does not match a restricted type" % val
+
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
 
@@ -156,8 +172,9 @@ def RestrictedClassType(*args, **kwargs):
         returning an error if the value does not validate.
       """
       v = base_type(v)
-      if not self._restriction_test(v):
-        raise ValueError, "did not match restricted type"
+      for chkfn in self._restriction_tests:
+        if not chkfn(v):
+          raise ValueError, "did not match restricted type"
       return True
 
     def getValue(self, *args, **kwargs):
@@ -165,10 +182,10 @@ def RestrictedClassType(*args, **kwargs):
         For types where there is a dict_key restriction (such as YANG
         enumeration), return the value of the dictionary key.
       """
-      if self._restriction_type == "dict_key":
+      if "dict_key" in self._restriction_dict:
         value = kwargs.pop("mapped", False)
         if value:
-          return self._restriction_arg[self.__str__()]["value"]
+          return self._enumeration_dict[self.__str__()]["value"]
       return self
 
   return type(RestrictedClass(*args, **kwargs))

@@ -48,5 +48,25 @@ module string {
                 and a default value";
             default "b";
         }
+
+        leaf restricted-length-string {
+            type string {
+                length 2;
+            }
+            description
+                "A test leaf that has a restricted
+                length";
+        }
+
+        leaf restricted-length-and-pattern-string {
+            type string {
+                length 2;
+                pattern "a.*";
+            }
+            description
+                "A test leaf that has a restricted
+                length and pattern";
+        }
+
     }
 }
