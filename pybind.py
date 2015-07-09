@@ -21,6 +21,7 @@ import string
 import numpy as np
 import decimal
 import copy
+from lib.yangtypes import safe_name
 
 from pyang import plugin
 from pyang import statements
@@ -54,13 +55,6 @@ class_bool_map = {
   'true':    True,
   'True':    True,
 }
-
-# Words that could turn up in YANG definition files that are actually
-# reserved names in Python, such as being builtin types. This list is
-# not complete, but will probably continue to grow.
-reserved_name = ["list", "str", "int", "global", "decimal", "float",
-                  "as", "if", "else", "elsif", "map", "set", "class",
-                  "from", "import", "pass", "return", "is"]
 
 class_map = {
   # this map is dynamically built upon but defines how we take
@@ -123,19 +117,6 @@ class_map = {
 # all types that support range substmts
 INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
-
-def safe_name(arg):
-  """
-    Make a leaf or container name safe for use in Python.
-  """
-  k = arg
-  arg = arg.replace("-", "_")
-  arg = arg.replace(".", "_")
-  if arg in reserved_name:
-    arg += "_"
-  # store the unsafe->original version mapping
-  # so that we can retrieve it when get() is called.
-  return arg
 
 def pyang_plugin_init():
     plugin.register_plugin(BTPyClass())

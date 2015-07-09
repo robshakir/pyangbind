@@ -23,6 +23,26 @@ import copy
 NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
                     np.int8, np.int16, np.int32, np.int64]
 
+# Words that could turn up in YANG definition files that are actually
+# reserved names in Python, such as being builtin types. This list is
+# not complete, but will probably continue to grow.
+reserved_name = ["list", "str", "int", "global", "decimal", "float",
+                  "as", "if", "else", "elsif", "map", "set", "class",
+                  "from", "import", "pass", "return", "is"]
+
+def safe_name(arg):
+  """
+    Make a leaf or container name safe for use in Python.
+  """
+  k = arg
+  arg = arg.replace("-", "_")
+  arg = arg.replace(".", "_")
+  if arg in reserved_name:
+    arg += "_"
+  # store the unsafe->original version mapping
+  # so that we can retrieve it when get() is called.
+  return arg
+
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   """
     Function to return a new type that is based on decimal.Decimal with
@@ -101,7 +121,6 @@ def RestrictedClassType(*args, **kwargs):
         return pattern
 
       def in_range_check(low, high):
-        print "low was %s, high was %s" % (low, high)
         return lambda i: i >= low and i <= high
 
       def match_pattern_check(regexp):
@@ -628,7 +647,7 @@ def ReferenceType(*args,**kwargs):
           if value:
             path_parts = self._referenced_path.split("/")
             leaf_name = path_parts[len(path_parts)-1]
-            set_method = getattr(path_chk[0]._parent, "_set_%s" % leaf_name)
+            set_method = getattr(path_chk[0]._parent, "_set_%s" % safe_name(leaf_name))
             set_method(value)
           self._ptr = True
         elif self._require_instance:
