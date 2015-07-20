@@ -68,5 +68,22 @@ module string {
                 length and pattern";
         }
 
+        leaf restricted-length-string-with-range {
+            type string {
+                length 10..max;
+            }
+            description
+                "A test leaf that has a restricted
+                length that is specified as a range";
+        }
+
+        leaf restricted-length-string-range-two {
+            type string {
+                length 10..20;
+            }
+            description
+                "A test leaf that has a restricted
+                length that is a range but not max";
+        }
     }
 }

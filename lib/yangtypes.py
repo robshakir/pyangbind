@@ -129,8 +129,17 @@ def RestrictedClassType(*args, **kwargs):
       def in_dictionary_check(dictionary):
         return lambda i: i in dictionary
 
-      def length_check(length):
-        return lambda i: len(i) <= int(length)
+      def length_check(length, low=False):
+        if length is None and not low:
+          raise ValueError("invalid means of specifying length check")
+        elif length is not None and low:
+          return lambda i: len(i) <= int(length) and len(i) >= int(low)
+        elif length is None and low:
+          return lambda i: len(i) >= int(low)
+        else:
+          return lambda i: len(i) <= int(length)
+
+      range_regex = re.compile("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>([0-9]+|max))")
 
       val = False
       try:
@@ -149,15 +158,20 @@ def RestrictedClassType(*args, **kwargs):
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
           x = [base_type(i) for i in \
-            re.sub("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>[0-9]+)", \
-              "\g<low>,\g<high>", rarg).split(",")]
+            range_regex.sub("\g<low>,\g<high>", rarg).split(",")]
           self._restriction_tests.append(in_range_check(x[0], x[1]))
           try:
             val = int(val)
           except:
             raise TypeError, "must specify a numeric type for a range argument"
         elif rtype == "length":
-          self._restriction_tests.append(length_check(rarg))
+          if range_regex.match(rarg):
+            low,high = range_regex.sub('\g<low>,\g<high>', rarg).split(",")
+            if high == "max":
+              high = None
+            self._restriction_tests.append(length_check(high, low=low))
+          else:
+            self._restriction_tests.append(length_check(rarg))
         elif rtype == "dict_key":
           new_rarg = copy.deepcopy(rarg)
           # populate enum values

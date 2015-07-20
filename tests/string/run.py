@@ -110,7 +110,25 @@ def main():
     except:
       passed = False
     assert passed == tc[1], "restricted len and pattern string was incorrectly set" + \
-      "(%s-> %s exp: %s)" % (tc[0], tc[1], passed)
+      "(%s-> %s exp: %s)" % (tc[0], passed, tc[1])
+
+  for tc in [("short", False), ("loooooooong", True)]:
+    try:
+      test_instance.string_container.restricted_length_string_with_range = tc[0]
+      passed = True
+    except:
+      passed = False
+    assert passed == tc[1], "restricted length range string was incorrectly set" + \
+      "(%s -> %s exp: %s)" % (tc[0], passed, tc[1])
+
+  for tc in [("short", False), ("loooooooong", True), ("toooooooooolooooooooong", False)]:
+    try:
+      test_instance.string_container.restricted_length_string_range_two = tc[0]
+      passed = True
+    except:
+      passed = False
+    assert passed == tc[1], "restricted length range string two was incorrectly set" + \
+      "(%s -> %s exp: %s)" % (tc[0], passed, tc[1])
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
