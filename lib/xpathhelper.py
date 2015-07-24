@@ -1,5 +1,8 @@
 """
-Copyright 2015  Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015  Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -49,7 +52,6 @@ class YANGPathHelper(object):
         (tagname, attributes) = self._tagname_attributes(parts[i])
         if attributes is not None:
           epath += "/" + tagname + "["
-          #print "ATTRS WAS %s" % attributes
           for k,v in attributes.iteritems():
             epath += "@%s='%s' " % (k,v)
             if mode == "search":
@@ -78,8 +80,6 @@ class YANGPathHelper(object):
       return (tagname, attributes)
 
   def register(self, object_path, ptr, caller=False):
-    #print "REGISTERING %s" % object_path
-    #print self.tostring(pretty_print=True)
     if not re.match("^(\.|\.\.|\/)", object_path):
       raise XPathError("A valid relative or absolute path must start with '.', '..', or '/'")
 
@@ -143,6 +143,8 @@ class YANGPathHelper(object):
     return retr_obj
 
   def get(self, object_path, caller=False):
+    if caller:
+      caller=self._encode_path(caller)
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
 
   def tostring(self,pretty_print=False):

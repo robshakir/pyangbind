@@ -1,5 +1,8 @@
 """
-Copyright 2015, Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015  Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -488,7 +491,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
-        class_str["arg"] += "(referenced_path='%s', caller='%s', " % (i["referenced_path"], path+"/"+i["yang_name"])
+        class_str["arg"] += "(referenced_path='%s', caller=self.path()+'/'+'%s', " % (i["referenced_path"], i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
       else:
@@ -586,9 +589,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
       fd.write("""
-    except (TypeError, ValueError):
-      raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
-    self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
+    except (TypeError, ValueError), msg:
+      raise ValueError(\"\"\"%s must be of a type compatible with %s -> %%s\"\"\" %% (msg))
+    self.__%s = t\n""" % (i["name"], i["origtype"], i["name"]))
       fd.write("    self.set()\n")
 
       if i["name"] in choice_attrs:

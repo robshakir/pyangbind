@@ -1,5 +1,8 @@
 """
-Copyright 2015, Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -92,6 +95,7 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
+    _restricted_class_base = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
     def __init__(self, *args, **kwargs):
       """
@@ -500,6 +504,8 @@ def YANGDynClass(*args,**kwargs):
     if is_container:
       __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
                    '_path_helper', '_base_type', '_is_leaf', '_is_container')
+    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
+
     def __new__(self, *args, **kwargs):
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -672,16 +678,18 @@ def ReferenceType(*args,**kwargs):
             path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
             found = False
-            if value in path_chk:
-              self._referenced_object = path_chk[path_chk.index(value)]
-              found = True
-            else:
+            for i in path_chk:
+              if str(i) == value:
+                self._referenced_object = path_chk[path_chk.index(i)]
+                found = True
+            if not found:
               for i in path_chk:
-                try:
-                  self._referenced_object = i[i.index(value)]
-                  found = True
-                except ValueError:
-                  pass
+                if hasattr(i, "index"):
+                  try:
+                    self._referenced_object = i[i.index(value)]
+                    found = True
+                  except ValueError:
+                    pass
             if not found:
               raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
         else:
