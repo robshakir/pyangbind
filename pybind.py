@@ -1,5 +1,8 @@
 """
-Copyright 2015, Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +24,7 @@ import string
 import numpy as np
 import decimal
 import copy
+from bitarray import bitarray
 from lib.yangtypes import safe_name
 
 from pyang import plugin
@@ -89,6 +93,8 @@ class_map = {
   'boolean':          {"native_type": "YANGBool", "map": class_bool_map,
                           "base_type": True, "quote_arg": True,
                             "pytype": YANGBool},
+  'binary':           {"native_type": "bitarray", "base_type": True,
+                          "quote_arg": True, "pytype": bitarray},
   'uint8':            {"native_type": "np.uint8", "base_type": True,
                           "pytype": np.uint8},
   'uint16':           {"native_type": "np.uint16", "base_type": True,
@@ -152,6 +158,7 @@ def build_pybind(ctx, modules, fd):
   fd.write("""from lib.yangtypes import YANGBool, YANGListType, YANGDynClass, ReferenceType\n""")
   fd.write("""from decimal import Decimal\n""")
   fd.write("""import numpy as np\n""")
+  fd.write("""from bitarray import bitarray\n""")
 
   all_mods = []
   for module in modules:
@@ -697,7 +704,7 @@ def build_elemtype(ctx, et, prefix=False):
 
   if len(restrictions):
     if 'length' in restrictions or 'pattern' in restrictions:
-      cls = "restricted-string"
+      cls = "restricted-%s" % (et.arg)
       elemtype = {
                     "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
                       % (class_map[et.arg]["native_type"], repr(restrictions)),

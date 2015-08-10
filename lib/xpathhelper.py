@@ -1,5 +1,8 @@
 """
-Copyright 2015  Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
