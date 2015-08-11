@@ -95,9 +95,22 @@ module typedef {
         }
     }
 
+    typedef referenced-leaf {
+        type leafref {
+            path "/container/target";
+            require-instance false;
+        }
+    }
+
     container container {
         description
             "A container";
+
+        leaf-list target {
+            type string;
+            description
+                "A target leaf for leafref checks";
+        }
 
         leaf string {
             type derived-string-type;
@@ -164,6 +177,10 @@ module typedef {
                     pattern "q.*";
                 }
             }
+        }
+
+        leaf reference {
+            type referenced-leaf;
         }
     }
 }

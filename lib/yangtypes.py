@@ -532,8 +532,8 @@ def YANGDynClass(*args,**kwargs):
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
-      except:
-        raise TypeError, "couldn't generate dynamic type"
+      except Exception as e:
+        raise TypeError, "couldn't generate dynamic type -> %s -> %s" % (type(e),e)
 
     def changed(self):
       return self._changed
