@@ -461,9 +461,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
-      print "%s, %s" % (i["name"], i["class"])
-      print pp.pprint(class_map)
-
       if i["class"] == "leaf-list":
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
