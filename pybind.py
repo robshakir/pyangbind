@@ -1,5 +1,5 @@
 """
-Copyright 2015  Rob Shakir (rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
 
 This project has been supported by:
           * BT plc.
@@ -24,6 +24,7 @@ import string
 import numpy as np
 import decimal
 import copy
+from bitarray import bitarray
 from lib.yangtypes import safe_name
 
 from pyang import plugin
@@ -40,7 +41,7 @@ class YANGBool(int):
     true_args = ["true", "True", True, 1, "1"]
     if len(args):
       if not args[0] in false_args + true_args:
-        raise ValueError, "%s is an invalid value for a YANGBool" % args[0]
+        raise ValueError("%s is an invalid value for a YANGBool" % args[0])
       value = 0 if args[0] in false_args else 1
     else:
       value = 0
@@ -92,6 +93,8 @@ class_map = {
   'boolean':          {"native_type": "YANGBool", "map": class_bool_map,
                           "base_type": True, "quote_arg": True,
                             "pytype": YANGBool},
+  'binary':           {"native_type": "bitarray", "base_type": True,
+                          "quote_arg": True, "pytype": bitarray},
   'uint8':            {"native_type": "np.uint8", "base_type": True,
                           "pytype": np.uint8},
   'uint16':           {"native_type": "np.uint16", "base_type": True,
@@ -146,6 +149,10 @@ class BTPyClass(plugin.PyangPlugin):
 
 def build_pybind(ctx, modules, fd):
 
+  if len(ctx.errors):
+    sys.stderr.write("FATAL: pyangbind cannot build module that pyang has found errors with.\n")
+    sys.exit(127)
+
   # output the base code that we need to re-use with dynamically generated
   # objects.
   fd.write("from operator import attrgetter\n")
@@ -155,6 +162,7 @@ def build_pybind(ctx, modules, fd):
   fd.write("""from lib.yangtypes import YANGBool, YANGListType, YANGDynClass, ReferenceType\n""")
   fd.write("""from decimal import Decimal\n""")
   fd.write("""import numpy as np\n""")
+  fd.write("""from bitarray import bitarray\n""")
 
   all_mods = []
   for module in modules:
@@ -162,7 +170,7 @@ def build_pybind(ctx, modules, fd):
     if local_module_prefix is None:
       local_module_prefix = module.search_one('belongs-to').search_one('prefix')
       if local_module_prefix is None:
-        raise AttributeError, "A module (%s) must have a prefix or parent module"
+        raise AttributeError("A module (%s) must have a prefix or parent module")
       local_module_prefix = local_module_prefix.arg
     else:
       local_module_prefix = local_module_prefix.arg
@@ -247,7 +255,7 @@ def build_identities(ctx, defnd):
       del identity_d[potential_identity]
 
   if error_ids:
-    raise TypeError, "could not resolve identities %s" % error_ids
+    raise TypeError("could not resolve identities %s" % error_ids)
 
   for i in identity_d:
     id_type = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
@@ -265,6 +273,7 @@ def build_typedefs(ctx, defnd):
   error_ids = []
   known_types = class_map.keys()
   known_types.append('enumeration')
+  known_types.append('leafref')
   process_typedefs_ordered = []
   while len(unresolved_t):
 
@@ -288,12 +297,12 @@ def build_typedefs(ctx, defnd):
       unresolved_tc[t] += 1
       if unresolved_tc[t] > 1000:
         error_ids.append(t)
-        sys.stderr.write("could not find a match for %s type\n" % t)
+        sys.stderr.write("could not find a match for %s type -> %s\n" % (t,[i.arg for i in subtypes]))
       else:
         unresolved_t.append(t)
 
   if error_ids:
-    raise TypeError, "could not resolve typedefs %s" % error_ids
+    raise TypeError("could not resolve typedefs %s" % error_ids)
 
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
@@ -305,24 +314,30 @@ def build_typedefs(ctx, defnd):
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
+    known_types.append("leafref")
 
     if type_name in known_types:
-      raise TypeError, "Duplicate definition of %s" % type_name
+      raise TypeError("Duplicate definition of %s" % type_name)
     default_stmt = item.search_one('default')
     if not isinstance(elemtype,list):
       restricted = False
-      class_map[type_name] = {"native_type": elemtype["native_type"], \
-                                "base_type": False,}
+      class_map[type_name] = {"base_type": False,}
+      class_map[type_name]["native_type"] = elemtype["native_type"]
       if "parent_type" in elemtype:
         class_map[type_name]["parent_type"] = elemtype["parent_type"]
       else:
         yang_type = item.search_one('type').arg
         if not yang_type in known_types:
-          raise TypeError, "typedef specified a native type that was not \
-                            supported"
+          raise TypeError("typedef specified a native type that was not " +
+                            "supported")
         class_map[type_name]["parent_type"] = yang_type
       if default_stmt is not None:
         class_map[type_name]["default"] = default_stmt.arg
+      if "referenced_path" in elemtype:
+        class_map[type_name]["referenced_path"] = elemtype["referenced_path"]
+        class_map[type_name]["class_override"] = "leafref"
+      if "require_instance" in elemtype:
+        class_map[type_name]["require_instance"] = elemtype["require_instance"]
       if "restriction_type" in elemtype:
         class_map[type_name]["restriction_type"] = \
                                               elemtype["restriction_type"]
@@ -344,7 +359,7 @@ def build_typedefs(ctx, defnd):
         else:
           msg = "typedef in a union specified a native type that was not"
           msg += "supported (%s in %s)" % (i[1]["yang_type"], item.arg)
-          raise TypeError, msg
+          raise TypeError(msg)
         if "default" in i[1] and not default:
           # we do strict ordering, so only the first default wins
           q = True if "quote_arg" in i[1] else False
@@ -359,7 +374,8 @@ def build_typedefs(ctx, defnd):
 def find_definitions(defn, ctx, module, prefix):
   mod = ctx.get_module(module.arg)
   if mod is None:
-    raise AttributeError, "expected to be able to find module %s, but could not" % (module.arg)
+    raise AttributeError("expected to be able to find module %s, "+
+                         "but could not" % (module.arg))
   type_definitions = {}
   for i in mod.search(defn):
     if i.arg in type_definitions:
@@ -395,8 +411,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
 
   if parent.keyword in ["container", "module", "list", "submodule"]:
     if not path == "":
-      fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
-        safe_name(path.replace("/", "_"))))
+      fd.write("class yc_%s_%s_%s(object):\n" % (safe_name(parent.arg), \
+        safe_name(module.arg), safe_name(path.replace("/", "_"))))
     else:
       fd.write("class %s(object):\n" % safe_name(parent.arg))
 
@@ -410,7 +426,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
 
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg
+      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
     else:
       parent_descr = ""
 
@@ -422,7 +438,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     \"\"\"\n"""  % (module.arg, (path if not path == "" else "/%s" % parent.arg), \
                     parent_descr))
   else:
-    raise TypeError, "unhandled keyword with children %s" % parent.keyword
+    raise TypeError("unhandled keyword with children %s" % parent.keyword)
 
   e_str = ""
   if len(elements) == 0:
@@ -492,6 +508,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
         class_str["arg"] += "(referenced_path='%s', caller=self.path()+'/'+'%s', " % (i["referenced_path"], i["yang_name"])
+          #path+"/"+i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
       else:
@@ -545,14 +562,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     fd.write("""
     if args:
       if len(args) > 1:
-        raise TypeError, "cannot create a YANG container with >1 argument"
+        raise TypeError("cannot create a YANG container with >1 argument")
       all_attr = True
       for e in self.__elements:
         if not hasattr(args[0], e):
           all_attr = False
           break
       if not all_attr:
-        raise ValueError, "Supplied object did not have the correct attributes"
+        raise ValueError("Supplied object did not have the correct attributes")
       for e in self.__elements:
         setattr(self, getattr(args[0], e))
 """)
@@ -565,7 +582,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n      YANG Description: %s" % i["description"]
+        description_str = "\n\n      YANG Description: %s" % i["description"].decode('utf-8').encode('ascii', 'ignore')
       fd.write("""
   def _get_%s(self):
     \"\"\"
@@ -589,9 +606,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
       fd.write("""
-    except (TypeError, ValueError), msg:
-      raise ValueError(\"\"\"%s must be of a type compatible with %s -> %%s\"\"\" %% (msg))
-    self.__%s = t\n""" % (i["name"], i["origtype"], i["name"]))
+    except (TypeError, ValueError):
+      raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
+    self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
       fd.write("    self.set()\n")
 
       if i["name"] in choice_attrs:
@@ -700,7 +717,7 @@ def build_elemtype(ctx, et, prefix=False):
 
   if len(restrictions):
     if 'length' in restrictions or 'pattern' in restrictions:
-      cls = "restricted-string"
+      cls = "restricted-%s" % (et.arg)
       elemtype = {
                     "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
                       % (class_map[et.arg]["native_type"], repr(restrictions)),
@@ -755,7 +772,7 @@ def build_elemtype(ctx, et, prefix=False):
     elif et.arg == "leafref":
       path_stmt = et.search_one('path')
       if path_stmt is None:
-        raise ValueError, "leafref specified with no path statement"
+        raise ValueError("leafref specified with no path statement")
       require_instance = class_bool_map[et.search_one('require-instance').arg] if et.search_one('require-instance') \
                             is not None else False
       if ctx.opts.use_xpathhelper:
@@ -766,11 +783,15 @@ def build_elemtype(ctx, et, prefix=False):
                     "require_instance": require_instance}
         cls = "leafref"
       else:
-        elemtype = class_map["string"]
+        elemtype = {
+                    "native_type": "str",
+                    "parent_type": "string",
+                    "base_type": False,
+                   }
     elif et.arg == "identityref":
       base_stmt = et.search_one('base')
       if base_stmt is None:
-        raise ValueError, "identityref specified with no base statement"
+        raise ValueError("identityref specified with no base statement")
       try:
         elemtype = class_map[base_stmt.arg]
       except KeyError:
@@ -801,6 +822,10 @@ def build_elemtype(ctx, et, prefix=False):
           sys.exit(127)
     if isinstance(elemtype, list):
       cls = "leaf-union"
+    elif "class_override" in elemtype:
+      # this is used to propagate the fact that in some cases the
+      # native type needs to be dynamically built (e.g., leafref)
+      cls = elemtype["class_override"]
   return (cls,elemtype)
 
 
@@ -834,8 +859,8 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       chs = element.i_children
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
-                          "type": "yc_%s_%s" % (safe_name(element.arg),
-                          safe_name(path.replace("/", "_"))),
+                          "type": "yc_%s_%s_%s" % (safe_name(element.arg),
+                          safe_name(module.arg), safe_name(path.replace("/", "_"))),
                           "class": element.keyword,
                           "path": safe_name(npath), "config": True,
                           "description": elemdescr,
@@ -886,6 +911,7 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
     # is str
     tmp_class_map = copy.deepcopy(class_map)
     tmp_class_map["enumeration"] = {"parent_type": "string"}
+    # TODO: add leafref
 
     if not default_type:
       if isinstance(elemtype, list):
@@ -958,7 +984,7 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
                 to_visit.append(tmp_class_map[check]["parent_type"])
         default_type = tmp_class_map[checked.pop()]
         if not default_type["base_type"]:
-          raise TypeError, "default type was not a base type"
+          raise TypeError("default type was not a base type")
 
     if default_type:
       quote_arg = default_type["quote_arg"] if "quote_arg" in \
@@ -984,7 +1010,10 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
               for subelemtype in subtype[1]["native_type"]:
                 allowed_types.append(subelemtype)
             else:
-              allowed_types.append(subtype[1]["native_type"])
+              if isinstance(subtype[1]["native_type"], list):
+                allowed_types.extend(subtype[1]["native_type"])
+              else:
+                allowed_types.append(subtype[1]["native_type"])
           else:
             allowed_types.append(subtype["native_type"])
       else:

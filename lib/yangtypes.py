@@ -18,6 +18,7 @@ limitations under the License.
 """
 import numpy as np
 from decimal import Decimal
+from bitarray import bitarray
 import uuid
 import re
 import collections
@@ -95,6 +96,7 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
+    _pybind_generated_by = "RestrictedClassType"
     _restricted_class_base = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
     def __init__(self, *args, **kwargs):
@@ -125,23 +127,39 @@ def RestrictedClassType(*args, **kwargs):
         return pattern
 
       def in_range_check(low, high):
-        return lambda i: i >= low and i <= high
+        if low is None and high is None:
+          raise AttributeError("invalid means of specifying a range check")
+        def int_range_check(value):
+          if low is not None and value < low:
+            return False
+          if high is not None and value > high:
+            return False
+          return True
+        return int_range_check
 
       def match_pattern_check(regexp):
-        return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
+        #return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
+        def mp_check(value):
+          if not isinstance(value, str):
+            return False
+          if re.match(convert_regexp(regexp), value):
+            return True
+          return False
+        return mp_check
 
       def in_dictionary_check(dictionary):
         return lambda i: i in dictionary
 
-      def length_check(length, low=False):
-        if length is None and not low:
-          raise ValueError("invalid means of specifying length check")
-        elif length is not None and low:
-          return lambda i: len(i) <= int(length) and len(i) >= int(low)
-        elif length is None and low:
-          return lambda i: len(i) >= int(low)
-        else:
-          return lambda i: len(i) <= int(length)
+      def length_check(maxlength, minlength=None):
+        if maxlength is None and minlength is None:
+          raise AttributeError("invalid means of specifying length check")
+        def lgt_check(value):
+          if maxlength is not None and len(value) > int(maxlength):
+            return False
+          if minlength is not None and len(value) < int(minlength):
+            return False
+          return True
+        return lgt_check
 
       range_regex = re.compile("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>([0-9]+|max))")
 
@@ -161,19 +179,20 @@ def RestrictedClassType(*args, **kwargs):
           tests = []
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
-          x = [base_type(i) for i in \
-            range_regex.sub("\g<low>,\g<high>", rarg).split(",")]
-          self._restriction_tests.append(in_range_check(x[0], x[1]))
+          low,high = range_regex.sub("\g<low>,\g<high>", rarg).split(",")
+          high = base_type(high) if not high == "max" else None
+          low = base_type(low) if not low == "min" else None
+          self._restriction_tests.append(in_range_check(low, high))
           try:
             val = int(val)
           except:
             raise TypeError, "must specify a numeric type for a range argument"
         elif rtype == "length":
           if range_regex.match(rarg):
-            low,high = range_regex.sub('\g<low>,\g<high>', rarg).split(",")
-            if high == "max":
-              high = None
-            self._restriction_tests.append(length_check(high, low=low))
+            minlength,maxlength = range_regex.sub('\g<low>,\g<high>', rarg).split(",")
+            minlength = minlength if not minlength == "min" else None
+            maxlength = maxlength if not maxlength == "max" else None
+            self._restriction_tests.append(length_check(maxlength, minlength=minlength))
           else:
             self._restriction_tests.append(length_check(rarg))
         elif rtype == "dict_key":
@@ -197,8 +216,12 @@ def RestrictedClassType(*args, **kwargs):
 
       if not val == False:
         for test in self._restriction_tests:
-          if not test(val):
-            raise ValueError, "%s does not match a restricted type" % val
+          passed = False
+          if test(val):
+            passed = True
+            break
+        if not passed:
+          raise ValueError, "%s does not match a restricted type" % val
 
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -244,18 +267,17 @@ def TypedListType(*args, **kwargs):
 
     def check(self,v):
       passed = False
+      count = 0
       for i in self._allowed_type:
         if isinstance(v, i):
           passed = True
+          break
         try:
-          # specific checks are required where there is a
-          # restricted class, so we generate a tmp type to
-          # be able to check the __bases__ of.
-          tmp_t = RestrictedClassType(base_type=str, restriction_type="pattern", restriction_arg=".*")
-          if i.__bases__ == tmp_t.__bases__:
-            tmp = i(v)
-            passed = True
-            break
+          if hasattr(i, "_pybind_generated_by"):
+            if getattr(i, "_pybind_generated_by") == "RestrictedClassType":
+              tmp = i(v)
+              passed = True
+              break
           elif i in NUMPY_INTEGER_TYPES:
             # numpy has odd characteristics where
             # it supports lists, so we check against
@@ -264,8 +286,12 @@ def TypedListType(*args, **kwargs):
             tmp = i(v)
             passed = True
             break
-        except:
-            pass
+        except (ValueError,TypeError):
+          # ValueError is generated by restricted classes in general
+          # TypeError is generated by int when it receives a [] which
+          # is valid for numpy, but not for standard int.
+          pass
+        count += 1
       if not passed:
         raise ValueError("Cannot add %s to TypedList (accepts only %s)" % \
           (v, self._allowed_type))
@@ -375,9 +401,11 @@ def YANGListType(*args,**kwargs):
             keyparts = [k,]
             kv_obj = getattr(tmp, self._keyval)
             path_keystring = "[%s=%s]" % (kv_obj.yang_name(), k)
+
           tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
                   is_container=is_container, path_helper=path_helper, \
                   register_path=self._parent.path()+"/"+self._yang_name+path_keystring)
+
           for i in range(0,len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
             key(keyparts[i])
@@ -504,6 +532,7 @@ def YANGDynClass(*args,**kwargs):
     if is_container:
       __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
                    '_path_helper', '_base_type', '_is_leaf', '_is_container')
+
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
     def __new__(self, *args, **kwargs):
@@ -534,8 +563,8 @@ def YANGDynClass(*args,**kwargs):
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
-      except:
-        raise TypeError, "couldn't generate dynamic type"
+      except Exception as e:
+        raise TypeError, "couldn't generate dynamic type -> %s -> %s" % (type(e),e)
 
     def changed(self):
       return self._changed
@@ -601,7 +630,6 @@ def YANGDynClass(*args,**kwargs):
         raise AttributeError("%s object has no attribute pop" % base_type)
       self.set()
       item = super(YANGBaseClass, self).pop(*args, **kwargs)
-      # TODO: remove element from helper
       if self._path_helper:
         register_path = self._register_path() + "/" + str(item)
         self._path_helper.unregister(register_path)
@@ -678,18 +706,16 @@ def ReferenceType(*args,**kwargs):
             path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
             found = False
-            for i in path_chk:
-              if str(i) == value:
-                self._referenced_object = path_chk[path_chk.index(i)]
-                found = True
-            if not found:
+            if value in path_chk:
+              self._referenced_object = path_chk[path_chk.index(value)]
+              found = True
+            else:
               for i in path_chk:
-                if hasattr(i, "index"):
-                  try:
-                    self._referenced_object = i[i.index(value)]
-                    found = True
-                  except ValueError:
-                    pass
+                try:
+                  self._referenced_object = i[i.index(value)]
+                  found = True
+                except ValueError:
+                  pass
             if not found:
               raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
         else:

@@ -1,5 +1,5 @@
 """
-Copyright 2015  Rob Shakir (rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
 
 This project has been supported by:
           * BT plc.
@@ -38,30 +38,64 @@ class YANGPathHelper(object):
     self._root = etree.Element("root")
     self._library = {}
 
-  def _encode_path(self, path, mode="search", find_parent=False):
-      if not mode in ["search", "set"]:
-        raise XPathError, "Path can only be encoded based on searching or setting attributes"
-      epath = ""
-      parts = path.split("/")
+  def _path_parts(self, path):
+    c = 0
+    parts = []
+    buf = ""
+    in_qstr, in_attr = False, False
+    while c < len(path):
+      if path[c] == "/" and not in_qstr and not in_attr:
+        parts.append(buf)
+        buf = ""
+      elif path[c] == '"' and in_qstr:
+        in_qstr = False
+        buf += path[c]
+      elif path[c] == '"':
+        in_qstr = True
+        buf += path[c]
+      elif path[c] == '[':
+        in_attr = True
+        buf += path[c]
+      elif path[c] == ']':
+        in_attr = False
+        buf += path[c]
+      else:
+        buf += path[c]
+      c += 1
+    parts.append(buf)
+    return parts
 
-      if find_parent and len(parts) == 2:
-        return "/"
+  def _encode_path(self, path, mode="search", find_parent=False, normalise_namespace=True):
+    if not mode in ["search", "set"]:
+      raise XPathError("Path can only be encoded based on searching or setting attributes")
+    epath = ""
 
-      lastelem = len(parts)-1 if find_parent else len(parts)
-      for i in range(1,lastelem):
-        (tagname, attributes) = self._tagname_attributes(parts[i])
-        if attributes is not None:
-          epath += "/" + tagname + "["
-          for k,v in attributes.iteritems():
-            epath += "@%s='%s' " % (k,v)
-            if mode == "search":
-              epath += "and "
+    parts = self._path_parts(path)
+    if find_parent and len(parts) == 2:
+      return "/"
+
+    lastelem = len(parts)-1 if find_parent else len(parts)
+    startelem = 1 if parts[0] == '' else 0
+    for i in range(startelem,lastelem):
+      (tagname, attributes) = self._tagname_attributes(parts[i])
+      if ":" in tagname and normalise_namespace:
+        tagname = tagname.split(":")[1]
+
+      if re.match("^[0-9]", tagname):
+        tagname = "i%s" % tagname
+
+      if attributes is not None:
+        epath += "/" + tagname + "["
+        for k,v in attributes.iteritems():
+          epath += "@%s='%s' " % (k,v)
           if mode == "search":
-            epath = epath.rstrip("and ")
-          epath = epath.rstrip(" ") + "]"
-        else:
-          epath += "/" + tagname
-      return epath
+            epath += "and "
+        if mode == "search":
+          epath = epath.rstrip("and ")
+        epath = epath.rstrip(" ") + "]"
+      else:
+        epath += "/" + tagname
+    return epath
 
   def _tagname_attributes(self, tag):
       tagname,attributes = tag,None
@@ -101,7 +135,7 @@ class YANGPathHelper(object):
     this_obj_id = str(uuid.uuid1())
     self._library[this_obj_id] = ptr
     parent = self._encode_path(object_path, mode="set", find_parent=True)
-    pparts = object_path.split("/")
+    pparts = self._path_parts(object_path)
     (tagname, attributes) = self._tagname_attributes(pparts[len(pparts)-1])
 
     if parent == "/":
@@ -114,6 +148,9 @@ class YANGPathHelper(object):
       if parent_o == []:
         raise XPathError, "parent node did not exist for %s @ %s" % (tagname, parent)
       parent_o = parent_o[0]
+
+    if re.match("^[0-9]", tagname):
+      tagname = "i%s" % tagname
 
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
@@ -135,16 +172,14 @@ class YANGPathHelper(object):
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
     if self._relative_path_re.match(object_path) and caller:
-      fx_q = "." + caller + "/" + object_path
+      fx_q = "." + self._encode_path(caller)
+      fx_q += "/" + self._encode_path(object_path)
     else:
       fx_q = "."+fx_q
-
     retr_obj = self._root.xpath(fx_q)
     return retr_obj
 
   def get(self, object_path, caller=False):
-    if caller:
-      caller=self._encode_path(caller)
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
 
   def tostring(self,pretty_print=False):
