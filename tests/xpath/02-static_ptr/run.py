@@ -24,7 +24,6 @@ def main():
   assert not pyangbindpath == False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  print "%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME)
   os.system("%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
 
 
@@ -45,10 +44,17 @@ def t1_listkey(yobj,tree=False):
     del_tree = True
     tree = YANGPathHelper()
 
-  yobj.container.t1a.add("test")
 
-  assert yobj.container.t1a["test"].t1c.t1d == 'test', "list key was not set correctly when acting as a pointer (%s != 'test')" % (yobj.container.t1a["test"].t1c.t1d)
-  assert str(yobj.container.t1a["test"].t1b) == 'test', "list key pointer was not read correctly (value is %s)" % yobj.container.t1a["test"].t1b
+  for x in range(0,100):
+    yobj.container.t1a.add("x%s" % x)
+
+  for x in range(0,100):
+    assert yobj.container.t1a["x%s" % x].t1c.t1d == "x%s" % x, \
+      "list key was not set correctly when acting as a pointer (%s != 'test')" % \
+        (yobj.container.t1a["x%s" % x].t1c.t1d)
+    assert str(yobj.container.t1a["x%s" % x].t1b) == "x%s" % x, \
+      "list key pointer was not read correctly (value is %s)" % \
+        yobj.container.t1a["x%s" % x].t1b
 
   if del_tree:
     del tree

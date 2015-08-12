@@ -503,7 +503,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
-        class_str["arg"] += "(referenced_path='%s', caller='%s', " % (i["referenced_path"], path+"/"+i["yang_name"])
+        class_str["arg"] += "(referenced_path='%s', caller=self.path()+'/'+'%s', " % (i["referenced_path"], i["yang_name"])
+          #path+"/"+i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
       else:

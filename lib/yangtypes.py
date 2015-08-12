@@ -400,9 +400,11 @@ def YANGListType(*args,**kwargs):
             keyparts = [k,]
             kv_obj = getattr(tmp, self._keyval)
             path_keystring = "[%s=%s]" % (kv_obj.yang_name(), k)
+
           tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
                   is_container=is_container, path_helper=path_helper, \
                   register_path=self._parent.path()+"/"+self._yang_name+path_keystring)
+
           for i in range(0,len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
             key(keyparts[i])

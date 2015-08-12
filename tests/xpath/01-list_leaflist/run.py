@@ -24,7 +24,6 @@ def main():
   assert not pyangbindpath == False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  print "%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME)
   os.system("%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
 
 

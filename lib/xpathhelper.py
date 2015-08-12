@@ -172,7 +172,8 @@ class YANGPathHelper(object):
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
     if self._relative_path_re.match(object_path) and caller:
-      fx_q = "." + caller + "/" + self._encode_path(object_path)
+      fx_q = "." + self._encode_path(caller)
+      fx_q += "/" + self._encode_path(object_path)
     else:
       fx_q = "."+fx_q
     retr_obj = self._root.xpath(fx_q)
