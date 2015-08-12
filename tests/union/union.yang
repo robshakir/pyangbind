@@ -43,6 +43,44 @@ module union {
         }
     }
 
+    typedef union-a {
+        type union {
+            type int8;
+            type string;
+        }
+    }
+
+    typedef union-b {
+        type union {
+            type decimal64 {
+                fraction-digits 2;
+            }
+            type boolean;
+        }
+    }
+
+    typedef union-c {
+        type union {
+            type uint16 {
+                range 10..20;
+            }
+            type string {
+                pattern "a.*";
+            }
+        }
+    }
+
+    typedef union-d {
+        type union {
+            type uint16 {
+                range 30..40;
+            }
+            type string {
+                pattern "b.*";
+            }
+        }
+    }
+
     container container {
 
         leaf u2 {
@@ -99,6 +137,20 @@ module union {
 
         leaf u7 {
             type derived-union-type;
+        }
+
+        leaf-list u9 {
+            type union {
+                type union-a;
+                type union-b;
+            }
+        }
+
+        leaf-list u10 {
+            type union {
+                type union-c;
+                type union-d;
+            }
         }
 
 

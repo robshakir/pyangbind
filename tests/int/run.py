@@ -69,6 +69,16 @@ def main():
     v = getattr(u.int_container, i)
     assert v == -42, "incorrectly set %s, expected 42, got %d" % (i, v)
 
+
+  for i in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
+    passed = False
+    try:
+      setattr(u.int_container, "%srestricted" % i, 10)
+      passed = True
+    except ValueError:
+      pass
+    assert passed == True, "could not set value of %srestricted to 10" % i
+
   e = False
   try:
     u.int_container.eightrestricted = -100

@@ -407,8 +407,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
 
   if parent.keyword in ["container", "module", "list", "submodule"]:
     if not path == "":
-      fd.write("class yc_%s_%s(object):\n" % (safe_name(parent.arg), \
-        safe_name(path.replace("/", "_"))))
+      fd.write("class yc_%s_%s_%s(object):\n" % (safe_name(parent.arg), \
+        safe_name(module.arg), safe_name(path.replace("/", "_"))))
     else:
       fd.write("class %s(object):\n" % safe_name(parent.arg))
 
@@ -422,7 +422,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
 
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg
+      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
     else:
       parent_descr = ""
 
@@ -577,7 +577,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n      YANG Description: %s" % i["description"]
+        description_str = "\n\n      YANG Description: %s" % i["description"].decode('utf-8').encode('ascii', 'ignore')
       fd.write("""
   def _get_%s(self):
     \"\"\"
@@ -854,8 +854,8 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       chs = element.i_children
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
-                          "type": "yc_%s_%s" % (safe_name(element.arg),
-                          safe_name(path.replace("/", "_"))),
+                          "type": "yc_%s_%s_%s" % (safe_name(element.arg),
+                          safe_name(module.arg), safe_name(path.replace("/", "_"))),
                           "class": element.keyword,
                           "path": safe_name(npath), "config": True,
                           "description": elemdescr,
@@ -1005,7 +1005,10 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
               for subelemtype in subtype[1]["native_type"]:
                 allowed_types.append(subelemtype)
             else:
-              allowed_types.append(subtype[1]["native_type"])
+              if isinstance(subtype[1]["native_type"], list):
+                allowed_types.extend(subtype[1]["native_type"])
+              else:
+                allowed_types.append(subtype[1]["native_type"])
           else:
             allowed_types.append(subtype["native_type"])
       else:

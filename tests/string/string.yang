@@ -85,5 +85,19 @@ module string {
                 "A test leaf that has a restricted
                 length that is a range but not max";
         }
+
+        leaf string-broken-description {
+            type string;
+            description
+                "Node’s <- has non-ascii characters";
+        }
+
+        container container-broken-description {
+            description
+                "Node’s <- has non-ascii characters";
+            leaf test-leaf {
+                type string;
+            }
+        }
     }
 }
