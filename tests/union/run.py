@@ -92,6 +92,31 @@ def main():
     "leaf with default int specified within a union (that was in a typedef) was not set correctly (%s)" % \
       u.container.u8._default
 
+  from bitarray import bitarray
+  for i in [(1, True), ("hello", True), (42.42, True), (True, True), (bitarray(10), False)]:
+    passed = False
+    try:
+      u.container.u9.append(i[0])
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+      "leaf-list of union of unions did not correctly validate value " + \
+        "(%s -> %s != %s)" % (i[0], passed, i[1])
+
+  # 10-20, 30-40 or starting with a and b
+  for i in [(15,True), (35,True), ("aardvark", True), ("bear", True),
+            (21, False), (42, False), ("cat", False), ("fish", False)]:
+    passed = False
+    try:
+      u.container.u10.append(i[0])
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+      "leaf-list of union of unions that had restricted types did not " \
+      + "correctly validate the value (%s -> %s != %s)" % (i[0], passed, i[1])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

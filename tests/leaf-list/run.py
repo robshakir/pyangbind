@@ -53,7 +53,9 @@ def main():
     pass
 
   assert len(leaflist_instance.container.leaflist) == 1, \
-    "appended an element to the list erroneously"
+    "appended an element to the list erroneously (%s, len %d vs. 1)" % \
+      (leaflist_instance.container.leaflist, \
+        len(leaflist_instance.container.leaflist))
 
   leaflist_instance.container.leaflist.append("itemTwo")
   assert leaflist_instance.container.leaflist[1] == "itemTwo", \
