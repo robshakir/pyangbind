@@ -75,10 +75,15 @@ class YANGPathHelper(object):
       return "/"
 
     lastelem = len(parts)-1 if find_parent else len(parts)
-    for i in range(1,lastelem):
+    startelem = 1 if parts[0] == '' else 0
+    for i in range(startelem,lastelem):
       (tagname, attributes) = self._tagname_attributes(parts[i])
       if ":" in tagname and normalise_namespace:
         tagname = tagname.split(":")[1]
+
+      if re.match("^[0-9]", tagname):
+        tagname = "i%s" % tagname
+
       if attributes is not None:
         epath += "/" + tagname + "["
         for k,v in attributes.iteritems():
@@ -144,6 +149,9 @@ class YANGPathHelper(object):
         raise XPathError, "parent node did not exist for %s @ %s" % (tagname, parent)
       parent_o = parent_o[0]
 
+    if re.match("^[0-9]", tagname):
+      tagname = "i%s" % tagname
+
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
       for k,v in attributes.iteritems():
@@ -164,10 +172,9 @@ class YANGPathHelper(object):
   def _get_etree(self, object_path, caller=False):
     fx_q = self._encode_path(object_path)
     if self._relative_path_re.match(object_path) and caller:
-      fx_q = "." + caller + "/" + object_path
+      fx_q = "." + caller + "/" + self._encode_path(object_path)
     else:
       fx_q = "."+fx_q
-
     retr_obj = self._root.xpath(fx_q)
     return retr_obj
 

@@ -135,6 +135,16 @@ def main():
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (-43)"
 
+  for i in [(0,True), (10,True),(-10,False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_max = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], "restricted range using max was not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
