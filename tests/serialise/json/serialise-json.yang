@@ -12,6 +12,30 @@ module serialise-json {
       reference "fooled-you";
   }
 
+  identity id-base {
+    description
+      "base identity";
+  }
+
+  identity idone {
+    base id-base;
+  }
+
+  identity idtwo {
+    base id-base;
+  }
+
+  typedef definedtype {
+    type string;
+  }
+
+  typedef definedtypeunion {
+    type union {
+      type uint8;
+      type string;
+    }
+  }
+
   container c1 {
     list l1 {
       key "k1";
@@ -52,6 +76,12 @@ module serialise-json {
         type int64;
       }
 
+      leaf restricted-integer {
+        type int8 {
+          range "5..10";
+        }
+      }
+
       leaf string {
         type string;
       }
@@ -64,17 +94,80 @@ module serialise-json {
 
       leaf union {
         type union {
+          type string;
+          type uint32;
+        }
+      }
+
+      leaf-list union-list {
+        type union {
           type uint32;
           type string;
         }
       }
+
+      leaf leafref {
+        type leafref {
+          path "/c1/t1/target";
+        }
+      }
+
+      leaf binary {
+        type binary;
+      }
+
+      leaf boolean {
+        type boolean;
+      }
+
+      leaf enumeration {
+        type enumeration {
+          enum one;
+          enum two;
+        }
+      }
+
+      leaf identityref {
+        type identityref {
+          base id-base;
+        }
+      }
+
+      leaf typedef-one {
+        type definedtype;
+      }
+
+      leaf typedef-two {
+        type definedtypeunion;
+      }
+
+      choice test-choice {
+        case one {
+          leaf one-leaf {
+            type string;
+          }
+        }
+        case two {
+          leaf two-leaf {
+            type string;
+          }
+        }
+      }
     }
+
     list l2 {
       key "k1";
       ordered-by user;
 
       leaf k1 {
        type uint32;
+      }
+    }
+
+    list t1 {
+      key "target";
+      leaf target {
+        type string;
       }
     }
   }

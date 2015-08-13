@@ -261,9 +261,13 @@ def TypedListType(*args, **kwargs):
       self._allowed_type = allowed_type
       self._list = list()
       if len(args):
-        for i in args[0]:
-          self.check(i)
-        self._list.extend(args[0])
+        if isinstance(args[0], list):
+          for i in args[0]:
+            self.check(i)
+          self._list.extend(args[0])
+        else:
+          self.check(args[0])
+          self._list.append(args[0])
 
     def check(self,v):
       passed = False
@@ -339,6 +343,7 @@ def YANGListType(*args,**kwargs):
   path_helper = kwargs.pop("path_helper", False)
   class YANGList(object):
     __slots__ = ('_members', '_keyval', '_contained_class', '_path_helper')
+
     def __init__(self, *args, **kwargs):
       if user_ordered:
         self._members = collections.OrderedDict()

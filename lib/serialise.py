@@ -27,10 +27,30 @@ from collections import OrderedDict
 from decimal import Decimal
 
 class pybindJSONEncoder(json.JSONEncoder):
+  def _preprocess_element(self, d):
+      nd = {}
+      if isinstance(d, OrderedDict) or isinstance(d, dict):
+          index = 0
+          for k in d:
+              if isinstance(d[k], dict) or isinstance(d[k], OrderedDict):
+                  nd[k] = self._preprocess_element(d[k])
+                  if isinstance(d, OrderedDict):
+                      nd[k]['__yang_order'] = index
+              else:
+                  nd[k] = d[k]
+              index += 1
+      else:
+          nd = d
+      return nd
+
+  def encode(self, obj):
+    return json.JSONEncoder.encode(self, self._preprocess_element(obj))
+
   def default(self, obj):
     # if isinstance(foo,bar):
     #  return <encoded type>
-    print "type %s" % (type(obj))
+    print "%s->type %s" % (obj, type(obj))
+    #print dir(obj)
     if hasattr(obj, "_pybind_base_class"):
       print "%s -> %s - had attr %s" % (obj, type(obj), getattr(obj, "_pybind_base_class"))
       pybc = getattr(obj, "_pybind_base_class")
@@ -44,7 +64,8 @@ class pybindJSONEncoder(json.JSONEncoder):
         return str(obj)
       elif pybc in ["lib.yangtypes.RestrictedPrecisionDecimal"]:
         return float(obj)
-
+      elif pybc in ["bitarray.bitarray"]:
+        return obj.to01()
       else:
         print dir(pybc)
         print pybc.__class__
@@ -53,16 +74,6 @@ class pybindJSONEncoder(json.JSONEncoder):
       return float(obj)
     elif type(obj) in [numpy.uint8, numpy.uint16, numpy.uint32, numpy.uint64, numpy.int8, numpy.int16, numpy.int32, numpy.int64]:
       return int(obj)
-    # elif isinstance(obj, OrderedDict):
-    #   new_dict = {}
-    #   index = 0
-    #   for k,v in obj.iteritems():
-    #     new_dict[self.default(k)] = self.default(v)
-    #     if not type(new_dict[self.default(k)]) in [dict, OrderedDict]:
-    #       raise ValueError("A YANG OrderedDict should be a list")
-    #     new_dict[self.default(k)]['__yang_order'] = index
-    #     index += 1
-    #   return "{" + ",".join([self.encode(k) + ":" + self.encode(v) for k,v in new_dict.iteritems()]) + "}"
     return json.JSONEncoder.default(self, obj)
 
 

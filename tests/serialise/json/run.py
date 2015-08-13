@@ -36,9 +36,25 @@ def main():
       name = "%s%s" % (s,l)
       x=getattr(js.c1.l1[1], "_set_%s" % name)
       x(1)
-
+  js.c1.l1[1].restricted_integer = 6;
   js.c1.l1[1].string = "bear"
   js.c1.l1[1].restricted_string = "aardvark"
+  js.c1.l1[1].union = 16
+  js.c1.l1[1].union_list.append(16)
+  js.c1.l1[1].union_list.append("chicken")
+
+  js.c1.t1.add(16)
+  js.c1.l1[1].leafref = 16
+
+  from bitarray import bitarray
+  js.c1.l1[1].binary = bitarray("010101")
+  js.c1.l1[1].boolean = True
+  js.c1.l1[1].enumeration = "one"
+  js.c1.l1[1].identityref = "idone"
+  js.c1.l1[1].typedef_one = "test"
+  js.c1.l1[1].typedef_two = 8
+  js.c1.l1[1].one_leaf = "hi"
+
 
   print js.get()
 
@@ -47,39 +63,40 @@ def main():
 
   print json.dumps(js.get(), cls=pybindJSONEncoder, indent=4)
 
-  from ocbindings import bgp
-  from lib.xpathhelper import YANGPathHelper
 
-  ph = YANGPathHelper()
+  # from ocbindings import bgp
+  # from lib.xpathhelper import YANGPathHelper
 
-  ocbgp = bgp(path_helper=ph)
+  # ph = YANGPathHelper()
 
-  add_peers = [
-                ("192.168.1.1", "2856", "linx-peers"),
-                ("172.16.12.2", "3356", "transit"),
-                ("10.0.0.3", "5400", "private-peers"),
-                ("10.0.0.4", "3300", "private-peers"),
-                ("192.168.1.2", "6871", "linx-peers")
-              ]
+  # ocbgp = bgp(path_helper=ph)
 
-  for e in add_peers:
-    if not e[2] in ocbgp.bgp.peer_groups.peer_group:
-      ocbgp.bgp.peer_groups.peer_group.add(e[2])
-    if not e[0] in ocbgp.bgp.neighbors.neighbor:
-      ocbgp.bgp.neighbors.neighbor.add(e[0])
-      ocbgp.bgp.neighbors.neighbor[e[0]].config.peer_group = e[2]
-      ocbgp.bgp.neighbors.neighbor[e[0]].config.peer_type = "EXTERNAL"
-      ocbgp.bgp.neighbors.neighbor[e[0]].config.send_community = "STANDARD"
-      ocbgp.bgp.neighbors.neighbor[e[0]].route_reflector.config.route_reflector_client = True
-      ocbgp.bgp.neighbors.neighbor[e[0]].route_reflector.config.route_reflector_cluster_id = "192.168.1.1"
+  # add_peers = [
+  #               ("192.168.1.1", "2856", "linx-peers"),
+  #               ("172.16.12.2", "3356", "transit"),
+  #               ("10.0.0.3", "5400", "private-peers"),
+  #               ("10.0.0.4", "3300", "private-peers"),
+  #               ("192.168.1.2", "6871", "linx-peers")
+  #             ]
+
+  # for e in add_peers:
+  #   if not e[2] in ocbgp.bgp.peer_groups.peer_group:
+  #     ocbgp.bgp.peer_groups.peer_group.add(e[2])
+  #   if not e[0] in ocbgp.bgp.neighbors.neighbor:
+  #     ocbgp.bgp.neighbors.neighbor.add(e[0])
+  #     ocbgp.bgp.neighbors.neighbor[e[0]].config.peer_group = e[2]
+  #     ocbgp.bgp.neighbors.neighbor[e[0]].config.peer_type = "EXTERNAL"
+  #     ocbgp.bgp.neighbors.neighbor[e[0]].config.send_community = "STANDARD"
+  #     ocbgp.bgp.neighbors.neighbor[e[0]].route_reflector.config.route_reflector_client = True
+  #     ocbgp.bgp.neighbors.neighbor[e[0]].route_reflector.config.route_reflector_cluster_id = "192.168.1.1"
 
 
-  #ocbgp.bgp.neighbors.neighbor.add("42.42.42.42")
-  #ocbgp.bgp.neighbors.neighbor["42.42.42.42"].config.peer_group = "DOES NOT EXIST!"
+  # #ocbgp.bgp.neighbors.neighbor.add("42.42.42.42")
+  # #ocbgp.bgp.neighbors.neighbor["42.42.42.42"].config.peer_group = "DOES NOT EXIST!"
 
-  print ocbgp.bgp.peer_groups.get(filter=True)
+  # print ocbgp.bgp.peer_groups.get(filter=True)
 
-  print json.dumps(ocbgp.get(), cls=pybindJSONEncoder, indent=4)
+  # print json.dumps(ocbgp.get(), cls=pybindJSONEncoder, indent=4)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
