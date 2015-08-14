@@ -32,7 +32,7 @@ NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
 # not complete, but will probably continue to grow.
 reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "as", "if", "else", "elsif", "map", "set", "class",
-                  "from", "import", "pass", "return", "is"]
+                  "from", "import", "pass", "return", "is", "exec"]
 
 def safe_name(arg):
   """
