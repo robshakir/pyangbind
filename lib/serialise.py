@@ -49,10 +49,10 @@ class pybindJSONEncoder(json.JSONEncoder):
   def default(self, obj):
     # if isinstance(foo,bar):
     #  return <encoded type>
-    print "%s->type %s" % (obj, type(obj))
+    #print "%s->type %s" % (obj, type(obj))
     #print dir(obj)
     if hasattr(obj, "_pybind_base_class"):
-      print "%s -> %s - had attr %s" % (obj, type(obj), getattr(obj, "_pybind_base_class"))
+      #print "%s -> %s - had attr %s" % (obj, type(obj), getattr(obj, "_pybind_base_class"))
       pybc = getattr(obj, "_pybind_base_class")
 
       if pybc in ["lib.yangtypes.RestrictedClass"]:
