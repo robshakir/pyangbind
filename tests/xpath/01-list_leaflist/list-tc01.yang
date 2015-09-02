@@ -12,6 +12,19 @@ module list-tc01 {
         reference "fooled-you";
     }
 
+    typedef derived-leafref-t5 {
+        type leafref {
+            path "/container/t5";
+            require-instance true;
+        }
+    }
+
+    typedef derived-leafref-t6 {
+        type leafref {
+            path "/container/t6/keyval";
+            require-instance true;
+        }
+    }
 
     container container {
         leaf-list t1 {
@@ -31,6 +44,17 @@ module list-tc01 {
         }
 
         list t4 {
+            key "keyval";
+            leaf keyval {
+                type string;
+            }
+        }
+
+        leaf-list t5 {
+            type string;
+        }
+
+        list t6 {
             key "keyval";
             leaf keyval {
                 type string;
@@ -58,6 +82,14 @@ module list-tc01 {
                 path "/container/t2/keyval";
                 require-instance true;
             }
+        }
+
+        leaf t5-ptr {
+            type derived-leafref-t5;
+        }
+
+        leaf t6-ptr {
+            type derived-leafref-t6;
         }
     }
 }

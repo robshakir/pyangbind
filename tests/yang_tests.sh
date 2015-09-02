@@ -42,9 +42,9 @@ else
         if [ -e $i/run.py ]; then
             echo "TESTING $i..."
             if [ "$DEL" = true ]; then
-                $i/run.py > /dev/null
+                $i/run.py
             else
-                $i/run.py -k > /dev/null
+                $i/run.py -k
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";

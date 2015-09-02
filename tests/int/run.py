@@ -69,6 +69,16 @@ def main():
     v = getattr(u.int_container, i)
     assert v == -42, "incorrectly set %s, expected 42, got %d" % (i, v)
 
+
+  for i in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
+    passed = False
+    try:
+      setattr(u.int_container, "%srestricted" % i, 10)
+      passed = True
+    except ValueError:
+      pass
+    assert passed == True, "could not set value of %srestricted to 10" % i
+
   e = False
   try:
     u.int_container.eightrestricted = -100
@@ -124,6 +134,16 @@ def main():
   except ValueError:
     e = True
   assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (-43)"
+
+  for i in [(0,True), (10,True),(-10,False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_max = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], "restricted range using max was not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

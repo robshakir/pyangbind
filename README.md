@@ -46,7 +46,7 @@ module pyangbind-example {
 }
 ```
 
-The module is compiled using ```pyang --plugindir <pyangbind-dir> -f pybind pyangbind-example.yang -o bindings.py``` from the command-line. 
+The module is compiled using ```pyang --plugindir <pyangbind-dir> -f pybind pyangbind-example.yang -o bindings.py``` from the command-line.
 
 A consuming application imports the Python module that is output, and can instantiate a new copy of the base YANG module class:
 
@@ -72,7 +72,7 @@ For example; openconfig-bgp will require the path to ietf-yang-types to be speci
 
 ```
 /usr/local/bin/pyang --plugindir ~/Code/pyangbind -f pybind \
--o bindings.py -p ../policy/ bgp.yang ~/path/to/ietf-yang-types.yang 
+-o bindings.py -p ../policy/ bgp.yang ~/path/to/ietf-yang-types.yang
 ```
 The error messages when a type is not correctly resolved are not very pretty currently and will be made more so in the future.
 
@@ -110,7 +110,7 @@ Otherwise, PyangBind's generated classes try to be consistent with the error typ
 
 * ```KeyError``` is raised when a ```__getitem__``` call results in a member not being found in the referenced item, this includes where members of a YANG ```list``` are not found.
 * ```ValueError``` is raised when a value does not conform with the YANG datatype. Since the intention is that a Python programmer does not need to care what types are used 'behind the scenes' by PyangBind ```ValueError``` will only be raised where the input cannot be cast to the  native type (for example, a YANG ```uint32``` will accept ```True``` as an input value, but really store the value of '1' in the leaf).
-* ```AttributeError``` will be thrown where a method that does not exist in the encapsulated type is used (as per standard Python errors); a leaf that does not exist in the YANG model is referenced; or an attempt to set a non-configurable value is made. Note that in some cases, ```dir(...)``` on the object may show that the method is available in the YANGDynClass object, since the requirement to capture calls where the data value is changed results in the need to generically overload these methods. 
+* ```AttributeError``` will be thrown where a method that does not exist in the encapsulated type is used (as per standard Python errors); a leaf that does not exist in the YANG model is referenced; or an attempt to set a non-configurable value is made. Note that in some cases, ```dir(...)``` on the object may show that the method is available in the YANGDynClass object, since the requirement to capture calls where the data value is changed results in the need to generically overload these methods.
 
 
 ### Setting ```config: false``` Leaves
@@ -160,7 +160,7 @@ As well as providing PyangBind a means to internally validate the existance of l
  * ```tostring(pretty_print=False)``` - prints a representation of the tree that is in use by the YANGPathHelper. It is not expected that this is of particular use to a consuming application as it simply stores a set of references to class instances (via an intermediate UUID identifier).
  * Internal ```register()``` and ```deregister()``` methods exist, but are unlikely to be of significant use to consuming applications.
 
-```YANGPathHelper``` raises ```xpathhelper.XPathError``` when invalid paths are specified. 
+```YANGPathHelper``` raises ```xpathhelper.XPathError``` when invalid paths are specified.
 
 The intention of ensuring that the YANGPathHelper is external to any generated PyangBind classes is to allow an application to build an arbitrary model hierarchy via different modules, thus ensuring that it is not required to build a single PyangBind class hierarchy for all models (which can become cumbersome due to large files!).
 
@@ -177,7 +177,7 @@ container test-container {
 	leaf target {
 		type string;
 	}
-	
+
 	leaf pointer {
 		type leafref {
 			path "../target";
@@ -198,22 +198,22 @@ When ```require-instance``` is set to false, PyangBind will simply treat the lea
 
 ## <a anchor="type-support"></a>YANG Type Support
 
-**Type**            | **Sub-Statement**   | **Supported Type**      | **Unit Tests**  
+**Type**            | **Sub-Statement**   | **Supported Type**      | **Unit Tests**
 --------------------|--------------------|--------------------------|---------------
-**binary**          | -                   | Not supported           | N/A
--                   | length              | Not supported           | N/A
+**binary**          | -                   | [bitarray](https://github.com/ilanschnell/bitarray)           | tests/binary
+-                   | length              | Supported           | tests/binary
 **bits**            | -                   | Not supported           | N/A
 -                   | position            | Not supported           | N/A
 **boolean**         | -                   | YANGBool                | tests/boolean-empty
 **empty**           | -                   | YANGBool                | tests/boolean-empty
-**decimal64**       | -                   | [Decimal](https://docs.python.org/2/library/decimal.html) | tests/decimal64 
+**decimal64**       | -                   | [Decimal](https://docs.python.org/2/library/decimal.html) | tests/decimal64
 -                   | fraction-digits     | Supported               | tests/decimal64
 **enumeration**     | -                   | Supported               | tests/enumeration
 **identityref**     | -                   | Supported               | tests/identityref
 **int{8,16,32,64}** | -                   | [numpy int](http://docs.scipy.org/doc/numpy/user/basics.types.html) | tests/int
 -                   | range               | Supported               | tests/int
 **uint{8,16,32,64}**| -                   | [numpy uint](http://docs.scipy.org/doc/numpy/user/basics.types.html) | tests/int
--                   | range               | Supported               | tests/int    
+-                   | range               | Supported               | tests/int
 **leafref**         | -                   | Supported               | tests/xpath/...
 **string**          | -                   | *str*                   | tests/string
 -                   | pattern             | Using python *re.match* | tests/string
@@ -226,9 +226,12 @@ When ```require-instance``` is set to false, PyangBind will simply treat the lea
 **choice**          | -                   | Supported               | tests/choice
 
 ## Licence
-             
+
 ```
-Copyright 2015  Rob Shakir, BT plc. (rob.shakir@bt.com, rjs@rob.sh)
+Copyright 2015, Rob Shakir (rjs@rob.sh)
+
+This project has been supported by:
+          * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -248,5 +251,5 @@ limitations under the License.
 Please send bug-reports or comments to rjs@rob.sh - or open an [issue on GitHub](https://github.com/robshakir/pyangbind/issues).
 
 ## ACKs
-* This project was developed as part of BT plc. Network Architecture 'future network management' projects.
+* This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.

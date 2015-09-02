@@ -99,6 +99,7 @@ def RestrictedClassType(*args, **kwargs):
     _pybind_generated_by = "RestrictedClassType"
     _restricted_class_base = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
+
     def __init__(self, *args, **kwargs):
       """
         Overloads the base_class __init__ method to check the input argument

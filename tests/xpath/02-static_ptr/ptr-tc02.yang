@@ -21,7 +21,6 @@ module ptr-tc02 {
             leaf t1b {
                 type leafref {
                     path "../t1c/t1d";
-                    require-instance true;
                 }
             }
 

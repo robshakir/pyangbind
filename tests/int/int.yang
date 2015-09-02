@@ -123,5 +123,11 @@ module int {
             description
               "A test uint32 that has a restricted range";
         }
+
+        leaf restricted-ueight-max {
+            type int8 {
+                range "0..max";
+            }
+        }
     }
 }
