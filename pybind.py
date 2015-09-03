@@ -24,6 +24,7 @@ import string
 import numpy as np
 import decimal
 import copy
+import os
 from bitarray import bitarray
 from lib.yangtypes import safe_name
 
@@ -142,6 +143,18 @@ class BTPyClass(plugin.PyangPlugin):
                                        action="store_true",
                                        help="""Use the xpathhelper module to
                                                resolve leafrefs"""),
+                  optparse.make_option("--split-class-dir",
+                                       metavar="DIR",
+                                       dest="split_class_dir",
+                                       help="""Split the code output into multiple
+                                               directories"""),
+                  optparse.make_option("--pybind-class-dir",
+                                        metavar="DIR",
+                                        dest="pybind_class_dir",
+                                        help="""Path in which the pyangbind 'lib'
+                                                folder can be found - assumed to
+                                                be the local directory if this option
+                                                is not specified"""),
                 ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -153,16 +166,31 @@ def build_pybind(ctx, modules, fd):
     sys.stderr.write("FATAL: pyangbind cannot build module that pyang has found errors with.\n")
     sys.exit(127)
 
-  # output the base code that we need to re-use with dynamically generated
-  # objects.
-  fd.write("from operator import attrgetter\n")
+  ctx.pybind_common_hdr = ""
+  if ctx.opts.pybind_class_dir:
+    libdir = os.path.abspath(ctx.opts.pybind_class_dir)
+    ctx.pybind_common_hdr += """import sys\n"""
+    ctx.pybind_common_hdr += """sys.path.append("%s")\n""" % libdir
+  ctx.pybind_common_hdr += "\n"
+
+  ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    fd.write("import lib.xpathhelper as xpathhelper\n")
-  fd.write("""from lib.yangtypes import RestrictedPrecisionDecimalType, RestrictedClassType, TypedListType\n""")
-  fd.write("""from lib.yangtypes import YANGBool, YANGListType, YANGDynClass, ReferenceType\n""")
-  fd.write("""from decimal import Decimal\n""")
-  fd.write("""import numpy as np\n""")
-  fd.write("""from bitarray import bitarray\n""")
+    ctx.pybind_common_hdr += "import lib.xpathhelper as xpathhelper\n"
+  ctx.pybind_common_hdr += """from lib.yangtypes import RestrictedPrecisionDecimalType, RestrictedClassType, TypedListType\n"""
+  ctx.pybind_common_hdr += """from lib.yangtypes import YANGBool, YANGListType, YANGDynClass, ReferenceType\n"""
+  ctx.pybind_common_hdr += """from lib.base import PybindBase\n"""
+  ctx.pybind_common_hdr += """from decimal import Decimal\n"""
+  ctx.pybind_common_hdr += """import numpy as np\n"""
+  ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
+
+
+
+  if not ctx.opts.split_class_dir:
+    fd.write(ctx.pybind_common_hdr)
+  else:
+    ctx.pybind_split_basepath = os.path.abspath(ctx.opts.split_class_dir)
+    if not os.path.exists(ctx.pybind_split_basepath):
+      os.makedirs(ctx.pybind_split_basepath)
 
   all_mods = []
   for module in modules:
@@ -389,6 +417,32 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
   used_types,elements = [],[]
   choices = False
 
+  if ctx.opts.split_class_dir:
+    if path == "":
+      fpath = ctx.pybind_split_basepath + "/__init__.py"
+    else:
+      pparts = path.split("/")
+      npath = "/"
+      for pp in pparts:
+        npath += safe_name(pp) + "/"
+      bpath = ctx.pybind_split_basepath + npath
+      if not os.path.exists(bpath):
+        os.makedirs(bpath)
+      fpath = bpath + "/__init__.py"
+    if not os.path.exists(fpath):
+      try:
+        nfd = open(fpath, 'w')
+      except IOError, m:
+        raise IOError, "could not open pyangbind output file (%s)" % m
+      nfd.write(ctx.pybind_common_hdr)
+    else:
+      try:
+        nfd = open(fpath, 'a')
+      except IOError, w:
+        raise IOError, "could not open pyangbind output file (%s)" % m
+  else:
+    nfd = fd
+
   if parent_cfg:
     # the first time we find a container that has config false set on it
     # then we need to hand this down the tree - we don't need to look if
@@ -400,6 +454,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         # this container is config false
         parent_cfg = False
 
+  if ctx.opts.split_class_dir:
+    import_req = []
   for ch in i_children:
     if ch.keyword == "choice":
       for choice_ch in ch.i_children:
@@ -408,13 +464,24 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
           elements += get_element(ctx, fd, case_ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=(ch.arg,choice_ch.arg))
     else:
       elements += get_element(ctx, fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
+      if ctx.opts.split_class_dir:
+        if hasattr(ch, "i_children") and len(ch.i_children):
+          import_req.append(ch.arg)
+
+  if ctx.opts.split_class_dir:
+    if len(import_req):
+      for im in import_req:
+        nfd.write("""import %s\n""" % safe_name(im))
 
   if parent.keyword in ["container", "module", "list", "submodule"]:
-    if not path == "":
-      fd.write("class yc_%s_%s_%s(object):\n" % (safe_name(parent.arg), \
-        safe_name(module.arg), safe_name(path.replace("/", "_"))))
+    if ctx.opts.split_class_dir:
+      nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
     else:
-      fd.write("class %s(object):\n" % safe_name(parent.arg))
+      if not path == "":
+        nfd.write("class yc_%s_%s_%s(PybindBase):\n" % (safe_name(parent.arg), \
+          safe_name(module.arg), safe_name(path.replace("/", "_"))))
+      else:
+        nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
 
     keyval = False
     if parent.keyword == "list":
@@ -430,7 +497,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     else:
       parent_descr = ""
 
-    fd.write("""  \"\"\"
+    nfd.write("""  \"\"\"
      This class was auto-generated by the PythonClass plugin for PYANG
      from YANG module %s - based on the path %s. Each member element of
      the container is represented as a class variable - with a specific
@@ -440,21 +507,20 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
   else:
     raise TypeError("unhandled keyword with children %s" % parent.keyword)
 
-  e_str = ""
+  elements_str = ""
   if len(elements) == 0:
-    fd.write("  pass\n")
+    nfd.write("  pass\n")
   else:
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
-    e_str = "__elements = {"
+    elements_str = "_pyangbind_elements = {"
     slots_str = "  __slots__ = ('_path_helper', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
-      e_str +=  "'%s': %s, " % (i["name"], i["name"])
+      elements_str +=  "'%s': %s, " % (i["name"], i["name"])
     slots_str += ")\n"
-    e_str += "}\n"
-    fd.write(slots_str)
-    fd.write("\n")
+    elements_str += "}\n"
+    nfd.write(slots_str + "\n")
 
     choices = {}
     choice_attrs = []
@@ -544,37 +610,37 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         classes[i["name"]] = class_str
         # TODO: NEED TO CLEAN UP HOW BASE ERRORS ARE REPORTED
         # WILL BE FIXED LATER.
-    fd.write("""
+    nfd.write("""
   def __init__(self, *args, **kwargs):\n""")
     if path == "":
       if ctx.opts.use_xpathhelper:
-        fd.write("""
+        nfd.write("""
     helper = kwargs.pop("path_helper", False)
     if helper and isinstance(helper, xpathhelper.YANGPathHelper):
       self._path_helper = helper
     else:
       self._path_helper = False\n""")
       else:
-        fd.write("""
+        nfd.write("""
     self._path_helper = False\n""")
     for c in classes:
-      fd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
-    fd.write("""
+      nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
+    nfd.write("""
     if args:
       if len(args) > 1:
         raise TypeError("cannot create a YANG container with >1 argument")
       all_attr = True
-      for e in self.__elements:
+      for e in self._pyangbind_elements:
         if not hasattr(args[0], e):
           all_attr = False
           break
       if not all_attr:
         raise ValueError("Supplied object did not have the correct attributes")
-      for e in self.__elements:
+      for e in self._pyangbind_elements:
         setattr(self, getattr(args[0], e))
 """)
     if path == "":
-      fd.write("""
+      nfd.write("""
   def path(self):
     return ""\n""")
     node = {}
@@ -583,7 +649,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       description_str = ""
       if i["description"]:
         description_str = "\n\n      YANG Description: %s" % i["description"].decode('utf-8').encode('ascii', 'ignore')
-      fd.write("""
+      nfd.write("""
   def _get_%s(self):
     \"\"\"
       Getter method for %s, mapped from YANG variable %s (%s)%s
@@ -592,7 +658,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       """ % (i["name"], i["name"], i["path"], i["origtype"],
              description_str, i["name"]))
 
-      fd.write("""
+      nfd.write("""
   def _set_%s(self,v):
     \"\"\"
       Setter method for %s, mapped from YANG variable %s (%s)
@@ -602,17 +668,17 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       do so via calling thisObj._set_%s() directly.%s
     \"\"\"""" % (i["name"], i["name"], i["path"], \
                           i["origtype"], i["name"], i["name"], description_str,))
-      fd.write("""
+      nfd.write("""
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
-      fd.write("""
+      nfd.write("""
     except (TypeError, ValueError):
       raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
-      fd.write("    self.set()\n")
+      nfd.write("    self.set()\n")
 
       if i["name"] in choice_attrs:
-        fd.write("""
+        nfd.write("""
   def _unset_%s(self):
     self.__%s = %s(%s)\n\n""" % (i["name"], i["name"], c_str["type"], c_str["arg"],))
     for i in elements:
@@ -625,76 +691,19 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         rw = False
 
       if not rw:
-        fd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
+        nfd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
       else:
-        fd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
+        nfd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
                           (i["name"], i["name"], i["name"]))
-  fd.write("\n")
+  nfd.write("\n")
   if choices:
-    fd.write("  __choices__ = %s" % repr(choices))
+    nfd.write("  __choices__ = %s" % repr(choices))
+  nfd.write("""\n  %s\n""" % elements_str)
+  nfd.write("\n")
 
-  fd.write("""
+  if ctx.opts.split_class_dir:
+    nfd.close()
 
-  %s
-
-  def elements(self):
-    return self.__elements
-
-  def __str__(self):
-    return str(self.elements())
-
-  def get(self, filter=False):
-    def error():
-      return NameError, "element does not exist"
-    d = {}
-    # for each YANG element within this container.
-    for element_name in self.__elements:
-      element = getattr(self, element_name, error)
-      if hasattr(element, "yang_name"):
-        # retrieve the YANG name method
-        yang_name = getattr(element, "yang_name", error)
-        element_id = yang_name()
-      else:
-        element_id = element_name
-      if hasattr(element, "get"):
-        # this is a YANG container that has its own
-        # get method
-        d[element_id] = element.get(filter=filter)
-        if filter == True:
-          # if the element hadn't changed but we were
-          # filtering unchanged elements, remove it
-          # from the dictionary
-          if isinstance(d[element_id], dict):
-            for entry in d[element_id]:
-              if hasattr(d[element_id][entry], "changed"):
-                if not d[element_id][entry].changed():
-                  del d[element_id][entry]
-            if len(d[element_id]) == 0:
-              del d[element_id]
-          elif isinstance(d[element_id], list):
-            for list_entry in d[element_id]:
-              if hasattr(list_entry, "changed"):
-                if not list_entry.changed():
-                  d[element_id].remove(list_entry)
-            if len(d[element_id]) == 0:
-              del d[element_id]
-      else:
-        # this is an attribute that does not have get()
-        # method
-
-        if filter == False and not element.changed():
-          if not element._default == False and element._default:
-            d[element_id] = element._default
-          else:
-            d[element_id] = element
-        elif element.changed():
-          d[element_id] = element
-        else:
-          # changed = False, and filter = True
-          pass
-    return d
-  \n""" % e_str)
-  fd.write("\n")
   return None
 
 def build_elemtype(ctx, et, prefix=False):
@@ -859,14 +868,24 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       chs = element.i_children
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
-                          "type": "yc_%s_%s_%s" % (safe_name(element.arg),
-                          safe_name(module.arg), safe_name(path.replace("/", "_"))),
                           "class": element.keyword,
                           "path": safe_name(npath), "config": True,
                           "description": elemdescr,
                           "yang_name": element.arg,
                           "choice": choice,
                  }
+      # handle the different cases of class name, this depends on whether we
+      # were asked to split the bindings into a directory structure or not.
+      if ctx.opts.split_class_dir:
+        # if we were then something that was defined as "foo/bar/config" needs
+        # to specify the relative path to it.
+        elemdict["type"] = "%s.%s" % (safe_name(element.arg), safe_name(element.arg))
+
+      else:
+        elemdict["type"] = "yc_%s_%s_%s" % (safe_name(element.arg),
+                                            safe_name(module.arg),
+                                            safe_name(path.replace("/", "_")))
+
       if element.keyword == "list":
         elemdict["key"] = safe_name(element.search_one("key").arg) if element.search_one("key") is not None else False
         user_ordered = element.search_one('ordered-by')
