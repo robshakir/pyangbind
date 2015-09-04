@@ -163,8 +163,10 @@ class BTPyClass(plugin.PyangPlugin):
 def build_pybind(ctx, modules, fd):
 
   if len(ctx.errors):
-    sys.stderr.write("FATAL: pyangbind cannot build module that pyang has found errors with.\n")
-    sys.exit(127)
+    for e in ctx.errors:
+      if not e[1] == "UNUSED_IMPORT":
+        sys.stderr.write("FATAL: pyangbind cannot build module that pyang has found errors with.\n")
+        sys.exit(127)
 
   ctx.pybind_common_hdr = ""
   if ctx.opts.pybind_class_dir:
@@ -224,6 +226,7 @@ def build_pybind(ctx, modules, fd):
         if not k in defn[defnt]:
           defn[defnt][k] = t[k]
 
+
   build_identities(ctx, defn['identity'])
   build_typedefs(ctx, defn['typedef'])
 
@@ -276,11 +279,12 @@ def build_identities(ctx, defnd):
           unresolved_ids.append(ident)
           unresolved_idc[ident] += 1
 
+  # BUGFIX?!
   # use keys() as the dictionary will change size when we
   # del an item.
-  for potential_identity in identity_d.keys():
-    if len(identity_d[potential_identity]) == 0:
-      del identity_d[potential_identity]
+  #for potential_identity in identity_d.keys():
+  #  if len(identity_d[potential_identity]) == 0:
+  #    del identity_d[potential_identity]
 
   if error_ids:
     raise TypeError("could not resolve identities %s" % error_ids)
@@ -402,8 +406,8 @@ def build_typedefs(ctx, defnd):
 def find_definitions(defn, ctx, module, prefix):
   mod = ctx.get_module(module.arg)
   if mod is None:
-    raise AttributeError("expected to be able to find module %s, "+
-                         "but could not" % (module.arg))
+    raise AttributeError("expected to be able to find module %s, " % (module.arg) +
+                         "but could not")
   type_definitions = {}
   for i in mod.search(defn):
     if i.arg in type_definitions:
@@ -573,10 +577,20 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
-        class_str["arg"] += "(referenced_path='%s', caller=self.path()+'/'+'%s', " % (i["referenced_path"], i["yang_name"])
+        class_str["arg"] += "(referenced_path='%s', caller=self.path() + ['%s'], " % (i["referenced_path"], i["yang_name"])
           #path+"/"+i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
+      elif i["class"] == "leafref-list":
+        # this a leaf-list of leafrefs
+        class_str["name"] = "__%s"% (i["name"])
+        class_str["type"] = "YANGDynClass"
+        class_str["arg"] = "base=%s" % i["type"]["native_type"][0]
+        class_str["arg"] += "(allowed_type=%s(referenced_path='%s', caller=self.path() + ['%s'], " % \
+                      (i["type"]["native_type"][1]["native_type"], i["type"]["native_type"][1]["referenced_path"], \
+                        i["yang_name"])
+        class_str["arg"] += "path_helper=self._path_helper, "
+        class_str["arg"] += "require_instance=%s))" % (i["type"]["native_type"][1]["require_instance"])
       else:
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
@@ -642,7 +656,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     if path == "":
       nfd.write("""
   def path(self):
-    return ""\n""")
+    return []\n""")
     node = {}
     for i in elements:
       c_str = classes[i["name"]]
@@ -1018,28 +1032,38 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
     #   referenced_path = elemtype["referenced_path"]
 
     if create_list:
-      cls = "leaf-list"
-      if isinstance(elemtype, list):
-        c = 0
-        allowed_types = []
-        for subtype in elemtype:
-          # nested union within a leaf-list type
-          if isinstance(subtype, tuple):
-            if subtype[0] == "leaf-union":
-              for subelemtype in subtype[1]["native_type"]:
-                allowed_types.append(subelemtype)
-            else:
-              if isinstance(subtype[1]["native_type"], list):
-                allowed_types.extend(subtype[1]["native_type"])
+      if not cls == "leafref":
+        cls = "leaf-list"
+
+        if isinstance(elemtype, list):
+          c = 0
+          allowed_types = []
+          for subtype in elemtype:
+            # nested union within a leaf-list type
+            if isinstance(subtype, tuple):
+              if subtype[0] == "leaf-union":
+                for subelemtype in subtype[1]["native_type"]:
+                  allowed_types.append(subelemtype)
               else:
-                allowed_types.append(subtype[1]["native_type"])
-          else:
-            allowed_types.append(subtype["native_type"])
+                if isinstance(subtype[1]["native_type"], list):
+                  allowed_types.extend(subtype[1]["native_type"])
+                else:
+                  allowed_types.append(subtype[1]["native_type"])
+            else:
+              allowed_types.append(subtype["native_type"])
+        else:
+          allowed_types = elemtype["native_type"]
       else:
-        allowed_types = elemtype["native_type"]
+        cls = "leafref-list"
+        allowed_types = {
+                          "native_type": elemtype["native_type"],
+                          "referenced_path": elemtype["referenced_path"],
+                          "require_instance": elemtype["require_instance"],
+                        }
 
       elemntype = {"class": cls, "native_type": ("TypedListType", \
                   allowed_types)}
+
     else:
       if cls == "union" or cls == "leaf-union":
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}

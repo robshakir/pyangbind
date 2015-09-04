@@ -107,9 +107,21 @@ def t3_leaflist_remove(yobj, tree=False):
     yobj.container.t3.append(b)
 
   for b in [("session-ipa", 1), ("amber-ale", 1), ("moose-drool", 0)]:
-    path = "/container/t3/%s" % b[0]
+    path = "/container/t3"
     retr = tree.get(path)
-    assert len(retr) == b[1], "Retrieve of a leaflist element returned the wrong number of elements (%s -> %d != %d)" % (b[0], len(retr), b[1])
+    passed = False
+    assert len(retr) == 1, "Looking up a leaf-list element returned multiple elements erroneously (%s -> %d elements (%s))" \
+      % (b[0], len(retr), retr)
+
+    found = False
+    try:
+      v = retr[0].index(b[0])
+      found = 1
+    except ValueError:
+      found = 0
+
+    assert found == b[1], "When retrieving a leaf-list element, a known value was not in the list (%s -> %s (%s))" % (b[0], b[1], retr[0])
+
     rem = False
     try:
       yobj.container.t3.remove(b[0])
@@ -118,24 +130,14 @@ def t3_leaflist_remove(yobj, tree=False):
       pass
     assert rem == bool(b[1]), "Removal of a leaflist element did not return expected result (%s -> %s != %s)" % (b[0], rem, bool(b[1]))
     new_retr = tree.get(path)
-    assert len(new_retr) == 0, "An element was not correctly removed from the leaf-list (%s -> len(%s) = %d)" % (b[0], path, len(new_retr))
 
-  for b in ["sunshine", "fat-tire", "ranger", "snapshot"]:
-    yobj.container.t3.append(b)
-
-  for b in [("snapshot", 1), ("ranger", 1), ("trout-slayer", 0)]:
-    path = "/container/t3/%s" % b[0]
-    retr = tree.get(path)
-    assert len(retr) == b[1], "Retrieve of a leaflist element returned the wrong number of elements (%s -> %d != %d)" % (b[0], len(retr), b[1])
-
-    popped_obj = yobj.container.t3.pop()
-    if popped_obj == b[0]:
-      expected_obj = True
-    else:
-      expected_obj = False
-    assert expected_obj == bool(b[1]), "Popped object was not the object that was expected (%s != %s)" % (b[0],popped_obj)
-    new_retr = tree.get(path)
-    assert len(new_retr) == 0, "An element was not correctly removed from the leaf-list (%s -> len(%s) = %d)" % (b[0], path, len(new_retr))
+    found = False
+    try:
+      v = new_retr[0].index(b[0])
+      found = 1
+    except ValueError:
+      found = 0
+    assert found == 0, "An element was not correctly removed from the leaf-list (%s -> %s [%s])" % (b[0], path, new_retr[0])
 
   if del_tree:
     del tree
@@ -188,13 +190,13 @@ def t5_typedef_leaflist_add_del(yobj,tree=False):
   for a in ["vancouver", "burnaby", "surrey", "richmond"]:
     yobj.container.t5.append(a)
 
-  for tc in [("vancouver", 1), ("burnaby", 1), ("san-francisco", 0), ("surrey", 1), ("richmond", 1)]:
-    path = "/container/t5/%s" % tc[0]
+  for tc in [("vancouver", True), ("burnaby", True), ("san-francisco", False), ("surrey", True), ("richmond", True)]:
+    path = "/container/t5"
     retr = tree.get(path)
-    assert len(retr) == tc[1], "Retreive of a leaflist element returned the wrong number of elements (%s -> %d != %d)" % (tc[0], len(retr), tc[1])
+    assert (tc[0] in retr[0]) == tc[1], "Retrieve of a leaf-list element did not return expected result (%s->%s %s)" % (tc[0], tc[1], (retr[0]))
     rem = False
     try:
-      yobj.container.t5.remove(tc[0])
+      retr[0].remove(tc[0])
       rem = True
     except ValueError:
       pass
@@ -202,18 +204,18 @@ def t5_typedef_leaflist_add_del(yobj,tree=False):
     assert rem == bool(tc[1]), "An element was not correctly removed from a leaf-list (%s -> len(%s) = %d)" % (tc[0], path, len(new_retr))
 
 
-  for tc in [("gatineau", 1), ("laval", 1), ("new-york-city", 0), ("quebec-city", 1)]:
-    path = "/container/t5/%s" % (tc[0])
+  for tc in [("gatineau", True), ("laval", True), ("new-york-city", False), ("quebec-city", True)]:
+    path = "/container/t5"
     retr = tree.get(path)
-    assert len(retr) == tc[1], "Retrieve of a leaflist element returned the wrong number of elements (%s -> %d != %d)" % (tc[0], len(retr), tc[1])
-    popped_obj = yobj.container.t5.pop()
+    assert (tc[0] in retr[0]) == tc[1], "Retrieve of a leaf-list element did not return expected result (%s->%s %s)" % (tc[0], tc[1], (retr[0]))
+    popped_obj = retr[0].pop()
     if popped_obj == tc[0]:
       expected_obj = True
     else:
       expected_obj = False
     assert expected_obj == bool(tc[1]), "Popped object was not the object that was expected (%s != %s)" % (tc[0],popped_obj)
     new_retr = tree.get(path)
-    assert len(new_retr) == 0, "An element was not correctly removed from the leaf-list (%s -> len(%s) = %d)" % (tc[0], path, len(new_retr))
+    assert (tc[0] in new_retr[0]) == False, "Retrieve of a leaf-list element did not return expected result (%s->%s %s)" % (tc[0], tc[1], (new_retr[0]))
 
   if del_tree:
     del tree
