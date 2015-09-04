@@ -60,6 +60,10 @@ module list-tc01 {
                 type string;
             }
         }
+
+        leaf-list t7 {
+            type string;
+        }
     }
 
     container reference {
@@ -90,6 +94,12 @@ module list-tc01 {
 
         leaf t6-ptr {
             type derived-leafref-t6;
+        }
+
+        leaf-list t7-ptr {
+            type leafref {
+                path "/container/t7";
+            }
         }
     }
 }

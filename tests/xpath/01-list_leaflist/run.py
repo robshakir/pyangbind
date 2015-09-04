@@ -242,6 +242,26 @@ def t6_typedef_list_add(yobj,tree=False):
   if del_tree:
     del tree
 
+def t7_leaflist_of_leafrefs(yobj,tree=False):
+  del_tree = False
+  if not tree:
+    del_tree = True
+    tree = YANGPathHelper()
+
+  test_list = [("snapshot", True), ("ranger", True), ("trout-slayer", False)]
+  for b in test_list:
+    if b[1]:
+      yobj.container.t7.append(b[0])
+
+  for b in test_list:
+    passed = False
+    try:
+      yobj.reference.t7_ptr.append(b[0])
+      passed = True
+    except:
+      pass
+
+    assert passed == b[1], "A reference to a leaf-list of leafrefs was not correctly set (%s -> %s, expected %s)" % (b[0], passed, b[1])
 
 if __name__ == '__main__':
   import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../../")
