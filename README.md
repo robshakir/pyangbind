@@ -14,7 +14,17 @@ Development of **PyangBind** has been motivated by consumption of the [**OpenCon
 pyang --plugindir /path/to/repo -f pybind <yang-files>
 ```
 
-All output is written to ```stdout``` or the file handle specified with ```-o```. Optionally, the ```--xpath-helper``` command-line argument can be used to invoke a module to allow XPath expressions for leafrefs to be resolved ([see the relevant documentation](#leafref-helper)).
+Output can be written in two different ways:
+
+* if no options given to pyang, it will write to ```stdout``` as per pyang's default behaviour.
+* if ```-o``` is given to pyang, all output will be written to the file specified as the target fd.
+* if ```--split-class-dir``` is specified, a hierarchy of modules is created such that each container corresponds to its own module. This allows statements like ```from openconfig import bgp.global.config``` to be used and means that significantly shorter files are generated for large modules. If this option is used, the argument specified after ```-o``` is ignored.
+
+Other options can be used on the command-line:
+
+* ```--use-xpath-helper``` - this currently uses the ```YANGPathHelper``` class in ```lib/xpathhelper.py``` to allow registration of objects into an XML tree, and hence allow XPATH references to be resolved ([see the relevant documentation](#leafref-helper)). In the future, arguments to this function will allow the user to load in their own helper function. See the documentation for ```PyangBindXpathHelper``` in ```lib/xpathhelper.py``` for the functions that this class should provide.
+* ```--pybind-class-dir=DIR``` - by default PyangBind will assume that in the module directory of any bindings file, there exists a ```lib/``` directory. This provides PyangBind access the relevant YANG type classes. Using this argument specifies an alternate directory which is then appended to the Python path variable, such that the user does not need to create ```lib``` symlinks. If you use ```--split-class-dir``` you *will* want to use this option!
+* ```--interesting-extension=EXTENSION-MODULE``` - PyangBind by default will do nothing with extension statements. If a module name (e.g., ```foo-extensions```) is specified on the command line, PyangBind will add entries to an extension dictionary where they are from an interesting module. Multiple modules may be specified. Such entries can then be accessed via ```yang_object.extensions()```.
 
 Once bindings have been generated, each YANG module is included as a top-level class within the output bindings file. Using the following module as an example:
 
@@ -59,7 +69,7 @@ bindings = pyangbind_example()
 bindings.parent.integer = 12
 ```
 
-Note, that as of release.01, pyangbind expects a ```lib``` directory locally to the ```bindings.py``` file referenced above. This contains the ```xpathhelper``` and ```yangtypes``` modules - such that this code does not need to be duplicated across each ```bindings.py``` file. In the future, it is intended that these functions be provided as an installable module, but this is is still *TODO*.
+Note, that as of release.01, pyangbind expects a ```lib``` directory locally to the ```bindings.py``` file referenced above. This contains the ```xpathhelper``` and ```yangtypes``` modules - such that this code does not need to be duplicated across each ```bindings.py``` file. In the future, it is intended that these functions be provided as an installable module, but this is is still *TODO*. See the commentary relating to ```--pybind-class-dir``` if this sounds irritating :-).
 
 Each data leaf can be referred to via the path described in the YANG module. Each leaf is represented by the base class that is described in the [type support](#type-support) section of this document.
 
@@ -68,7 +78,7 @@ Where nodes of the data model's tree are not Python-safe names - for example, ``
 ### YANG Dependencies
 With some outputs (e.g., ```tree``` or ```jstree```), Pyang does not require the ability to resolve all typedefs (e.g., it can just display that the type is inet:ip-address). PyangBind **requires** the ability to resolve all typedefs to their underlying definition, such that a new datatype can be defined. In some cases, this will lead to needing to include 'types' YANG files on the command line, such that pyang can load them - and they are made available to PyangBind to build types.
 
-For example; openconfig-bgp will require the path to ietf-yang-types to be specified via:
+For example; ```openconfig-bgp``` will require the path to ietf-yang-types to be specified via:
 
 ```
 /usr/local/bin/pyang --plugindir ~/Code/pyangbind -f pybind \
@@ -82,6 +92,7 @@ Each native type is wrapped in a YANGDynClass dynamic type - which provides help
 * ```default()``` - returns the default value of the YANG leaf.
 * ```changed()``` - returns ```True``` if the value has been changed from the default, ```False``` otherwise.
 * ```yang_name()``` - returns the YANG data element's name (since not all data elements name are safe to be used in Python).
+* ```extensions()``` - returns the dictionary of interesting extensions.
 
 ### YANG Container Methods
 
@@ -91,6 +102,8 @@ In addition, a YANG container provides a set of methods to determine properties 
 
  * ```elements()``` - which provides a list of the elements of the YANG-described tree which branch from this container.
  * ```get(filter=False)``` - providing a means to return a Python dictionary hiearchy showing the tree branching from the container node. Where the ```filter``` argument is set to ```True``` only elements that have changed from their default values due to manipulation of the model are returned - when filter is not specified the default values of all leaves are returned.
+
+As of a recent release, iteration through container objects will return a key,value list which can be used to walk through leaf or container objects within a particular container.
 
 ### YANG List Methods
 
@@ -104,7 +117,7 @@ Where a ```pattern``` restriction is specified in the definition of a string lea
 
 ### Errors thrown by PyangBind
 
-A number of the errors that PyangBind raises are based on the YANG model input - and are thrown from ```YANGDynClass```. In general, these will be raised when initiating an instance of the generated class (rather than during the initial generation of the bindings) -- in general, PyangBind expects Pyang's validation to have thrown errors *before* the model is parsed (it remains to be seen whether this is a safe assumption!).
+A number of the errors that PyangBind raises are based on the YANG model input - and are thrown from ```YANGDynClass```. In general, these will be raised when initiating an instance of the generated class (rather than during the initial generation of the bindings) -- in general, PyangBind expects Pyang's validation to have thrown errors *before* the model is parsed - and will bail on all errors other than those relating to unused modules.
 
 Otherwise, PyangBind's generated classes try to be consistent with the error type that a Python programmer would expect from the native types Python provides. That is to say:
 
@@ -217,13 +230,27 @@ When ```require-instance``` is set to false, PyangBind will simply treat the lea
 **leafref**         | -                   | Supported               | tests/xpath/...
 **string**          | -                   | *str*                   | tests/string
 -                   | pattern             | Using python *re.match* | tests/string
--                   | length              | Not supported           | N/A
+-                   | length              | Supported using *len*   | tests/string
 **typedef**         | -                   | Supported               | tests/typedef
 **container**       | -                   | *class*                 | tests/*
 **list**            | -                   | YANGList                | tests/list
 **leaf-list**       | -                   | TypedList               | tests/leaf-list
 **union**           | -                   | Supported               | tests/union
 **choice**          | -                   | Supported               | tests/choice
+
+## <a anchor="serialisation"></a>Seralisation
+
+As of September 2015 (no current release-tag), PyangBind also provides means to serialise classes from the default ```get()``` behaviour into a JSON format. This format tries to follow what one would consider sensible - but does not entirely conform with [draft-ietf-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json-04).
+
+In order to use the JSON serialisation, the custom encoder needs to be imported:
+
+```python
+from lib.serialise import pybindJSONEncoder
+print json.dumps(pyangbind_obj.get(filter=True), \
+		cls=pybindJSONEncoder, indent=4)
+```
+
+This will serialise the output of ```get(filter=True)``` into JSON. It is notable that where ```ordered-by-user``` lists exists, PyangBind will add a meta-data element ```__yang_order``` such that it is safe to transmit these messages through intermediate platforms which may re-order them.
 
 ## Licence
 
