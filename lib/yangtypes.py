@@ -34,6 +34,16 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "as", "if", "else", "elsif", "map", "set", "class",
                   "from", "import", "pass", "return", "is"]
 
+
+def is_yang_list(arg):
+  if isinstance(arg, list):
+    return True
+  elif hasattr(arg, "_pybind_generated_by"):
+    pygen = getattr(arg, "_pybind_generated_by")
+    if pygen in ["TypedListType", "YANGListType"]:
+      return True
+  return False
+
 def safe_name(arg):
   """
     Make a leaf or container name safe for use in Python.
@@ -141,7 +151,7 @@ def RestrictedClassType(*args, **kwargs):
       def match_pattern_check(regexp):
         #return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
         def mp_check(value):
-          if not isinstance(value, str):
+          if not isinstance(value, basestring):
             return False
           if re.match(convert_regexp(regexp), value):
             return True
@@ -257,6 +267,7 @@ def TypedListType(*args, **kwargs):
     allowed_type = [allowed_type,]
   # this was from collections.MutableSequence
   class TypedList(collections.MutableSequence):
+    _pybind_generated_by = "TypedListType"
     _list = list()
 
     def __init__(self, *args, **kwargs):
@@ -349,6 +360,7 @@ def YANGListType(*args,**kwargs):
   path_helper = kwargs.pop("path_helper", False)
   class YANGList(object):
     __slots__ = ('_members', '_keyval', '_contained_class', '_path_helper')
+    _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
       if user_ordered:
@@ -408,6 +420,8 @@ def YANGListType(*args,**kwargs):
             path_keystring = path_keystring.rstrip(" ")
             path_keystring += "]"
           else:
+            if k == "":
+              raise KeyError("Cannot set a null key for a list entry!")
             keys = [self._keyval,]
             keyparts = [k,]
             kv_obj = getattr(tmp, self._keyval)
@@ -416,6 +430,7 @@ def YANGListType(*args,**kwargs):
           tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
                   is_container=is_container, path_helper=path_helper, \
                   register_path=self._parent.path() + [self._yang_name+path_keystring])
+
 
           for i in range(0,len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
@@ -439,11 +454,11 @@ def YANGListType(*args,**kwargs):
 
     def keys(self): return self._members.keys()
 
-    def add(self, k=False):
+    def add(self, k=None):
       if k in self._members:
         raise KeyError, "%s is already defined as a list entry" % k
       if self._keyval:
-        if not k:
+        if k is None:
           raise KeyError, "a list with a key value must have a key specified"
         self.__set(k)
       else:
@@ -513,6 +528,7 @@ def YANGDynClass(*args,**kwargs):
   is_leaf = kwargs.pop("is_leaf", False)
   path_helper = kwargs.pop("path_helper", False)
   supplied_register_path = kwargs.pop("register_path", None)
+  extensions = kwargs.pop("extensions", None)
   if not base_type:
     raise TypeError, "must have a base type"
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -542,7 +558,7 @@ def YANGDynClass(*args,**kwargs):
   class YANGBaseClass(base_type):
     if is_container:
       __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
-                   '_path_helper', '_base_type', '_is_leaf', '_is_container')
+                   '_path_helper', '_base_type', '_is_leaf', '_is_container', '_extensions')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
@@ -561,6 +577,7 @@ def YANGDynClass(*args,**kwargs):
       self._base_type = base_type
       self._is_leaf = is_leaf
       self._is_container = is_container
+      self._extensions = extensions
 
       if default:
         self._default = default
@@ -581,6 +598,9 @@ def YANGDynClass(*args,**kwargs):
 
     def changed(self):
       return self._changed
+
+    def extensions(self):
+      return self._extensions
 
     def path(self):
       return self._register_path()
@@ -655,8 +675,7 @@ def YANGDynClass(*args,**kwargs):
         raise AttributeError("%s object has no attribute extend" % base_type)
       self.set()
       super(YANGBaseClass, self).extend(*args, **kwargs)
-      # Note we do not call register() here for a path_helper as extend()
-      # will call append.
+
 
     def insert(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass,self), "insert"):

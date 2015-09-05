@@ -125,6 +125,7 @@ class_map = {
 INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
 
+
 def pyang_plugin_init():
     plugin.register_plugin(BTPyClass())
 
@@ -155,6 +156,18 @@ class BTPyClass(plugin.PyangPlugin):
                                                 folder can be found - assumed to
                                                 be the local directory if this option
                                                 is not specified"""),
+                  optparse.make_option("--interesting-extension",
+                                      metavar="EXTENSION-MODULE",
+                                      default=[],
+                                      action="append",
+                                      type=str,
+                                      dest="pybind_interested_exts",
+                                      help="""A set of extensions that
+                                              are interesting and should be
+                                              stored with the class. They
+                                              can be accessed through the
+                                              "extension_dict()" argument. Multiple
+                                              arguments can be specified."""),
                 ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -621,6 +634,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["arg"] += ", path_helper=self._path_helper"
         #class_str += ", path='%s'" % (path+"/"+i["yang_name"])
         #class_str["arg"] += ")\n"
+        if "extensions" in i:
+          class_str["arg"] += ", extensions=%s" % i["extensions"]
         classes[i["name"]] = class_str
         # TODO: NEED TO CLEAN UP HOW BASE ERRORS ARE REPORTED
         # WILL BE FIXED LATER.
@@ -1081,6 +1096,21 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]
       elemdict["require_instance"] = elemtype["require_instance"]
+
+
+    if element.substmts is not None and ctx.opts.pybind_interested_exts is not None:
+      extensions = {}
+      for ext in element.substmts:
+        if ext.keyword[0] in ctx.opts.pybind_interested_exts:
+          if not ext.keyword[0] in extensions:
+            extensions[ext.keyword[0]] = {}
+          extensions[ext.keyword[0]][ext.keyword[1]] = ext.arg
+      if len(extensions):
+        elemdict["extensions"] = extensions
+
     this_object.append(elemdict)
+
+
+
   return this_object
 

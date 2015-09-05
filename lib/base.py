@@ -57,3 +57,13 @@ class PybindBase(object):
           # changed = False, and filter = True
           pass
     return d
+
+  def __getitem__(self, k):
+    def error():
+      raise KeyError("Key %s does not exist" % k)
+    element = getattr(self, k, error)
+    return element()
+
+  def __iter__(self):
+    for elem in self._pyangbind_elements:
+      yield (elem, getattr(self, elem))
