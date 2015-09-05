@@ -280,3 +280,4 @@ Please send bug-reports or comments to rjs@rob.sh - or open an [issue on GitHub]
 ## ACKs
 * This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
+* Thanks to folks from Juniper Networks for their views on Python mapping, particularly the ```split-class-dir``` functionality was inspired by their views.
