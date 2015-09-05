@@ -8,3 +8,8 @@
 
 	* Merge of xpath-helper-04 into master.
 	* Support for leafref with XPath lookups.
+
+04-09-2015 - rel.02:
+
+	* Merge of serialiser-11 into master.
+	* Support for serialising to JSON, extensions, refactored xpathhelper, and a number of new types.
