@@ -36,6 +36,15 @@ def main():
 
   bgp = openconfig_bgp_juniper()
 
+  except_thrown = False
+  try:
+    bgp.system = False
+  except AttributeError:
+    except_thrown = True
+
+  assert except_thrown == True, "Trying to set a missing container did not result" + \
+    " in an attribute error (%s != True)" % except_thrown
+
   bgp.juniper_config.bgp.global_.as_ = global_config["my_as"]
   for peer_group in peer_group_list:
     bgp.juniper_config.bgp.peer_group.add(peer_group)

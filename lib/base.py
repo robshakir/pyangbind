@@ -1,6 +1,9 @@
 
 
 class PybindBase(object):
+  _pybind_class = True
+  __slots__ = ('_pybind_class')
+
   def elements(self):
     return self._pyangbind_elements
 

@@ -91,6 +91,9 @@ class_map = {
   #                     restriction. this is generally used when we need to
   #                     re-initialise an instance of the class, such as in the
   #                     setter methods of containers.
+  # Other types may add their own types to this dictionary that have meaning
+  # only for themselves. For example, a ReferenceType can add the path that it
+  # references, and whether the require-instance keyword was set or not.
   'boolean':          {"native_type": "YANGBool", "map": class_bool_map,
                           "base_type": True, "quote_arg": True,
                             "pytype": YANGBool},
@@ -175,6 +178,10 @@ class BTPyClass(plugin.PyangPlugin):
 
 def build_pybind(ctx, modules, fd):
 
+  # which modules did pyang get asked for - we only want
+  # to build these.
+  pyang_called_modules = copy.deepcopy(modules)
+
   if len(ctx.errors):
     for e in ctx.errors:
       if not e[1] == "UNUSED_IMPORT":
@@ -243,7 +250,7 @@ def build_pybind(ctx, modules, fd):
   build_identities(ctx, defn['identity'])
   build_typedefs(ctx, defn['typedef'])
 
-  for module in modules:
+  for module in pyang_called_modules:
     mods = [module]
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
@@ -1109,8 +1116,5 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
         elemdict["extensions"] = extensions
 
     this_object.append(elemdict)
-
-
-
   return this_object
 

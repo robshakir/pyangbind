@@ -386,6 +386,9 @@ def YANGListType(*args,**kwargs):
         return False
       return True
 
+    def iteritems(self):
+      return self._members.iteritems()
+
     def __iter__(self):
       return iter(self._members)
 

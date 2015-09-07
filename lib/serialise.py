@@ -38,6 +38,14 @@ class pybindJSONEncoder(json.JSONEncoder):
                       nd[k]['__yang_order'] = index
               else:
                   nd[k] = d[k]
+              # if we wanted to do this as per draft-ietf-netmod-yang-metadata
+              # then the encoding is like this
+              #if not "@%s" % k in nd:
+              #  nd["@%s" % k] = {}
+              #  nd["@%s" % k]['order'] = index
+              # this has the downside that iterating over the dict gives you
+              # some elements that do not really exist - there is a need to
+              # exclude all elements that begin with "@"
               index += 1
       else:
           nd = d
