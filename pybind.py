@@ -36,6 +36,9 @@ if DEBUG:
   import pprint
   pp = pprint.PrettyPrinter(indent=2)
 
+# A custom boolean class for use in YANG. Since bool has specific
+# logic in python, it is not possible to extend the existing bool
+# mechanism.
 class YANGBool(int):
   def __new__(self, *args, **kwargs):
     false_args = ["false", "False", False, 0, "0"]
@@ -54,6 +57,9 @@ class YANGBool(int):
   def __str__(self):
     return str(self.__repr__())
 
+# YANG is quite flexible in terms of what it allows as input to a boolean
+# value, this map is used to provide a mapping of these values to the python
+# True and False boolean instances.
 class_bool_map = {
   'false':  False,
   'False':  False,
@@ -124,23 +130,38 @@ class_map = {
                           "pytype": np.int64},
 }
 
-# all types that support range substmts
+# We have a set of types which support "range" statements in RFC6020. This
+# list determins types that should be allowed to have a "range" argument.
 INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
 
 
+
+# Base machinery to support operation as a plugin to pyang.
 def pyang_plugin_init():
     plugin.register_plugin(BTPyClass())
 
 class BTPyClass(plugin.PyangPlugin):
     def add_output_format(self, fmts):
-        self.multiple_modules = True
-        fmts['pybind'] = self
+      # Add the 'pybind' output format to pyang.
+      self.multiple_modules = True
+      fmts['pybind'] = self
 
     def emit(self, ctx, modules, fd):
-        build_pybind(ctx, modules, fd)
+      # When called, call the build_pyangbind function.
+      build_pybind(ctx, modules, fd)
 
     def add_opts(self, optparser):
+      # Add pyangbind specific operations to pyang. These are documented in the
+      # options, but are essentially divided into three sets.
+      #   * xpathhelper - How pyangbind should deal with xpath expressions. This
+      #     module is documented in lib/xpathhelper and describes how support
+      #     registration, updates, and retrieval of xpaths.
+      #   * class output - whether a single file should be created, or whether a
+      #     hierarchy of python modules should be created. The latter is
+      #     preferable when one has large trees being compiled.
+      #   * extensions - support for YANG extensions that pyangbind should look
+      #     for, and add as a dictionary with each element.
       optlist = [
                   optparse.make_option("--use-xpathhelper",
                                        dest="use_xpathhelper",
@@ -150,14 +171,15 @@ class BTPyClass(plugin.PyangPlugin):
                   optparse.make_option("--split-class-dir",
                                        metavar="DIR",
                                        dest="split_class_dir",
-                                       help="""Split the code output into multiple
-                                               directories"""),
+                                       help="""Split the code output into
+                                               multiple directories"""),
                   optparse.make_option("--pybind-class-dir",
                                         metavar="DIR",
                                         dest="pybind_class_dir",
-                                        help="""Path in which the pyangbind 'lib'
-                                                folder can be found - assumed to
-                                                be the local directory if this option
+                                        help="""Path in which the pyangbind
+                                                'lib' directionary can be found
+                                                - assumed to be the local
+                                                directory if this option
                                                 is not specified"""),
                   optparse.make_option("--interesting-extension",
                                       metavar="EXTENSION-MODULE",
@@ -169,27 +191,39 @@ class BTPyClass(plugin.PyangPlugin):
                                               are interesting and should be
                                               stored with the class. They
                                               can be accessed through the
-                                              "extension_dict()" argument. Multiple
-                                              arguments can be specified."""),
+                                              "extension_dict()" argument.
+                                              Multiple arguments can be
+                                              specified."""),
                 ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
 
-
+# Core function to build the pyangbind output - starting with building the
+# dependencies - and then working through the instantiated tree that pyang has
+# already parsed.
 def build_pybind(ctx, modules, fd):
 
-  # which modules did pyang get asked for - we only want
-  # to build these.
+  # Restrict the output of the plugin to only the modules that are supplied
+  # to pyang. More modules are parsed by pyangbind to resolve typedefs and
+  # identities.
   pyang_called_modules = copy.deepcopy(modules)
 
+  # Bail if there are pyang errors, since this certainly means that the
+  # pyangbind output will fail - unless these are solely due to imports that
+  # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
       if not e[1] == "UNUSED_IMPORT":
-        sys.stderr.write("FATAL: pyangbind cannot build module that pyang has found errors with.\n")
+        sys.stderr.write("FATAL: pyangbind cannot build module that pyang" + \
+          " has found errors with.\n")
         sys.exit(127)
 
+  # Build the common set of imports that all pyangbind files needs
   ctx.pybind_common_hdr = ""
   if ctx.opts.pybind_class_dir:
+    # If we were asked to include a different directory for the library, then
+    # the header needs to extend the python system path to be able to include
+    # files from this directory.
     libdir = os.path.abspath(ctx.opts.pybind_class_dir)
     ctx.pybind_common_hdr += """import sys\n"""
     ctx.pybind_common_hdr += """sys.path.append("%s")\n""" % libdir
@@ -198,14 +232,15 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
     ctx.pybind_common_hdr += "import lib.xpathhelper as xpathhelper\n"
-  ctx.pybind_common_hdr += """from lib.yangtypes import RestrictedPrecisionDecimalType, RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from lib.yangtypes import YANGBool, YANGListType, YANGDynClass, ReferenceType\n"""
+  ctx.pybind_common_hdr += """from lib.yangtypes import """
+  ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
+  ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
+  ctx.pybind_common_hdr += """from lib.yangtypes import YANGBool, """
+  ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
   ctx.pybind_common_hdr += """from lib.base import PybindBase\n"""
   ctx.pybind_common_hdr += """from decimal import Decimal\n"""
   ctx.pybind_common_hdr += """import numpy as np\n"""
   ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
-
-
 
   if not ctx.opts.split_class_dir:
     fd.write(ctx.pybind_common_hdr)
@@ -214,21 +249,29 @@ def build_pybind(ctx, modules, fd):
     if not os.path.exists(ctx.pybind_split_basepath):
       os.makedirs(ctx.pybind_split_basepath)
 
+  # Determine all modules, and submodules that are needed, along with the
+  # prefix that is used for it. We need to ensure that we understand all of the
+  # prefixes that might be used to reference an identity or a typedef.
   all_mods = []
   for module in modules:
     local_module_prefix = module.search_one('prefix')
     if local_module_prefix is None:
       local_module_prefix = module.search_one('belongs-to').search_one('prefix')
       if local_module_prefix is None:
-        raise AttributeError("A module (%s) must have a prefix or parent module")
+        raise AttributeError("A module (%s) must have a prefix or parent " + \
+          "module")
       local_module_prefix = local_module_prefix.arg
     else:
       local_module_prefix = local_module_prefix.arg
     mods = [(local_module_prefix,module)]
+    # 'include' statements specify the submodules of the existing module - which
+    # also need to be parsed.
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
       if subm is not None:
         mods.append((local_module_prefix, subm))
+    # 'import' statements specify the other modules that this module will
+    # reference.
     for j in module.search('import'):
       mod = ctx.get_module(j.arg)
       if mod is not None:
@@ -237,6 +280,8 @@ def build_pybind(ctx, modules, fd):
         modules.append(mod)
     all_mods.extend(mods)
 
+  # Build a list of the 'typedef' and 'identity' statements that are included
+  # in the modules supplied.
   defn = {}
   for defnt in ['typedef', 'identity']:
     defn[defnt] = {}
@@ -246,23 +291,28 @@ def build_pybind(ctx, modules, fd):
         if not k in defn[defnt]:
           defn[defnt][k] = t[k]
 
-
+  # Build the identities and typedefs (these are added to the class_map which
+  # is globally referenced).
   build_identities(ctx, defn['identity'])
   build_typedefs(ctx, defn['typedef'])
 
+  # Iterate through the tree which pyang has built, solely for the modules
+  # that pyang was asked to build
   for module in pyang_called_modules:
     mods = [module]
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
       if subm is not None:
         mods.append(subm)
-
     for m in mods:
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
       get_children(ctx, fd, children, m, m)
 
 def build_identities(ctx, defnd):
+  # Build dicionaries which determine how identities work. Essentially, an
+  # identity is modelled such that it is a dictionary where the keys of that
+  # dictionary are the valid values for an identityref.
   unresolved_idc = {}
   for i in defnd:
     unresolved_idc[i] = 0
@@ -270,6 +320,9 @@ def build_identities(ctx, defnd):
   error_ids = []
   identity_d = {}
 
+  # The order of an identity being built is important. Find those identities
+  # that either have no "base" statement, or have a known base statement, and
+  # queue these to be processed first.
   while len(unresolved_ids):
     ident = unresolved_ids.pop(0)
     base = defnd[ident].search_one('base')
@@ -287,21 +340,26 @@ def build_identities(ctx, defnd):
         if ":" in base.arg and base.arg.split(":")[1] in identity_d:
           identity_d[base.arg.split(":")[1]][val] = {}
         identity_d[base.arg][val] = {}
-        # everything that is a value can also be a base
+        # When we have an "identity" statement, this can be used as a base for
+        # other identities, and hence we add it to the dictionary different
+        # identities that might need to be built in the future.
         if not val in identity_d:
           identity_d[val] = {}
       else:
+        # Fall-out from the loop of resolving the identity. If we've looped
+        # around many times, we can't find a base for the identity, which means
+        # it is invalid.
         if unresolved_idc[ident] > 1000:
-          # looked at this id a lot, it's a problem
-          sys.stderr.write("could not find a match for %s base: %s\n" % (ident, base.arg))
+          sys.stderr.write("could not find a match for %s base: %s\n" % \
+            (ident, base.arg))
           error_ids.append(ident)
         else:
           unresolved_ids.append(ident)
           unresolved_idc[ident] += 1
 
-  # BUGFIX?!
-  # use keys() as the dictionary will change size when we
-  # del an item.
+  # Remove those identities that do not have any members. This would remove
+  # identities that are solely bases, but have no other members. However, this
+  # is a problem if particular modules are compiled.
   #for potential_identity in identity_d.keys():
   #  if len(identity_d[potential_identity]) == 0:
   #    del identity_d[potential_identity]
@@ -309,8 +367,12 @@ def build_identities(ctx, defnd):
   if error_ids:
     raise TypeError("could not resolve identities %s" % error_ids)
 
+  # Add entries to the class_map such that this identity can be referenced by
+  # elements that use this identity ref.
   for i in identity_d:
-    id_type = {"native_type": """RestrictedClassType(base_type=unicode, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
+    id_type = {"native_type": """RestrictedClassType(base_type=unicode, """ + \
+                              """restriction_type="dict_key", """ + \
+                              """restriction_arg=%s,)""" % identity_d[i], \
                 "restriction_argument": identity_d[i], \
                 "restriction_type": "dict_key",
                 "parent_type": "string",
@@ -318,6 +380,10 @@ def build_identities(ctx, defnd):
     class_map[i] = id_type
 
 def build_typedefs(ctx, defnd):
+  # Build the type definitions that are specified within a model. Since
+  # typedefs are essentially derived from existing types, order of processing
+  # is important - we need to go through and build the types in order where
+  # they have a known 'type'.
   unresolved_tc = {}
   for i in defnd:
     unresolved_tc[i] = 0
@@ -348,19 +414,26 @@ def build_typedefs(ctx, defnd):
     else:
       unresolved_tc[t] += 1
       if unresolved_tc[t] > 1000:
+        # Take a similar approach to the resolution of identities. If we have a
+        # typedef that has a type in it that is not found after many iterations
+        # then we should bail.
         error_ids.append(t)
-        sys.stderr.write("could not find a match for %s type -> %s\n" % (t,[i.arg for i in subtypes]))
+        sys.stderr.write("could not find a match for %s type -> %s\n" % \
+          (t,[i.arg for i in subtypes]))
       else:
         unresolved_t.append(t)
 
   if error_ids:
     raise TypeError("could not resolve typedefs %s" % error_ids)
 
+  # Process the types that we built above.
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
     type_name = i_tuple[0]
     mapped_type = False
     restricted_arg = False
+    # Copy the class_map entry - this is done so that we do not alter the
+    # existing instance in memory as we add to it.
     cls,elemtype = copy.deepcopy(build_elemtype(ctx, item.search_one('type')))
     known_types = class_map.keys()
     # Enumeration is a native type, but is not natively supported
@@ -368,11 +441,19 @@ def build_typedefs(ctx, defnd):
     known_types.append("enumeration")
     known_types.append("leafref")
 
+    # Don't allow duplicate definitions of types
     if type_name in known_types:
       raise TypeError("Duplicate definition of %s" % type_name)
     default_stmt = item.search_one('default')
+
+    # 'elemtype' is a list when the type includes a union, so we need to go
+    # through and build a type definition that supports multiple types.
     if not isinstance(elemtype,list):
       restricted = False
+      # Map the original type to the new type, parsing the additional arguments
+      # that may be specified, for example, a new default, a pattern that must
+      # be matched, or a length (stored in the restriction_argument, and
+      # restriction_type class_map variables).
       class_map[type_name] = {"base_type": False,}
       class_map[type_name]["native_type"] = elemtype["native_type"]
       if "parent_type" in elemtype:
@@ -398,6 +479,9 @@ def build_typedefs(ctx, defnd):
       if "quote_arg" in elemtype:
         class_map[type_name]["quote_arg"] = elemtype["quote_arg"]
     else:
+      # Handle a typedef that is a union - extended the class_map arguments
+      # to be a list that is parsed by the relevant dynamic type generation
+      # function.
       native_type = []
       parent_type = []
       default = False if default_stmt is None else default_stmt.arg
@@ -413,7 +497,8 @@ def build_typedefs(ctx, defnd):
           msg += "supported (%s in %s)" % (i[1]["yang_type"], item.arg)
           raise TypeError(msg)
         if "default" in i[1] and not default:
-          # we do strict ordering, so only the first default wins
+          # When multiple 'default' values are specified within a union that
+          # is within a typedef, then pyangbind will choose the first one.
           q = True if "quote_arg" in i[1] else False
           default = (i[1]["default"], q)
       class_map[type_name] = {"native_type": native_type, "base_type": False,
@@ -424,10 +509,13 @@ def build_typedefs(ctx, defnd):
 
 
 def find_definitions(defn, ctx, module, prefix):
+  # Find the statements within a module that map to a particular type of
+  # statement, for instance - find typedefs, or identities, and reutrn them
+  # as a dictionary to the calling function.
   mod = ctx.get_module(module.arg)
   if mod is None:
-    raise AttributeError("expected to be able to find module %s, " % (module.arg) +
-                         "but could not")
+    raise AttributeError("expected to be able to find module %s, " % \
+                        (module.arg) + "but could not")
   type_definitions = {}
   for i in mod.search(defn):
     if i.arg in type_definitions:
@@ -437,10 +525,21 @@ def find_definitions(defn, ctx, module, prefix):
       type_definitions[i.arg] = i
   return type_definitions
 
-def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False):
+def get_children(ctx, fd, i_children, module, parent, path=str(), \
+                 parent_cfg=True, choice=False):
+  # Iterative function that is called for all elements that have childen
+  # data nodes in the tree. This function resolves those nodes into the
+  # relevant leaf, or container/list configuration and outputs the python
+  # code that corresponds to it to the relevant file. parent_cfg is used to
+  # ensure that where a parent container was set to config false, this is
+  # inherited by all elements below it; and choice is used to store whether
+  # these leaves are within a choice or not.
   used_types,elements = [],[]
   choices = False
 
+  # When pyangbind was asked to split classes, then we need to create the
+  # relevant directories for the modules to be created into. In this case
+  # even though fd might be a valid file handle, we ignore it.
   if ctx.opts.split_class_dir:
     if path == "":
       fpath = ctx.pybind_split_basepath + "/__init__.py"
@@ -465,10 +564,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       except IOError, w:
         raise IOError, "could not open pyangbind output file (%s)" % m
   else:
+    # If we weren't asked to split the files, then just use the file handle
+    # provided.
     nfd = fd
 
   if parent_cfg:
-    # the first time we find a container that has config false set on it
+    # The first time we find a container that has config false set on it
     # then we need to hand this down the tree - we don't need to look if
     # parent_cfg has already been set to False as we need to inherit.
     parent_config = parent.search_one('config')
@@ -478,6 +579,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         # this container is config false
         parent_cfg = False
 
+  # When we are asked to split the classes into modules, then we need to find
+  # all elements that have their own class within this container, and make sure
+  # that they are imported. Additionally, we need to find the elements that are
+  # within a case, and ensure that these are built with the corresponding
+  # choice specified.
   if ctx.opts.split_class_dir:
     import_req = []
   for ch in i_children:
@@ -485,18 +591,24 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       for choice_ch in ch.i_children:
         # these are case statements
         for case_ch in choice_ch.i_children:
-          elements += get_element(ctx, fd, case_ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=(ch.arg,choice_ch.arg))
+          elements += get_element(ctx, fd, case_ch, module, parent, \
+            path+"/"+ch.arg, parent_cfg=parent_cfg, \
+            choice=(ch.arg,choice_ch.arg))
     else:
-      elements += get_element(ctx, fd, ch, module, parent, path+"/"+ch.arg, parent_cfg=parent_cfg, choice=choice)
+      elements += get_element(ctx, fd, ch, module, parent, path+"/"+ch.arg,\
+        parent_cfg=parent_cfg, choice=choice)
       if ctx.opts.split_class_dir:
         if hasattr(ch, "i_children") and len(ch.i_children):
           import_req.append(ch.arg)
 
+  # Write out the import statements if needed.
   if ctx.opts.split_class_dir:
     if len(import_req):
       for im in import_req:
         nfd.write("""import %s\n""" % safe_name(im))
 
+  # 'container', 'module', 'list' and 'submodule' all have their own classes
+  # generated.
   if parent.keyword in ["container", "module", "list", "submodule"]:
     if ctx.opts.split_class_dir:
       nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
@@ -507,20 +619,28 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       else:
         nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
 
+    # If the container is actually a list, then determine what the key value
+    # is and store this such that we can give a hint.
     keyval = False
     if parent.keyword == "list":
-      keyval = parent.search_one('key').arg if parent.search_one('key') is not None else False
+      keyval = parent.search_one('key').arg if parent.search_one('key') \
+                                    is not None else False
       if keyval and " " in keyval:
         keyval = keyval.split(" ")
       else:
         keyval = [keyval,]
 
+    # Auto-generate a docstring based on the description that is provided in
+    # the YANG module. This aims to provide readability to someone perusing the
+    # code that is generated.
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n     YANG Description: %s" % parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      parent_descr = "\n\n     YANG Description: %s" % \
+        parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
     else:
       parent_descr = ""
 
+    # Add more helper text.
     nfd.write("""  \"\"\"
      This class was auto-generated by the PythonClass plugin for PYANG
      from YANG module %s - based on the path %s. Each member element of
@@ -535,8 +655,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
   if len(elements) == 0:
     nfd.write("  pass\n")
   else:
-    # we want to prevent a user from creating new attributes on a class that
-    # are not allowed within the data model
+    # We want to prevent a user from creating new attributes on a class that
+    # are not allowed within the data model - this uses the __slots__ magic
+    # variable of the class to restrict anyone from adding to these classes.
+    # Doing so gives an AttributeError when a user tries to specify something
+    # that was not in the model.
     elements_str = "_pyangbind_elements = {"
     slots_str = "  __slots__ = ('_path_helper', '_yang_name', "
     for i in elements:
@@ -545,18 +668,30 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     slots_str += ")\n"
     elements_str += "}\n"
     nfd.write(slots_str + "\n")
+    # Store the real name of the element - since we often get values that are
+    # not allowed in python as identifiers, but we need the real-name when
+    # creating instance documents (e.g., peer-group is not valid due to '-').
     nfd.write("  _yang_name = '%s'\n" % (parent.arg))
 
     choices = {}
     choice_attrs = []
     classes = {}
     for i in elements:
+      # Loop through the elements and build a string that corresponds to the
+      # class that is going to be created. In all cases (thus far) this uses
+      # the YANGDynClass helper function to generate a dynamic type. This
+      # can extend the base type that is provided, and does this to give us
+      # some attributes that base classes such as int(), or str() don't have -
+      # but YANG needs (such as a default value, the original YANG name, any
+      # extension that were provided with the leaf, etc.).
       class_str = {}
       if "default" in i and not i["default"] is None:
         default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
       if i["class"] == "leaf-list":
+        # Map a leaf-list to the type specified in the class map. This is a
+        # TypedList (see lib.yangtypes) with a particular set of types allowed.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base="
@@ -567,21 +702,32 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
           allowed_type += "]"
         else:
           allowed_type = "%s" % (i["type"]["native_type"][1])
-        class_str["arg"] += "%s(allowed_type=%s)" % (i["type"]["native_type"][0],allowed_type)
+        class_str["arg"] += "%s(allowed_type=%s)" % \
+          (i["type"]["native_type"][0],allowed_type)
         if "default" in i and not i["default"] is None:
-          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], \
+            default_arg)
       elif i["class"] == "list":
+        # Map a list to YANGList class - this is dynamically derived by the
+        # YANGListType function to have the relevant characteristics, such as
+        # whether it is ordered by the user.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=YANGListType("
-        class_str["arg"] += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
-        class_str["arg"] += ", yang_name=\"%s\", parent=self, is_container='list'" % (i["yang_name"])
-        class_str["arg"] += ", user_ordered=%s" % i["user_ordered"]
+        class_str["arg"] += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] \
+                                                  else False, i["type"])
+        class_str["arg"] += ", yang_name=\"%s\", parent=self" % (i["yang_name"])
+        class_str["arg"] += ", is_container='list', user_ordered=%s" \
+                                                  % i["user_ordered"]
         class_str["arg"] += ", path_helper=self._path_helper"
         if i["choice"]:
           class_str["arg"] += ", choice=%s" % repr(choice)
         class_str["arg"] += ")"
       elif i["class"] == "union" or i["class"] == "leaf-union":
+        # A special mapped type where there is a union that just includes leaves
+        # this is mapped to a particular Union type, and valid types within it
+        # provided. The dynamically generated class will determine whether the
+        # input can be mapped to the types included in the union.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=["
@@ -593,26 +739,35 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
             class_str["arg"] += "%s," % u[1]["native_type"]
         class_str["arg"] += "]"
         if "default" in i and not i["default"] is None:
-          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], \
+            default_arg)
       elif i["class"] == "leafref":
+        # A leafref, pyangbind uses the special ReferenceType which performs a
+        # lookup against the path_helper class provided.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
-        class_str["arg"] += "(referenced_path='%s', caller=self.path() + ['%s'], " % (i["referenced_path"], i["yang_name"])
-          #path+"/"+i["yang_name"])
+        class_str["arg"] += "(referenced_path='%s'" % i["referenced_path"]
+        class_str["arg"] += ", caller=self.path() + ['%s'], " \
+                                % (i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
       elif i["class"] == "leafref-list":
-        # this a leaf-list of leafrefs
+        # Deal with the special case of a list of leafrefs, since the
+        # ReferenceType has different arguments that need to be provided to the
+        # class to properly initialise.
         class_str["name"] = "__%s"% (i["name"])
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]["native_type"][0]
-        class_str["arg"] += "(allowed_type=%s(referenced_path='%s', caller=self.path() + ['%s'], " % \
-                      (i["type"]["native_type"][1]["native_type"], i["type"]["native_type"][1]["referenced_path"], \
-                        i["yang_name"])
+        class_str["arg"] += "(allowed_type=%s(referenced_path='%s'," \
+                              % (i["type"]["native_type"][1]["native_type"], \
+                                 i["type"]["native_type"][1]["referenced_path"])
+        class_str["arg"] += "caller=self.path() + ['%s'], " % i["yang_name"]
         class_str["arg"] += "path_helper=self._path_helper, "
-        class_str["arg"] += "require_instance=%s))" % (i["type"]["native_type"][1]["require_instance"])
+        class_str["arg"] += "require_instance=%s))" % \
+                              (i["type"]["native_type"][1]["require_instance"])
       else:
+        # Generically handle all other classes with the 'standard' mappings.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
         if isinstance(i["type"],list):
@@ -623,7 +778,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         else:
           class_str["arg"] = "base=%s" % i["type"]
         if "default" in i and not i["default"] is None:
-          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
+          class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], \
+                                                        default_arg)
         if i["class"] == "container":
           class_str["arg"] += ", is_container='container'"
         elif i["class"] == "list":
@@ -645,8 +801,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         if "extensions" in i:
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         classes[i["name"]] = class_str
-        # TODO: NEED TO CLEAN UP HOW BASE ERRORS ARE REPORTED
-        # WILL BE FIXED LATER.
+
+    # TODO: get and set methods currently have errors that are reported that
+    # are a bit ugly. The intention here is to act like an immutable type - such
+    # that new class instances are created each time that the value is set.
+
+    # Generic class __init__, set up the path_helper if asked to.
     nfd.write("""
   def __init__(self, *args, **kwargs):\n""")
     if ctx.opts.use_xpathhelper:
@@ -664,8 +824,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     else:
       nfd.write("""
     self._path_helper = False\n""")
+
+    # Write out the classes that are stored locally as self.__foo where
+    # foo is the safe YANG name.
     for c in classes:
-      nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
+      nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], \
+                                  classes[c]["type"], classes[c]["arg"]))
+    # Don't accept arguments to a container/list/submodule class
     nfd.write("""
     if args:
       if len(args) > 1:
@@ -680,6 +845,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       for e in self._pyangbind_elements:
         setattr(self, getattr(args[0], e))
 """)
+
+    # A generic method to provide a path() method on each container, that gives
+    # a path in the form of a list that describes the nodes in the hierarchy.
     nfd.write("""
   def path(self):
     if hasattr(self, "_parent"):
@@ -687,11 +855,15 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     else:
       return %s\n""" % path.split("/")[1:])
     node = {}
+
+    # For each element, write out a getter and setter method - with the doc
+    # string of the element within the model.
     for i in elements:
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n      YANG Description: %s" % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        description_str = "\n\n      YANG Description: %s" \
+              % i["description"].decode('utf-8').encode('ascii', 'ignore')
       nfd.write("""
   def _get_%s(self):
     \"\"\"
@@ -720,10 +892,18 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
       nfd.write("    self.set()\n")
 
+      # When there is a choice, then we need the ability to be able to 'unset'
+      # a leaf when the other choices are set. In this case, we write out an
+      # "unset" module that can be called.
       if i["name"] in choice_attrs:
         nfd.write("""
   def _unset_%s(self):
     self.__%s = %s(%s)\n\n""" % (i["name"], i["name"], c_str["type"], c_str["arg"],))
+
+    # When an element is read-only, write out the _set and _get methods, but
+    # we don't actually make the property object accessible. This ensures that
+    # where backends are populating the model, then they can do so via the
+    # _set_X method - but a 'normal' user can't just do container.X = 10.
     for i in elements:
       rw = True
       if not i["config"]:
@@ -739,6 +919,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         nfd.write("""  %s = property(_get_%s, _set_%s)\n""" % \
                           (i["name"], i["name"], i["name"]))
   nfd.write("\n")
+
+  # Store a list of the choices that are included within this module such that
+  # we can enforce each brnahc.
   if choices:
     nfd.write("  __choices__ = %s" % repr(choices))
   nfd.write("""\n  %s\n""" % elements_str)
@@ -750,14 +933,22 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
   return None
 
 def build_elemtype(ctx, et, prefix=False):
+  # Build a dictionary which defines the type for the element. This is used
+  # both in the case that a typedef needs to be built, as well as on per-list
+  # basis.
   cls = None
+  pattern_stmt =  et.search_one('pattern') if not et.search_one('pattern') \
+                                              is None else False
+  range_stmt = et.search_one('range') if not et.search_one('range') \
+                                              is None else False
+  length_stmt = et.search_one('length') if not et.search_one('length') \
+                                              is None else False
 
-  pattern_stmt =  et.search_one('pattern') if not et.search_one('pattern') is None else False
-  range_stmt = et.search_one('range') if not et.search_one('range') is None else False
-  length_stmt = et.search_one('length') if not et.search_one('length') is None else False
 
+  # Determine whether there are any restrictions that are placed on this leaf,
+  # and build a dictionary of the different restrictions to be placed on the
+  # type.
   restrictions = {}
-
   if pattern_stmt:
     restrictions['pattern'] = pattern_stmt.arg
 
@@ -767,28 +958,35 @@ def build_elemtype(ctx, et, prefix=False):
   if range_stmt:
     restrictions['range'] = range_stmt.arg
 
+  # Build RestrictedClassTypes based on the compiled dictionary and the
+  # underlying base type.
   if len(restrictions):
     if 'length' in restrictions or 'pattern' in restrictions:
       cls = "restricted-%s" % (et.arg)
       elemtype = {
-                    "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
+                  "native_type": \
+                    """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
                       % (class_map[et.arg]["native_type"], repr(restrictions)),
-                    "restriction_dict": restrictions,
-                    "parent_type": et.arg,
-                    "base_type": False,
+                  "restriction_dict": restrictions,
+                  "parent_type": et.arg,
+                  "base_type": False,
                   }
     elif 'range' in restrictions:
       cls = "restricted-%s" % et.arg
       elemtype = {
-                    "native_type": """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
+                  "native_type": \
+                    """RestrictedClassType(base_type=%s, restriction_dict=%s)"""
                       % (class_map[et.arg]["native_type"], repr(restrictions)),
-                    "restriction_dict": restrictions,
-                    "parent_type": et.arg,
-                    "base_type": False,
-      }
+                  "restriction_dict": restrictions,
+                  "parent_type": et.arg,
+                  "base_type": False,
+                 }
 
+  # Handle all other types of leaves that are not restricted classes.
   if cls is None:
     cls = "leaf"
+    # Enumerations are built as RestrictedClasses where the value that is
+    # provided to the class is check against the keys of a dictionary.
     if et.arg == "enumeration":
       enumeration_dict = {}
       for enum in et.search('enum'):
@@ -804,6 +1002,9 @@ def build_elemtype(ctx, et, prefix=False):
                   "restriction_type": "dict_key", \
                   "parent_type": "string", \
                   "base_type": False,}
+    # Map decimal64 to a RestrictedPrecisionDecimalType - this is there to
+    # ensure that the fraction-digits argument can be implemented. Note that
+    # fraction-digits is a mandatory argument.
     elif et.arg == "decimal64":
       fd_stmt = et.search_one('fraction-digits')
       if not fd_stmt is None:
@@ -814,6 +1015,8 @@ def build_elemtype(ctx, et, prefix=False):
                       "parent_type": "decimal64",}
       else:
         elemtype = class_map[et.arg]
+    # Handle unions - build a list of the supported types that are under the
+    # union.
     elif et.arg == "union":
       elemtype = []
       for uniontype in et.search('type'):
@@ -821,11 +1024,15 @@ def build_elemtype(ctx, et, prefix=False):
         elemtype_s[1]["yang_type"] = uniontype.arg
         elemtype.append(elemtype_s)
       cls = "union"
+    # Map leafrefs to a ReferenceType, handling the referenced path, and whether
+    # require-instance is set. When xpathhelper is not specified, then no such
+    # mapping is done - at this point, we solely map to a string.
     elif et.arg == "leafref":
       path_stmt = et.search_one('path')
       if path_stmt is None:
         raise ValueError("leafref specified with no path statement")
-      require_instance = class_bool_map[et.search_one('require-instance').arg] if et.search_one('require-instance') \
+      require_instance = class_bool_map[et.search_one('require-instance').arg] \
+                          if et.search_one('require-instance') \
                             is not None else False
       if ctx.opts.use_xpathhelper:
         elemtype = {"native_type": "ReferenceType",
@@ -840,6 +1047,8 @@ def build_elemtype(ctx, et, prefix=False):
                     "parent_type": "string",
                     "base_type": False,
                    }
+    # Handle identityrefs, but check whether there is a valid base where this
+    # has been specified.
     elif et.arg == "identityref":
       base_stmt = et.search_one('base')
       if base_stmt is None:
@@ -854,6 +1063,10 @@ def build_elemtype(ctx, et, prefix=False):
           pp.pprint(base_stmt.arg)
         sys.exit(127)
     else:
+      # For all other cases, then we should be able to look up directly in the
+      # class_map for the defined type, since these are not 'derived' types
+      # at this point. In the case that we are referencing a type that is a
+      # typedef, then this has been added to the class_map.
       try:
         elemtype = class_map[et.arg]
       except KeyError:
@@ -880,11 +1093,15 @@ def build_elemtype(ctx, et, prefix=False):
       cls = elemtype["class_override"]
   return (cls,elemtype)
 
+def get_element(ctx, fd, element, module, parent, path,
+                  parent_cfg=True, choice=False):
+  # Handle mapping of an invidual element within the model. This function
+  # produces a dictionary that can then be mapped into the relevant code that
+  # dynamically generates a class.
 
-def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=False):
   this_object = []
   default = False
-  p = False
+  has_children = False
   create_list = False
 
   elemdescr = element.search_one('description')
@@ -893,12 +1110,16 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
   else:
     elemdescr = elemdescr.arg
 
+  # If the element has an i_children attribute then this is a container, list
+  # leaf-list or choice.
   if hasattr(element, 'i_children'):
     if element.keyword in ["container", "list"]:
-      p = True
+      has_children = True
     elif element.keyword in ["leaf-list"]:
       create_list = True
 
+    # Fixup the path when within a choice, because this iteration belives that
+    # we are under a new container, but this does not exist in the path.
     if element.keyword in ["choice"]:
       path_parts = path.split("/")
       npath = ""
@@ -907,9 +1128,12 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       npath.rstrip("/")
     else:
       npath=path
+
+    # Create an element for a container.
     if element.i_children:
       chs = element.i_children
-      get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg, choice=choice)
+      get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg,\
+                   choice=choice)
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "class": element.keyword,
                           "path": safe_name(npath), "config": True,
@@ -917,34 +1141,45 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
                           "yang_name": element.arg,
                           "choice": choice,
                  }
-      # handle the different cases of class name, this depends on whether we
+      # Handle the different cases of class name, this depends on whether we
       # were asked to split the bindings into a directory structure or not.
       if ctx.opts.split_class_dir:
-        # if we were then something that was defined as "foo/bar/config" needs
-        # to specify the relative path to it.
-        elemdict["type"] = "%s.%s" % (safe_name(element.arg), safe_name(element.arg))
+        # If we were dealing with split classes, then rather than naming the
+        # class based on a unique intra-file name - and rather we must import
+        # the relative path to the module.class
+        elemdict["type"] = "%s.%s" % (safe_name(element.arg),\
+                                      safe_name(element.arg))
 
       else:
+        # Otherwise, give a unique name for the class within the dictionary.
         elemdict["type"] = "yc_%s_%s_%s" % (safe_name(element.arg),
                                             safe_name(module.arg),
                                             safe_name(path.replace("/", "_")))
 
+      # Deal with specific cases for list - such as the key and how it is
+      # ordered.
       if element.keyword == "list":
-        elemdict["key"] = safe_name(element.search_one("key").arg) if element.search_one("key") is not None else False
+        elemdict["key"] = safe_name(element.search_one("key").arg) \
+                            if element.search_one("key") is not None else False
         user_ordered = element.search_one('ordered-by')
         elemdict["user_ordered"] = True if user_ordered is not None \
           and user_ordered.arg.upper() == "USER" else False
       this_object.append(elemdict)
-      p = True
-  if not p:
+      has_children = True
+
+  # Deal with the cases that the attribute does not have children.
+  if not has_children:
     if element.keyword in ["leaf-list"]:
       create_list = True
     cls,elemtype = copy.deepcopy(build_elemtype(ctx, element.search_one('type')))
 
-    # build a tree that is rooted on this class.
-    # perform a breadth-first search - the first node found
-    # that has the "default" leaf set, then we take this
-    # as the value for the default
+    # Determine what the default for the leaf should be where there are
+    # multiple available.
+    # Algorithm:
+    #   - build a tree that is rooted on this class.
+    #   - perform a breadth-first search - the first node found
+    #   - that has the "default" leaf set, then we take this
+    #     as the value for the default
 
     # then starting at the selected default node, traverse
     # until we find a node that is declared to be a base_type
@@ -973,7 +1208,6 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
     # is str
     tmp_class_map = copy.deepcopy(class_map)
     tmp_class_map["enumeration"] = {"parent_type": "string"}
-    # TODO: add leafref
 
     if not default_type:
       if isinstance(elemtype, list):
@@ -1048,6 +1282,8 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
         if not default_type["base_type"]:
           raise TypeError("default type was not a base type")
 
+    # Set the default type based on what was determined above about the
+    # correct value to set.
     if default_type:
       quote_arg = default_type["quote_arg"] if "quote_arg" in \
                     default_type else False
@@ -1057,9 +1293,10 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
                                   element.search_one('config') else True
 
     elemname = safe_name(element.arg)
-    # if "referenced_path" in elemtype:
-    #   referenced_path = elemtype["referenced_path"]
 
+    # Deal with the cases that there is a requirement to create a list - these
+    # are leaf lists. There is some special handling for leaf-lists to ensure
+    # that the references are correctly created.
     if create_list:
       if not cls == "leafref":
         cls = "leaf-list"
@@ -1089,7 +1326,6 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
                           "referenced_path": elemtype["referenced_path"],
                           "require_instance": elemtype["require_instance"],
                         }
-
       elemntype = {"class": cls, "native_type": ("TypedListType", \
                   allowed_types)}
 
@@ -1098,6 +1334,8 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
         elemtype = {"class": cls, "native_type": ("UnionType", elemtype)}
       elemntype = elemtype["native_type"]
 
+    # Build the dictionary for the element with the relevant meta-data specified
+    # within it.
     elemdict = {"name": elemname, "type": elemntype,
                         "origtype": element.search_one('type').arg, "path": \
                         safe_name(path),
@@ -1111,7 +1349,9 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True,choice=F
       elemdict["referenced_path"] = elemtype["referenced_path"]
       elemdict["require_instance"] = elemtype["require_instance"]
 
-
+    # In cases where there there are a set of interesting extensions specified
+    # then build a dictionary of these extension values to provide with the
+    # specific leaf for this element.
     if element.substmts is not None and ctx.opts.pybind_interested_exts is not None:
       extensions = {}
       for ext in element.substmts:

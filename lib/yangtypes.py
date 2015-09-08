@@ -34,7 +34,6 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "as", "if", "else", "elsif", "map", "set", "class",
                   "from", "import", "pass", "return", "is", "exec"]
 
-
 def is_yang_list(arg):
   if isinstance(arg, list):
     return True

@@ -48,7 +48,6 @@ class PybindBase(object):
       else:
         # this is an attribute that does not have get()
         # method
-
         if filter == False and not element.changed():
           if not element._default == False and element._default:
             d[element_id] = element._default
