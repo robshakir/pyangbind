@@ -230,6 +230,7 @@ class YANGPathHelper(PybindXpathHelper):
       fx_q += "/" + self._encode_path(object_path)
     else:
       fx_q = "."+fx_q
+
     retr_obj = self._root.xpath(fx_q)
     return retr_obj
 

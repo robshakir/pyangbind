@@ -107,8 +107,8 @@ class_map = {
                           "pytype": np.uint32},
   'uint64':           {"native_type": "np.uint64", "base_type": True,
                           "pytype": np.uint64},
-  'string':           {"native_type": "str", "base_type": True,
-                          "quote_arg": True, "pytype": str},
+  'string':           {"native_type": "unicode", "base_type": True,
+                          "quote_arg": True, "pytype": unicode},
   'decimal64':        {"native_type": "Decimal", "base_type": True,
                           "pytype": decimal.Decimal},
   'empty':            {"native_type": "YANGBool", "map": class_bool_map,
@@ -310,7 +310,7 @@ def build_identities(ctx, defnd):
     raise TypeError("could not resolve identities %s" % error_ids)
 
   for i in identity_d:
-    id_type = {"native_type": """RestrictedClassType(base_type=str, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
+    id_type = {"native_type": """RestrictedClassType(base_type=unicode, restriction_type="dict_key", restriction_arg=%s,)""" % identity_d[i], \
                 "restriction_argument": identity_d[i], \
                 "restriction_type": "dict_key",
                 "parent_type": "string",
@@ -538,13 +538,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     # we want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model
     elements_str = "_pyangbind_elements = {"
-    slots_str = "  __slots__ = ('_path_helper', "
+    slots_str = "  __slots__ = ('_path_helper', '_yang_name', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
       elements_str +=  "'%s': %s, " % (i["name"], i["name"])
     slots_str += ")\n"
     elements_str += "}\n"
     nfd.write(slots_str + "\n")
+    nfd.write("  _yang_name = '%s'\n" % (parent.arg))
 
     choices = {}
     choice_attrs = []
@@ -574,7 +575,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=YANGListType("
         class_str["arg"] += "%s,%s" % ("\"%s\"" % i["key"] if i["key"] else False, i["type"])
-        class_str["arg"] += ", yang_name=\"%s\", parent=self, is_container=True" % (i["yang_name"])
+        class_str["arg"] += ", yang_name=\"%s\", parent=self, is_container='list'" % (i["yang_name"])
         class_str["arg"] += ", user_ordered=%s" % i["user_ordered"]
         class_str["arg"] += ", path_helper=self._path_helper"
         if i["choice"]:
@@ -623,8 +624,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
           class_str["arg"] = "base=%s" % i["type"]
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
-        if i["class"] in ["container", "list"]:
-          class_str["arg"] += ", is_container=True"
+        if i["class"] == "container":
+          class_str["arg"] += ", is_container='container'"
+        elif i["class"] == "list":
+          class_str["arg"] += ", is_container='list'"
         else:
           class_str["arg"] += ", is_leaf=True"
       if class_str["arg"]:
@@ -639,8 +642,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
             choices[i["choice"][0]][i["choice"][1]] = []
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str["arg"] += ", path_helper=self._path_helper"
-        #class_str += ", path='%s'" % (path+"/"+i["yang_name"])
-        #class_str["arg"] += ")\n"
         if "extensions" in i:
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         classes[i["name"]] = class_str
@@ -648,16 +649,20 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         # WILL BE FIXED LATER.
     nfd.write("""
   def __init__(self, *args, **kwargs):\n""")
-    if path == "":
-      if ctx.opts.use_xpathhelper:
-        nfd.write("""
-    helper = kwargs.pop("path_helper", False)
-    if helper and isinstance(helper, xpathhelper.YANGPathHelper):
+    if ctx.opts.use_xpathhelper:
+      nfd.write("""
+    helper = kwargs.pop("path_helper", None)
+    if helper is False:
+      self._path_helper = False
+    elif helper is not None and isinstance(helper, xpathhelper.YANGPathHelper):
+      self._path_helper = helper
+    elif hasattr(self, "_parent"):
+      helper = getattr(self._parent, "_path_helper", False)
       self._path_helper = helper
     else:
       self._path_helper = False\n""")
-      else:
-        nfd.write("""
+    else:
+      nfd.write("""
     self._path_helper = False\n""")
     for c in classes:
       nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
@@ -675,10 +680,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
       for e in self._pyangbind_elements:
         setattr(self, getattr(args[0], e))
 """)
-    if path == "":
-      nfd.write("""
+    nfd.write("""
   def path(self):
-    return []\n""")
+    if hasattr(self, "_parent"):
+      return self._parent.path()+[self._yang_name]
+    else:
+      return %s\n""" % path.split("/")[1:])
     node = {}
     for i in elements:
       c_str = classes[i["name"]]
@@ -789,7 +796,7 @@ def build_elemtype(ctx, et, prefix=False):
         val = enum.search_one('value')
         if val is not None:
           enumeration_dict[enum.arg]["value"] = int(val.arg)
-      elemtype = {"native_type": """RestrictedClassType(base_type=str, \
+      elemtype = {"native_type": """RestrictedClassType(base_type=unicode, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)""" % \
                                     (enumeration_dict), \
@@ -829,7 +836,7 @@ def build_elemtype(ctx, et, prefix=False):
         cls = "leafref"
       else:
         elemtype = {
-                    "native_type": "str",
+                    "native_type": "unicode",
                     "parent_type": "string",
                     "base_type": False,
                    }

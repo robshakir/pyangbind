@@ -75,7 +75,7 @@ def main():
     "union with integer default did not have integer type default (%s)" % \
       type(u.container.u4._default)
 
-  assert type(u.container.u6._default) == type("hello"), \
+  assert type(u.container.u6._default) == unicode, \
     "union with an inherited default from a typedef did not do so correctly (%s)" % \
       type(u.container.u6._default)
 
