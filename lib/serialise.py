@@ -96,7 +96,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return float(obj)
     elif type(obj) in [int, numpy.uint8, numpy.uint16, numpy.uint32, numpy.uint64, numpy.int8, numpy.int16, numpy.int32, numpy.int64]:
       return int(obj)
-    elif isinstance(obj, str):
+    elif isinstance(obj, str) or isinstance(obj, unicode):
       return unicode(obj)
     return json.JSONEncoder.default(self, obj)
 
