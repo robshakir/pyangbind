@@ -31,6 +31,9 @@ from types import ModuleType
 class pybindJSONIOError(Exception):
   pass
 
+class pybindJSONUpdateError(Exception):
+  pass
+
 class pybindJSONEncoder(json.JSONEncoder):
   def _preprocess_element(self, d):
     nd = {}
@@ -83,9 +86,9 @@ class pybindJSONEncoder(json.JSONEncoder):
         return obj.to01()
       elif pybc in ["lib.yangtypes.YANGBool"]:
         if obj:
-          return "true"
+          return True
         else:
-          return "false"
+          return False
       elif pybc in ["unicode"]:
         return unicode(obj)
       else:
@@ -101,7 +104,9 @@ class pybindJSONEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, obj)
 
 class pybindJSONDecoder(object):
-  def load_json(self, d, parent, yang_module, obj=False, path_helper=None):
+  def load_json(self, d, parent, yang_module, obj=False, path_helper=None, update=False):
+    if update and not obj:
+      raise pybindJSONUpdateError("can't update a missing object")
     if not obj:
       base_mod_cls = getattr(parent, safe_name(yang_module))
       obj = base_mod_cls(path_helper=path_helper)
@@ -133,7 +138,8 @@ class pybindJSONDecoder(object):
         if pybind_attr:
           if pybind_attr in ["YANGListType", "list"]:
             for child_key in d[key]:
-              attr().add(child_key)
+              if not update and not child_key in attr():
+                attr().add(child_key)
               parent = attr()[child_key]
               self.load_json(d[key][child_key], parent, yang_module, obj=obj)
           elif pybind_attr in ["RestrictedClassType","TypedListType","ReferencePathType"]:
