@@ -489,7 +489,8 @@ def YANGListType(*args,**kwargs):
         keyargs = k.split(" ")
         key_string = "["
         for key,val in zip(keyparts,keyargs):
-          key_string += "%s=%s " % (key,val)
+          kv_o = getattr(self._members[k], key)
+          key_string += "%s=%s " % (kv_o.yang_name(),val)
         key_string = key_string.rstrip(" ")
         key_string += "]"
 
