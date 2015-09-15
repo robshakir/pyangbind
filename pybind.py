@@ -780,12 +780,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
         if "default" in i and not i["default"] is None:
           class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], \
                                                         default_arg)
-        if i["class"] == "container":
-          class_str["arg"] += ", is_container='container'"
-        elif i["class"] == "list":
-          class_str["arg"] += ", is_container='list'"
-        else:
-          class_str["arg"] += ", is_leaf=True"
+      if i["class"] == "container":
+        class_str["arg"] += ", is_container='container'"
+      elif i["class"] == "list":
+        class_str["arg"] += ", is_container='list'"
+      elif i["class"] == "leaf-list":
+        class_str["arg"] += ", is_leaf=False"
+      else:
+        class_str["arg"] += ", is_leaf=True"
       if class_str["arg"]:
         class_str["arg"] += ", yang_name=\"%s\"" % i["yang_name"]
         class_str["arg"] += ", parent=self"
@@ -843,8 +845,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
       if not all_attr:
         raise ValueError("Supplied object did not have the correct attributes")
       for e in self._pyangbind_elements:
-        setattr(self, getattr(args[0], e))
-""")
+        setmethod = getattr(self, "_set_%s" % e)
+        setmethod(getattr(args[0], e))\n""")
 
     # A generic method to provide a path() method on each container, that gives
     # a path in the form of a list that describes the nodes in the hierarchy.

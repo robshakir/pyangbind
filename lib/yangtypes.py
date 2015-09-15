@@ -373,7 +373,7 @@ def YANGListType(*args,**kwargs):
   user_ordered = kwargs.pop("user_ordered", False)
   path_helper = kwargs.pop("path_helper", None)
   class YANGList(object):
-    __slots__ = ('_members', '_keyval', '_contained_class', '_path_helper')
+    __slots__ = ('_pybind_generated_by', '_members', '_keyval', '_contained_class', '_path_helper')
     _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
@@ -396,7 +396,12 @@ def YANGListType(*args,**kwargs):
     def __check__(self, v):
       if self._contained_class is None:
         return False
-      if not type(v) == type(self._contained_class):
+      try:
+        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name,
+                         is_container=is_container, path_helper=False)
+        if not tmp.__slots__ == v.__slots__:
+          return False
+      except:
         return False
       return True
 
@@ -418,13 +423,16 @@ def YANGListType(*args,**kwargs):
       self.__set(k,v)
 
     def __set(self, k=False, v=False):
+      update=False
       if v and not self.__check__(v):
         raise ValueError, "value must be set to an instance of %s" % \
           (self._contained_class)
+      if k in self._members:
+        update=True
       if self._keyval:
         try:
           tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name,
-                              is_container=is_container, path_helper=False)
+                              is_container='container', path_helper=False)
           if " " in self._keyval:
             keys = self._keyval.split(" ")
             keyparts = k.split(" ")
@@ -444,8 +452,14 @@ def YANGListType(*args,**kwargs):
             kv_obj = getattr(tmp, self._keyval)
             path_keystring = "[%s=%s]" % (kv_obj.yang_name(), k)
 
-          tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
-                  is_container=is_container, path_helper=path_helper, \
+          if not update:
+            tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
+                  is_container='container', path_helper=path_helper, \
+                  register_path=self._parent.path() + [self._yang_name+path_keystring])
+          else:
+            # hand the value to the init, rather than simply creating an empty object.
+            tmp = YANGDynClass(v, base=self._contained_class, parent=parent, yang_name=yang_name, \
+                  is_container='container', path_helper=path_helper, \
                   register_path=self._parent.path() + [self._yang_name+path_keystring])
 
           for i in range(0,len(keys)):
@@ -575,7 +589,7 @@ def YANGDynClass(*args,**kwargs):
   class YANGBaseClass(base_type):
     if is_container:
       __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
-                   '_path_helper', '_base_type', '_is_leaf', '_is_container', '_extensions')
+                   '_path_helper', '_base_type', '_is_leaf', '_is_container', '_extensions', '_pybind_base_class')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
@@ -602,13 +616,16 @@ def YANGDynClass(*args,**kwargs):
         if not args[0] == self._default:
           self._changed = True
 
-      if self._path_helper:
-        if self._supplied_register_path is None:
-          self._path_helper.register(self._register_path(), self)
-        else:
-          self._path_helper.register(self._supplied_register_path, self)
+      # lists themselves do not register, only elements within them
+      # are actually created in the tree.
+      if not self._is_container == "list":
+        if self._path_helper:
+          if self._supplied_register_path is None:
+            self._path_helper.register(self._register_path(), self)
+          else:
+            self._path_helper.register(self._supplied_register_path, self)
 
-      if self._is_container == 'list':
+      if self._is_container == 'list' or self._is_container == 'container':
         kwargs['path_helper'] = self._path_helper
 
       try:

@@ -96,11 +96,12 @@ def main():
       if i not in ["chicken"]:
         assert False, "invalid item added to a list with a union restricted key, %s" % i
 
-  passed = True
+  passed = False
+  test_instance.list_container.list_element.add(22)
   try:
-    test_instance.list_container.list_element.keyval = 14
-  except TypeError:
-    passed = False
+    test_instance.list_container.list_element[22].keyval = 14
+  except AttributeError:
+    passed = True
   assert passed, "keyvalue of a list was read-write when it should be read-only"
 
   for i in [("aardvark 5", True), ("bear 7", True), ("chicken 5", False), ("bird 11",False)]:
