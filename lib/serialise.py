@@ -104,12 +104,12 @@ class pybindJSONEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, obj)
 
 class pybindJSONDecoder(object):
-  def load_json(self, d, parent, yang_module, obj=False, path_helper=None, update=False):
+  def load_json(self, d, parent, yang_base, obj=None, path_helper=None, update=False):
     if update and not obj:
       raise pybindJSONUpdateError("can't update a missing object")
 
-    if not obj:
-      base_mod_cls = getattr(parent, safe_name(yang_module))
+    if obj is None:
+      base_mod_cls = getattr(parent, safe_name(yang_base))
       obj = base_mod_cls(path_helper=path_helper)
       for cls in d:
         tmod = getattr(obj, safe_name(cls))
@@ -128,9 +128,9 @@ class pybindJSONDecoder(object):
               attr().add(child_key)
               parent = attr()[child_key]
               standard_class = False
-              self.load_json(d[cls][child_key], parent, yang_module, obj=obj)
+              self.load_json(d[cls][child_key], parent, yang_base, obj=obj)
         if standard_class:
-          self.load_json(d[cls], pcls, yang_module, obj=obj)
+          self.load_json(d[cls], pcls, yang_base, obj=obj)
     else:
       for key in d:
         set_via_method = False
@@ -142,11 +142,11 @@ class pybindJSONDecoder(object):
               if not update and not child_key in attr():
                 attr().add(child_key)
               parent = attr()[child_key]
-              self.load_json(d[key][child_key], parent, yang_module, obj=obj)
+              self.load_json(d[key][child_key], parent, yang_base, obj=obj)
           elif pybind_attr in ["RestrictedClassType","TypedListType","ReferencePathType"]:
             set_via_method = True
           elif pybind_attr == "container":
-            self.load_json(d[key], attr(), yang_module, obj=obj)
+            self.load_json(d[key], attr(), yang_base, obj=obj)
           else:
             raise AttributeError("some unhandled pybind class on load (%s)" % pybind_attr)
         else:
