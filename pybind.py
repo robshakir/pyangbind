@@ -26,7 +26,7 @@ import decimal
 import copy
 import os
 from bitarray import bitarray
-from lib.yangtypes import safe_name
+from lib.yangtypes import safe_name, YANGBool
 
 from pyang import plugin
 from pyang import statements
@@ -35,27 +35,6 @@ DEBUG = True
 if DEBUG:
   import pprint
   pp = pprint.PrettyPrinter(indent=2)
-
-# A custom boolean class for use in YANG. Since bool has specific
-# logic in python, it is not possible to extend the existing bool
-# mechanism.
-class YANGBool(int):
-  def __new__(self, *args, **kwargs):
-    false_args = ["false", "False", False, 0, "0"]
-    true_args = ["true", "True", True, 1, "1"]
-    if len(args):
-      if not args[0] in false_args + true_args:
-        raise ValueError("%s is an invalid value for a YANGBool" % args[0])
-      value = 0 if args[0] in false_args else 1
-    else:
-      value = 0
-    return int.__new__(self, bool(value))
-
-  def __repr__(self):
-    return str([False, True][self])
-
-  def __str__(self):
-    return str(self.__repr__())
 
 # YANG is quite flexible in terms of what it allows as input to a boolean
 # value, this map is used to provide a mapping of these values to the python
@@ -194,6 +173,12 @@ class BTPyClass(plugin.PyangPlugin):
                                               "extension_dict()" argument.
                                               Multiple arguments can be
                                               specified."""),
+                  optparse.make_option("--use-extmethods",
+                                      dest="use_extmethods",
+                                      action="store_true",
+                                      help="""Allow a path-keyed dictionary
+                                              to be used to specify methods
+                                              related to a particular class"""),
                 ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -661,7 +646,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
     elements_str = "_pyangbind_elements = {"
-    slots_str = "  __slots__ = ('_path_helper', '_yang_name', "
+    slots_str = "  __slots__ = ('_path_helper', '_yang_name', '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
       elements_str +=  "'%s': %s, " % (i["name"], i["name"])
@@ -748,7 +733,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
         class_str["arg"] += "(referenced_path='%s'" % i["referenced_path"]
-        class_str["arg"] += ", caller=self.path() + ['%s'], " \
+        class_str["arg"] += ", caller=self._path() + ['%s'], " \
                                 % (i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
@@ -762,7 +747,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
         class_str["arg"] += "(allowed_type=%s(referenced_path='%s'," \
                               % (i["type"]["native_type"][1]["native_type"], \
                                  i["type"]["native_type"][1]["referenced_path"])
-        class_str["arg"] += "caller=self.path() + ['%s'], " % i["yang_name"]
+        class_str["arg"] += "caller=self._path() + ['%s'], " % i["yang_name"]
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s))" % \
                               (i["type"]["native_type"][1]["require_instance"])
@@ -800,6 +785,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
             choices[i["choice"][0]][i["choice"][1]] = []
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str["arg"] += ", path_helper=self._path_helper"
+        class_str["arg"] += ", extmethods=self._extmethods"
         if "extensions" in i:
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         classes[i["name"]] = class_str
@@ -827,6 +813,22 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
       nfd.write("""
     self._path_helper = False\n""")
 
+    if ctx.opts.use_extmethods:
+      nfd.write("""
+    extmethods = kwargs.pop("extmethods", None)
+    if extmethods is False:
+      self._extmethods = False
+    elif extmethods is not None and isinstance(extmethods, dict):
+      self._extmethods = extmethods
+    elif hasattr(self, "_parent"):
+      extmethods = getattr(self._parent, "_extmethods", None)
+      self._extmethods = extmethods
+    else:
+      self._extmethods = False\n""")
+    else:
+      nfd.write("""
+    self._extmethods = False\n""")
+
     # Write out the classes that are stored locally as self.__foo where
     # foo is the safe YANG name.
     for c in classes:
@@ -851,9 +853,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
     # A generic method to provide a path() method on each container, that gives
     # a path in the form of a list that describes the nodes in the hierarchy.
     nfd.write("""
-  def path(self):
+  def _path(self):
     if hasattr(self, "_parent"):
-      return self._parent.path()+[self._yang_name]
+      return self._parent._path()+[self._yang_name]
     else:
       return %s\n""" % path.split("/")[1:])
     node = {}
@@ -892,7 +894,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
     except (TypeError, ValueError):
       raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
-      nfd.write("    self.set()\n")
+      nfd.write("    self._set()\n")
 
       # When there is a choice, then we need the ability to be able to 'unset'
       # a leaf when the other choices are set. In this case, we write out an

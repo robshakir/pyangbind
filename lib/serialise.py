@@ -104,13 +104,13 @@ class pybindJSONEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, obj)
 
 class pybindJSONDecoder(object):
-  def load_json(self, d, parent, yang_base, obj=None, path_helper=None, update=False):
+  def load_json(self, d, parent, yang_base, obj=None, path_helper=None, update=False, extmethods=None):
     if update and not obj:
       raise pybindJSONUpdateError("can't update a missing object")
 
     if obj is None:
       base_mod_cls = getattr(parent, safe_name(yang_base))
-      obj = base_mod_cls(path_helper=path_helper)
+      obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
       for cls in d:
         tmod = getattr(obj, safe_name(cls))
         if isinstance(tmod, ModuleType):

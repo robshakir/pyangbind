@@ -30,15 +30,15 @@ def main():
 
   test_instance = nested()
 
-  assert test_instance.container.subcontainer.changed() == False, \
+  assert test_instance.container.subcontainer._changed() == False, \
     "subcontainer was marked to changed"
 
-  assert test_instance.container.changed() == False, \
+  assert test_instance.container._changed() == False, \
     "container was marked to changed"
 
   test_instance.container.subcontainer.a_leaf = 1
 
-  assert test_instance.container.subcontainer.changed() == True, \
+  assert test_instance.container.subcontainer._changed() == True, \
     "subcontainer not marked to changed after change"
 
   assert test_instance.container.subcontainer.get() == {'a-leaf': 1}, \

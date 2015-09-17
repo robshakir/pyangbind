@@ -43,6 +43,15 @@ def is_yang_list(arg):
       return True
   return False
 
+def remove_path_attributes(p):
+  new_path = []
+  for i in p:
+    if "[" in i:
+      new_path.append(i.split("[")[0])
+    else:
+      new_path.append(i)
+  return new_path
+
 def safe_name(arg):
   """
     Make a leaf or container name safe for use in Python.
@@ -272,10 +281,14 @@ def RestrictedClassType(*args, **kwargs):
   return type(RestrictedClass(*args, **kwargs))
 
 def TypedListType(*args, **kwargs):
+  """
+    Return a type that consists of a list object where only
+    certain types (specified by allowed_type kwarg to the function)
+    can be added to the list.
+  """
   allowed_type = kwargs.pop("allowed_type", unicode)
   if not isinstance(allowed_type, list):
     allowed_type = [allowed_type,]
-  # this was from collections.MutableSequence
   class TypedList(collections.MutableSequence):
     _pybind_generated_by = "TypedListType"
     _list = list()
@@ -362,6 +375,21 @@ def TypedListType(*args, **kwargs):
   return type(TypedList(*args,**kwargs))
 
 def YANGListType(*args,**kwargs):
+  """
+    Return a type representing a YANG list, with a contained class.
+    A dict or ordered dict is used to store the list, and the
+    returned object behaves akin to a dictionary.
+
+    Additional checks are performed to ensure that the keys of the
+    list are valid before adding the value.
+
+    .add(key) - initialises a new member of the list
+    .delete(key) - removes it.
+
+    Where a list exists that does not have a key - which can be the
+    case for 'config false' lists - a uuid is generated and used
+    as the key for the list.
+  """
   try:
     keyname = args[0]
     listclass = args[1]
@@ -372,6 +400,7 @@ def YANGListType(*args,**kwargs):
   yang_name = kwargs.pop("yang_name", False)
   user_ordered = kwargs.pop("user_ordered", False)
   path_helper = kwargs.pop("path_helper", None)
+
   class YANGList(object):
     __slots__ = ('_pybind_generated_by', '_members', '_keyval', '_contained_class', '_path_helper')
     _pybind_generated_by = "YANGListType"
@@ -455,12 +484,14 @@ def YANGListType(*args,**kwargs):
           if not update:
             tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
                   is_container='container', path_helper=path_helper, \
-                  register_path=self._parent.path() + [self._yang_name+path_keystring])
+                  register_path=self._parent._path() + [self._yang_name+path_keystring], \
+                  extmethods=self._parent._extmethods)
           else:
             # hand the value to the init, rather than simply creating an empty object.
             tmp = YANGDynClass(v, base=self._contained_class, parent=parent, yang_name=yang_name, \
                   is_container='container', path_helper=path_helper, \
-                  register_path=self._parent.path() + [self._yang_name+path_keystring])
+                  register_path=self._parent._path() + [self._yang_name+path_keystring],
+                  extmethods=self._parent._extmethods)
 
           for i in range(0,len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
@@ -508,7 +539,7 @@ def YANGListType(*args,**kwargs):
         key_string = key_string.rstrip(" ")
         key_string += "]"
 
-        obj_path = self._parent.path() + [self._yang_name + key_string]
+        obj_path = self._parent._path() + [self._yang_name + key_string]
 
       try:
         del self._members[k]
@@ -532,6 +563,14 @@ def YANGListType(*args,**kwargs):
   return type(YANGList(*args,**kwargs))
 
 class YANGBool(int):
+  """
+    A custom boolean class for using in YANG. Since bool has specific
+    logic in python, it is not possible to extend the existing bool
+    objects.
+
+    This bool also accepts input matching strings to handle the
+    forms that might be used in YANG modules.
+  """
   def __new__(self, *args, **kwargs):
     false_args = ["false", "False", False, 0, "0"]
     true_args = ["true", "True", True, 1, "1"]
@@ -550,6 +589,29 @@ class YANGBool(int):
     return str(self.__repr__())
 
 def YANGDynClass(*args,**kwargs):
+  """
+    Wrap an type - specified in the base_type arugment - with
+    a set of custom attributes that YANG specifies (or are required
+    for serialisation of that object). Particularly:
+
+      - base_type:  the original type - for example, string, int.
+      - default:    the YANG specified default value of the type.
+      - yang_name:  the YANG name of the type (as opposed to a 'safe'
+                    Python version).
+      - parent:     the class which this type is a member of in the
+                    YANG-specified tree.
+      - choice:     The choice branch that this type is a member of.
+      - is_{container,leaf}: whether this element is a container or
+                             a leaf.
+      - path_helper: pyangbind helper class to allow XPATH lookups.
+      - supplied_register_path: an override for the path that this
+                                object should register to. This is
+                                used when an element is a member of
+                                a list to add the key attributes to
+                                the path.
+      - extensions:  The list of extensions that should be stored
+                     with the type.
+  """
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
   yang_name = kwargs.pop("yang_name", False)
@@ -560,6 +622,7 @@ def YANGDynClass(*args,**kwargs):
   path_helper = kwargs.pop("path_helper", None)
   supplied_register_path = kwargs.pop("register_path", None)
   extensions = kwargs.pop("extensions", None)
+  extmethods = kwargs.pop("extmethods", None)
   if not base_type:
     raise TypeError, "must have a base type"
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -588,8 +651,9 @@ def YANGDynClass(*args,**kwargs):
 
   class YANGBaseClass(base_type):
     if is_container:
-      __slots__ = ('_default', '_changed', '_yang_name', '_choice', '_parent', '_supplied_register_path',
-                   '_path_helper', '_base_type', '_is_leaf', '_is_container', '_extensions', '_pybind_base_class')
+      __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
+                   '_supplied_register_path', '_path_helper', '_base_type', '_is_leaf',
+                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
@@ -599,7 +663,7 @@ def YANGDynClass(*args,**kwargs):
 
     def __init__(self, *args, **kwargs):
       self._default = False
-      self._changed = False
+      self._mchanged = False
       self._yang_name = yang_name
       self._parent = parent_instance
       self._choice = choice_member
@@ -608,13 +672,14 @@ def YANGDynClass(*args,**kwargs):
       self._base_type = base_type
       self._is_leaf = is_leaf
       self._is_container = is_container
-      self._extensions = extensions
+      self._extensionsd = extensions
+      self._extmethods = extmethods
 
       if default:
         self._default = default
       if len(args):
         if not args[0] == self._default:
-          self._changed = True
+          self._set()
 
       # lists themselves do not register, only elements within them
       # are actually created in the tree.
@@ -633,22 +698,22 @@ def YANGDynClass(*args,**kwargs):
       except Exception as e:
         raise TypeError, "couldn't generate dynamic type -> %s -> %s" % (type(e),e)
 
-    def changed(self):
-      return self._changed
+    def _changed(self):
+      return self._mchanged
 
-    def extensions(self):
-      return self._extensions
+    def _extensions(self):
+      return self._extensionsd
 
-    def path(self):
+    def _path(self):
       return self._register_path()
 
     def __str__(self):
       return super(YANGBaseClass, self).__str__()
 
-    def repr(self):
-      return super(YANGBaseClass, self).__str__()
+    def __repr__(self):
+      return super(YANGBaseClass, self).__repr__()
 
-    def set(self,choice=False):
+    def _set(self,choice=False):
       if hasattr(self, '__choices__') and choice:
         for ch in self.__choices__:
           if ch == choice[0]:
@@ -662,9 +727,9 @@ def YANGDynClass(*args,**kwargs):
                   x()
       if self._choice and not choice:
         choice=self._choice
-      self._changed = True
-      if self._parent and hasattr(self._parent, "set"):
-        self._parent.set(choice=choice)
+      self._mchanged = True
+      if self._parent and hasattr(self._parent, "_set"):
+        self._parent._set(choice=choice)
 
     def yang_name(self):
       return self._yang_name
@@ -674,34 +739,26 @@ def YANGDynClass(*args,**kwargs):
 
     # we need to overload the set methods
     def __setitem__(self, *args, **kwargs):
-      self._changed = True
+      self._set()
       super(YANGBaseClass, self).__setitem__(*args, **kwargs)
-
-    def _register_path(self):
-      if not self._supplied_register_path is None:
-        return self._supplied_register_path
-      if not self._parent is None:
-        return self._parent.path() + [self._yang_name]
-      else:
-        return []
 
     def append(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass,self), "append"):
         raise AttributeError("%s object has no attribute append" % base_type)
-      self.set()
+      self._set()
       super(YANGBaseClass, self).append(*args,**kwargs)
 
     def pop(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "pop"):
         raise AttributeError("%s object has no attribute pop" % base_type)
-      self.set()
+      self._set()
       item = super(YANGBaseClass, self).pop(*args, **kwargs)
       return item
 
     def remove(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "remove"):
         raise AttributeError("%s object has no attribute remove" % base_type)
-      self.set()
+      self._set()
       if self._path_helper:
         elem_index = super(YANGBaseClass, self).index(*args, **kwargs)
         item = super(YANGBaseClass, self).__getitem__(elem_index)
@@ -710,19 +767,63 @@ def YANGDynClass(*args,**kwargs):
     def extend(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "extend"):
         raise AttributeError("%s object has no attribute extend" % base_type)
-      self.set()
+      self._set()
       super(YANGBaseClass, self).extend(*args, **kwargs)
 
 
     def insert(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass,self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
-      self.set()
+      self._set()
       super(YANGBaseClass, self).insert(*args, **kwargs)
+
+    def _register_path(self):
+      if not self._supplied_register_path is None:
+        return self._supplied_register_path
+      if not self._parent is None:
+        return self._parent._path() + [self._yang_name]
+      else:
+        return []
+
+    def __has_extmethod(self, method):
+      if not self._extmethods:
+        return False
+      chk_path = "/" + "/".join(remove_path_attributes(self._register_path()))
+      if chk_path in self._extmethods:
+        if hasattr(self._extmethods[chk_path], method):
+          return getattr(self._extmethods[chk_path], method, False)
+        return False
+      return False
+
+    def __return_extmethod(self, method, *args, **kwargs):
+      cm = self.__has_extmethod(method)
+      if cm:
+        kwargs['caller'] = self._register_path()
+        return cm(*args, **kwargs)
+      return None
+
+    def _presave(self, *args, **kwargs):
+      return self.__return_extmethod("presave", *args, **kwargs)
+
+    def _commit(self, *args, **kwargs):
+      return self.__return_extmethod("commit", *args, **kwargs)
+
+    def _postsave(self, *args, **kwargs):
+      return self.__return_extmethod("postsave", *args, **kwargs)
+
+    def _validate(self, *args, **kwargs):
+      return self.__return_extmethod("validate", *args, **kwargs)
 
   return YANGBaseClass(*args, **kwargs)
 
 def ReferenceType(*args,**kwargs):
+  """
+    A type which based on a path provided acts as a leafref.
+    The caller argument is used to allow the path that is provided
+    to be a relative (rather than absolute) path. The require_instance
+    argument specifies whether errors should be thrown in the case
+    that the referenced instance does not exist.
+  """
   ref_path = kwargs.pop("referenced_path", False)
   path_helper = kwargs.pop("path_helper", None)
   caller = kwargs.pop("caller", False)
@@ -747,6 +848,10 @@ def ReferenceType(*args,**kwargs):
       if self._path_helper:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
+        # TODO: verify whether the path_chk[0]._is_leaf test here is
+        # valid. If not, may need to check that path_chk[0].parent
+        # specifies that this is a list. Need to check leaf-list
+        # cases too. Based on discussion on OpenConfig call 16/09/15.
         if len(path_chk) == 1 and path_chk[0]._is_leaf == True:
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.

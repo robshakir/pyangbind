@@ -53,7 +53,7 @@ def main():
   for i in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     v = getattr(u.uint_container, i)
     assert v == 42, "incorrectly set %s, expected 42, got %d" % (i, v)
-    c = getattr(u.uint_container, "changed")()
+    c = getattr(u.uint_container, "_changed")()
     assert c == True, "incorrect changed flag for %s" % i
 
   # maybe we need to test math here

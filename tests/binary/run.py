@@ -50,14 +50,14 @@ def main():
   assert t.container.b2 == bitarray(), \
     "Value of bitarray was not null when checking b2 (%s != %s)" \
         % (t.container.b2, bitarray())
-  assert t.container.b2._changed == False, \
+  assert t.container.b2._changed() == False, \
     "Unset bitarray specified changed when was default (%s != False)" \
-        % (t.container.b2._changed)
+        % (t.container.b2._changed())
   t.container.b2 = bitarray("010")
   assert t.container.b2 == bitarray('010'), \
     "Bitarray not successfuly set (%s != %s)" % (t.container.b2, bitarray('010'))
-  assert t.container.b2._changed == True, \
-    "Bitarray value not flagged as changed (%s != %s)" % (t.container.b2._changed, True)
+  assert t.container.b2._changed() == True, \
+    "Bitarray value not flagged as changed (%s != %s)" % (t.container.b2._changed(), True)
 
   for v in [("0", True), ("01", True), ("010", False)]:
     try:

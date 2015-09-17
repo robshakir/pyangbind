@@ -43,18 +43,18 @@ def main():
   assert hasattr(test_instance.string_container, "restricted_string_default"), \
         "restricted_string with default does not exist"
 
-  assert test_instance.string_container.string_leaf.changed() == False, \
+  assert test_instance.string_container.string_leaf._changed() == False, \
         "string_leaf erroneously set to changed (value: %s)" % \
-          test_instance.string_container.string_leaf.changed()
+          test_instance.string_container.string_leaf._changed()
 
   test_instance.string_container.string_leaf = "TestValue"
   assert test_instance.string_container.string_leaf == "TestValue", \
         "string_leaf not set correctly (value: %s)" % \
           test_instance.string_container.string_leaf
 
-  assert test_instance.string_container.string_leaf.changed() == True, \
+  assert test_instance.string_container.string_leaf._changed() == True, \
         "string_leaf did not change to changed (value: %s)" % \
-          test_instance.string_container.string_leaf.changed()
+          test_instance.string_container.string_leaf._changed()
 
   test_instance.string_container.string_leaf += "Addition"
   assert test_instance.string_container.string_leaf == "TestValueAddition", \
@@ -73,9 +73,9 @@ def main():
         "restricted_string_default did not have the correct hidden defualt value (value: %s)" % \
           test_instance.string_container.restricted_string_default
 
-  assert test_instance.string_container.string_default_leaf.changed() == False, \
+  assert test_instance.string_container.string_default_leaf._changed() == False, \
         "string_default_leaf erroneously reports having been changed (value: %s)" % \
-          test_instance.string_container.string_default_leaf.changed()
+          test_instance.string_container.string_default_leaf._changed()
 
   test_instance.string_container.restricted_string = "aardvark"
   assert test_instance.string_container.restricted_string == "aardvark", \

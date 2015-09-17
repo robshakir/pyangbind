@@ -61,12 +61,12 @@ def main():
   assert t.container.b2._default == False, "value default was not correctly set (%s)" % \
     t.container.b2._default
 
-  assert t.container.b2.changed() == False, "value was marked as changed incorrectly (%s)" %\
-    t.container.b2.changed()
+  assert t.container.b2._changed() == False, "value was marked as changed incorrectly (%s)" %\
+    t.container.b2._changed()
 
   t.container.b2 = True
-  assert t.container.b2.changed() == True, "value was not marked as changed when it was (%s)" % \
-    t.container.b2.changed()
+  assert t.container.b2._changed() == True, "value was not marked as changed when it was (%s)" % \
+    t.container.b2._changed()
 
   t.container.b2 = False
   assert t.get() == {'container': {'e1': True, 'b1': True, 'b2': False}}, \

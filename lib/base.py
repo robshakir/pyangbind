@@ -33,27 +33,27 @@ class PybindBase(object):
           # from the dictionary
           if isinstance(d[element_id], dict):
             for entry in d[element_id]:
-              if hasattr(d[element_id][entry], "changed"):
-                if not d[element_id][entry].changed():
+              if hasattr(d[element_id][entry], "_changed"):
+                if not d[element_id][entry]._changed():
                   del d[element_id][entry]
             if len(d[element_id]) == 0:
               del d[element_id]
           elif isinstance(d[element_id], list):
             for list_entry in d[element_id]:
-              if hasattr(list_entry, "changed"):
-                if not list_entry.changed():
+              if hasattr(list_entry, "_changed"):
+                if not list_entry._changed():
                   d[element_id].remove(list_entry)
             if len(d[element_id]) == 0:
               del d[element_id]
       else:
         # this is an attribute that does not have get()
         # method
-        if filter == False and not element.changed():
+        if filter == False and not element._changed():
           if not element._default == False and element._default:
             d[element_id] = element._default
           else:
             d[element_id] = element
-        elif element.changed():
+        elif element._changed():
           d[element_id] = element
         else:
           # changed = False, and filter = True
