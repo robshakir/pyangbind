@@ -1,18 +1,41 @@
 from serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
 import json
 
+def remove_path(tree, path):
+  this_part = path.pop(0)
+  if len(path) == 0:
+    try:
+      del tree[this_part]
+      return tree
+    except KeyError:
+      # ignore missing dictionary key
+      pass
+  else:
+    try:
+      tree[this_part] = remove_path(tree[this_part], path)
+    except KeyError:
+      pass
+  return tree
+
+
 def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None):
   return pybindJSONDecoder().load_json(d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods)
 
-def dumps(obj, indent=4, filter=True):
-  return json.dumps(obj.get(filter=filter),cls=pybindJSONEncoder, indent=indent)
+def dumps(obj, indent=4, filter=True, skip_subtrees=[]):
+  if not isinstance(skip_subtrees, list):
+    raise AttributeError('the subtrees to be skipped should be a list')
+  tree = obj.get(filter=filter)
+  for p in skip_subtrees:
+    pp = p.split("/")[1:]
+    tree = remove_path(tree, pp)
+  return json.dumps(tree,cls=pybindJSONEncoder, indent=indent)
 
-def dump(obj, fn):
+def dump(obj, fn, indent=4, filter=True, skip_subtrees=[]):
   try:
     fh = open(fn, 'w')
   except IOError, m:
     raise pybindJSONIOError("could not open file for writing: %s" % m)
-  fh.write(dumps(obj))
+  fh.write(dumps(obj, indent=indent, filter=filter, skip_subtrees=skip_subtrees))
   fh.close()
 
 def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None):

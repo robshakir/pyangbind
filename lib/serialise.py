@@ -109,49 +109,54 @@ class pybindJSONDecoder(object):
       raise pybindJSONUpdateError("can't update a missing object")
 
     if obj is None:
+      # we need to find the class to create, as one has not been supplied.
       base_mod_cls = getattr(parent, safe_name(yang_base))
-      obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
-      for cls in d:
-        tmod = getattr(obj, safe_name(cls))
-        if isinstance(tmod, ModuleType):
-          pcls = getattr(tmod, safe_name(cls))
+      tmp = base_mod_cls(path_helper=False)
+      if path_helper is not None:
+        # check that this path doesn't already exist in the
+        # tree, otherwise we create a duplicate.
+        existing_objs = path_helper.get(tmp._path())
+        if len(existing_objs) == 0:
+          obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+        elif len(existing_objs) == 1:
+          obj = existing_objs[0]
         else:
-          pcls = tmod
-        pybind_attr = getattr(pcls, "_pybind_generated_by", False)
-        standard_class = True
-        if pybind_attr:
-          # check that this isn't a list otherwise we need to call
-          # the method differently
-          if pybind_attr in ["YANGListType", "list"]:
-            attr = getattr(obj, "_get_%s" % safe_name(cls))
-            for child_key in d[cls]:
-              attr().add(child_key)
-              parent = attr()[child_key]
-              standard_class = False
-              self.load_json(d[cls][child_key], parent, yang_base, obj=obj)
-        if standard_class:
-          self.load_json(d[cls], pcls, yang_base, obj=obj)
-    else:
-      for key in d:
-        set_via_method = False
-        attr = getattr(parent, "_get_%s" % safe_name(key))
-        pybind_attr = getattr(attr(), "_pybind_generated_by", False)
-        if pybind_attr:
-          if pybind_attr in ["YANGListType", "list"]:
-            for child_key in d[key]:
-              if not update and not child_key in attr():
-                attr().add(child_key)
-              parent = attr()[child_key]
-              self.load_json(d[key][child_key], parent, yang_base, obj=obj)
-          elif pybind_attr in ["RestrictedClassType","TypedListType","ReferencePathType"]:
-            set_via_method = True
-          elif pybind_attr == "container":
-            self.load_json(d[key], attr(), yang_base, obj=obj)
-          else:
-            raise AttributeError("some unhandled pybind class on load (%s)" % pybind_attr)
-        else:
-          set_via_method = True
-        if set_via_method:
-          set_method = getattr(parent, "_set_%s" % safe_name(key))
-          set_method(d[key])
+          raise pybindJSONUpdateError('update was attempted to a node that was not unique')
+      else:
+        # in this case, we cannot check for an existing object
+        obj = base_mod_class(path_helper=path_helper, extmethods=extmethods)
+
+    for key in d:
+      child = getattr(obj, "_get_%s" % safe_name(key), None)
+      if child is None:
+        raise AttributeError('JSON object contained a key that did not exist')
+      chobj = child()
+      set_via_stdmethod = True
+      pybind_attr = getattr(child(), '_pybind_generated_by', None)
+      if pybind_attr in ["container"]:
+        # the child is a container, so call this method for it
+        self.load_json(d[key], chobj, yang_base, obj=chobj)
+        set_via_stdmethod = False
+      elif pybind_attr in ["YANGListType", "list"]:
+        # we need to add each key to the list and then skip a level in the
+        # JSON hierarchy
+        for child_key in d[key]:
+          if not child_key in obj:
+            chobj.add(child_key)
+          parent = chobj[child_key]
+          self.load_json(d[key][child_key], parent, yang_base, obj=parent)
+          set_via_stdmethod = False
+      elif pybind_attr in ["RestrictedClassType","TypedListType","ReferencePathType"]:
+        # normal but valid types - which use the std set method
+        pass
+      elif pybind_attr is None:
+        # not a pybind attribute at all - keep using the std set method
+        pass
+      else:
+        raise pybindJSONUpdateError("unknown pybind type when loading JSON: %s" % pybind_attr)
+      if set_via_stdmethod:
+        # simply get the set method and then set the value of the leaf
+        set_method = getattr(obj, "_set_%s" % safe_name(key))
+        set_method(d[key])
     return obj
+

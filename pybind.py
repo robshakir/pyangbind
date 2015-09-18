@@ -894,7 +894,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
     except (TypeError, ValueError):
       raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
     self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
-      nfd.write("    self._set()\n")
+      nfd.write("    if hasattr(self, '_set'):\n")
+      nfd.write("      self._set()\n")
 
       # When there is a choice, then we need the ability to be able to 'unset'
       # a leaf when the other choices are set. In this case, we write out an
