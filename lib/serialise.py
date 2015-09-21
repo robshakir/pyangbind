@@ -112,6 +112,7 @@ class pybindJSONDecoder(object):
       # we need to find the class to create, as one has not been supplied.
       base_mod_cls = getattr(parent, safe_name(yang_base))
       tmp = base_mod_cls(path_helper=False)
+
       if path_helper is not None:
         # check that this path doesn't already exist in the
         # tree, otherwise we create a duplicate.
@@ -129,7 +130,7 @@ class pybindJSONDecoder(object):
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
       if child is None:
-        raise AttributeError('JSON object contained a key that did not exist')
+        raise AttributeError("JSON object contained a key that did not exist (%s)" % (key))
       chobj = child()
       set_via_stdmethod = True
       pybind_attr = getattr(child(), '_pybind_generated_by', None)
@@ -141,7 +142,7 @@ class pybindJSONDecoder(object):
         # we need to add each key to the list and then skip a level in the
         # JSON hierarchy
         for child_key in d[key]:
-          if not child_key in obj:
+          if not child_key in chobj:
             chobj.add(child_key)
           parent = chobj[child_key]
           self.load_json(d[key][child_key], parent, yang_base, obj=parent)

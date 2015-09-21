@@ -21,13 +21,34 @@ def remove_path(tree, path):
 def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None):
   return pybindJSONDecoder().load_json(d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods)
 
-def dumps(obj, indent=4, filter=True, skip_subtrees=[]):
+def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
+  def lookup_subdict(dictionary, key):
+    if not isinstance(key, list):
+      raise AttributeError('keys should be a list')
+    if not key[0] in dictionary:
+      raise KeyError("requested non-existent key (%s)" % key[0])
+    if len(key) == 1:
+      return dictionary[key[0]]
+    current = key.pop(0)
+    return lookup_subdict(dictionary[current], key)
+
   if not isinstance(skip_subtrees, list):
     raise AttributeError('the subtrees to be skipped should be a list')
   tree = obj.get(filter=filter)
   for p in skip_subtrees:
     pp = p.split("/")[1:]
     tree = remove_path(tree, pp)
+  if select:
+    key_del = []
+    for t in tree:
+      keep = True
+      for k, v in select.iteritems():
+        if keep and not unicode(lookup_subdict(tree[t], k.split("."))) == unicode(v):
+          keep = False
+      if not keep:
+        key_del.append(t)
+    for k in key_del:
+      del tree[k]
   return json.dumps(tree,cls=pybindJSONEncoder, indent=indent)
 
 def dump(obj, fn, indent=4, filter=True, skip_subtrees=[]):

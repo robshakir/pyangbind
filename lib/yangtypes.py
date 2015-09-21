@@ -32,7 +32,9 @@ NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
 # not complete, but will probably continue to grow.
 reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "as", "if", "else", "elsif", "map", "set", "class",
-                  "from", "import", "pass", "return", "is", "exec"]
+                  "from", "import", "pass", "return", "is", "exec",
+                  "pop", "insert", "remove", "add", "delete", "local",
+                  "get", "default", "yang_name"]
 
 def is_yang_list(arg):
   if isinstance(arg, list):
@@ -707,6 +709,9 @@ def YANGDynClass(*args,**kwargs):
     def _path(self):
       return self._register_path()
 
+    def _yang_path(self):
+      return "/"+"/".join(self._register_path())
+
     def __str__(self):
       return super(YANGBaseClass, self).__str__()
 
@@ -799,6 +804,7 @@ def YANGDynClass(*args,**kwargs):
       cm = self.__has_extmethod(method)
       if cm:
         kwargs['caller'] = self._register_path()
+        kwargs['path_helper'] = self._path_helper
         return cm(*args, **kwargs)
       return None
 
