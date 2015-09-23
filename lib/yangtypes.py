@@ -507,7 +507,7 @@ def YANGListType(*args,**kwargs):
         # returns the uuid for the upstream process to use
         k = str(uuid.uuid1())
         self._members[k] = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
-                            is_container=is_container, path_helper=path_helper)
+                            is_container=is_container, path_helper=path_helper, extmethods=self._parent._extmethods)
         return k
 
     def __delitem__(self, k):
@@ -531,15 +531,18 @@ def YANGListType(*args,**kwargs):
     def delete(self, k):
       if self._path_helper:
         current_item = self._members[k]
-        keyparts = self._keyval.split(" ")
-
-        keyargs = k.split(" ")
-        key_string = "["
-        for key,val in zip(keyparts,keyargs):
-          kv_o = getattr(self._members[k], key)
-          key_string += "%s=%s " % (kv_o.yang_name(),val)
-        key_string = key_string.rstrip(" ")
-        key_string += "]"
+        if " " in self._keyval:
+          keyparts = self._keyval.split(" ")
+          keyargs = k.split(" ")
+          key_string = "["
+          for key,val in zip(keyparts,keyargs):
+            kv_o = getattr(self._members[k], key)
+            key_string += "%s=%s " % (kv_o.yang_name(),val)
+          key_string = key_string.rstrip(" ")
+          key_string += "]"
+        else:
+          kv_o = getattr(self._members[k], self._keyval)
+          key_string = "[@%s=%s]" % (kv_o.yang_name(), k)
 
         obj_path = self._parent._path() + [self._yang_name + key_string]
 
