@@ -1,8 +1,6 @@
 import copy
 
 class PybindBase(object):
-  __slots__ = ('_pybind_generated_by',)
-  _pybind_generated_by = "container"
 
   def elements(self):
     return self._pyangbind_elements

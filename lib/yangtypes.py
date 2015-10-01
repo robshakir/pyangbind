@@ -655,7 +655,7 @@ def YANGDynClass(*args,**kwargs):
     if is_container:
       __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
                    '_supplied_register_path', '_path_helper', '_base_type', '_is_leaf',
-                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods')
+                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods',)
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
