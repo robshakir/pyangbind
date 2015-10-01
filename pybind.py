@@ -191,7 +191,10 @@ def build_pybind(ctx, modules, fd):
   # Restrict the output of the plugin to only the modules that are supplied
   # to pyang. More modules are parsed by pyangbind to resolve typedefs and
   # identities.
-  pyang_called_modules = copy.deepcopy(modules)
+  module_d = {}
+  for mod in modules:
+    module_d[mod.arg] = mod
+  pyang_called_modules = module_d.keys()
 
   # Bail if there are pyang errors, since this certainly means that the
   # pyangbind output will fail - unless these are solely due to imports that
@@ -283,7 +286,8 @@ def build_pybind(ctx, modules, fd):
 
   # Iterate through the tree which pyang has built, solely for the modules
   # that pyang was asked to build
-  for module in pyang_called_modules:
+  for modname in pyang_called_modules:
+    module = module_d[modname]
     mods = [module]
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
