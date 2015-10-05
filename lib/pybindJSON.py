@@ -18,8 +18,8 @@ def remove_path(tree, path):
   return tree
 
 
-def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None):
-  return pybindJSONDecoder().load_json(d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods)
+def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False):
+  return pybindJSONDecoder().load_json(d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
 def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
   def lookup_subdict(dictionary, key):
@@ -59,9 +59,9 @@ def dump(obj, fn, indent=4, filter=True, skip_subtrees=[]):
   fh.write(dumps(obj, indent=indent, filter=filter, skip_subtrees=skip_subtrees))
   fh.close()
 
-def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None):
+def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
   except IOError, m:
     raise pybindJSONIOError("could not open file to read")
-  return loads(f, parent_pymod, yang_module, path_helper=path_helper, extmethods=extmethods)
+  return loads(f, parent_pymod, yang_module, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)

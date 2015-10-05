@@ -126,6 +126,7 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
+    __slots__ = ('_restricted_class_base')
     _pybind_generated_by = "RestrictedClassType"
 
     _restricted_class_base = restricted_class_hint
@@ -180,7 +181,7 @@ def RestrictedClassType(*args, **kwargs):
         return mp_check
 
       def in_dictionary_check(dictionary):
-        return lambda i: i in dictionary
+        return lambda i: unicode(i) in dictionary
 
       def length_check(maxlength, minlength=None):
         if maxlength is None and minlength is None:
@@ -839,6 +840,9 @@ def ReferenceType(*args,**kwargs):
   require_instance = kwargs.pop("require_instance", False)
   class ReferencePathType(object):
 
+    __slots__ = ('_referenced_path', '_path_helper', '_caller', '_referenced_object',
+                 '_ptr', '_require_instance', '_type')
+
     _pybind_generated_by = "ReferencePathType"
 
     def __init__(self, *args, **kwargs):
@@ -848,6 +852,7 @@ def ReferenceType(*args,**kwargs):
       self._caller = caller
       self._ptr = False
       self._require_instance = require_instance
+      self._type = "unicode"
 
       if len(args):
         value = args[0]
@@ -864,14 +869,16 @@ def ReferenceType(*args,**kwargs):
         if len(path_chk) == 1 and path_chk[0]._is_leaf == True:
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.
+          path_parts = self._referenced_path.split("/")
+          leaf_name = path_parts[-1]
+          if ":" in leaf_name:
+            # normalise the namespace
+            leaf_name = leaf_name.split(":")[1]
+          set_method = getattr(path_chk[0]._parent, "_set_%s" % safe_name(leaf_name))
+          get_method = getattr(path_chk[0]._parent, "_get_%s" % safe_name(leaf_name))
           if value:
-            path_parts = self._referenced_path.split("/")
-            leaf_name = path_parts[-1]
-            if ":" in leaf_name:
-              # normalise the namespace
-              leaf_name = leaf_name.split(":")[1]
-            set_method = getattr(path_chk[0]._parent, "_set_%s" % safe_name(leaf_name))
             set_method(value)
+          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(get_method()._base_type))
           self._ptr = True
         elif self._require_instance:
           if not value:
@@ -909,6 +916,11 @@ def ReferenceType(*args,**kwargs):
       if not self._ptr:
         return repr(self._referenced_object)
       return repr(self._get_ptr())
+
+    def _get(self):
+      if not self._ptr:
+        return self._referenced_object
+      return self._get_ptr()
 
     def __str__(self):
       if not self._ptr:

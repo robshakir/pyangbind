@@ -322,13 +322,13 @@ def build_identities(ctx, defnd):
         val = ident
         if ":" in ident:
           parts = ident.split(":")
-          val = parts[1]
-          pfx = parts[0]
-          if "%s:%s" % (pfx, base.arg) in identity_d:
-            identity_d["%s:%s" % (pfx, base.arg)][val] = {}
-        if ":" in base.arg and base.arg.split(":")[1] in identity_d:
-          identity_d[base.arg.split(":")[1]][val] = {}
-        identity_d[base.arg][val] = {}
+          val = unicode(parts[1])
+          pfx = unicode(parts[0])
+          if unicode("%s:%s") % (pfx, base.arg) in identity_d:
+            identity_d[unicode("%s:%s") % (pfx, base.arg)][val] = {}
+        if ":" in base.arg and unicode(base.arg.split(":")[1]) in identity_d:
+          identity_d[unicode(base.arg.split(":")[1])][val] = {}
+        identity_d[unicode(base.arg)][val] = {}
         # When we have an "identity" statement, this can be used as a base for
         # other identities, and hence we add it to the dictionary different
         # identities that might need to be built in the future.
@@ -903,11 +903,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
       nfd.write("    if hasattr(self, '_set'):\n")
       nfd.write("      self._set()\n")
 
-      # When there is a choice, then we need the ability to be able to 'unset'
-      # a leaf when the other choices are set. In this case, we write out an
-      # "unset" module that can be called.
-      if i["name"] in choice_attrs:
-        nfd.write("""
+      # When we want to return a value to its default, the unset method can
+      # be used. Generally, this is done in a choice where one branch needs to
+      # be set to the default, but may be used wherever re-initialiation of
+      # the object is required.
+      nfd.write("""
   def _unset_%s(self):
     self.__%s = %s(%s)\n\n""" % (i["name"], i["name"], c_str["type"], c_str["arg"],))
 
@@ -1001,10 +1001,10 @@ def build_elemtype(ctx, et, prefix=False):
     if et.arg == "enumeration":
       enumeration_dict = {}
       for enum in et.search('enum'):
-        enumeration_dict[enum.arg] = {}
+        enumeration_dict[unicode(enum.arg)] = {}
         val = enum.search_one('value')
         if val is not None:
-          enumeration_dict[enum.arg]["value"] = int(val.arg)
+          enumeration_dict[unicode(enum.arg)]["value"] = int(val.arg)
       elemtype = {"native_type": """RestrictedClassType(base_type=unicode, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)""" % \

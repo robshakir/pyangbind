@@ -2,6 +2,8 @@ import copy
 
 class PybindBase(object):
 
+  __slots__ = ()
+
   def elements(self):
     return self._pyangbind_elements
 
