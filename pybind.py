@@ -268,6 +268,14 @@ def build_pybind(ctx, modules, fd):
         modules.append(mod)
     all_mods.extend(mods)
 
+  # remove duplicates from the list (same module and prefix)
+  new_all_mods = []
+  for mod in all_mods:
+    if not mod in new_all_mods:
+      new_all_mods.append(mod)
+  all_mods = new_all_mods
+
+
   # Build a list of the 'typedef' and 'identity' statements that are included
   # in the modules supplied.
   defn = {}
@@ -315,26 +323,42 @@ def build_identities(ctx, defnd):
   while len(unresolved_ids):
     ident = unresolved_ids.pop(0)
     base = defnd[ident].search_one('base')
-    if base is None:
-      identity_d[ident] = {}
+    reprocess = False
+    if base is None and not unicode(ident) in identity_d:
+      identity_d[unicode(ident)] = {}
     else:
-      if base.arg in identity_d:
-        val = ident
+      # the identity has a base, so we need to check whether it
+      # exists already
+      if unicode(base.arg) in identity_d:
+        base_id = unicode(base.arg)
+        # if it did, then we can now define the value - we want to
+        # define it as both the resolved value (i.e., with the prefix)
+        # and the unresolved value.
         if ":" in ident:
-          parts = ident.split(":")
-          val = unicode(parts[1])
-          pfx = unicode(parts[0])
-          if unicode("%s:%s") % (pfx, base.arg) in identity_d:
-            identity_d[unicode("%s:%s") % (pfx, base.arg)][val] = {}
-        if ":" in base.arg and unicode(base.arg.split(":")[1]) in identity_d:
-          identity_d[unicode(base.arg.split(":")[1])][val] = {}
-        identity_d[unicode(base.arg)][val] = {}
-        # When we have an "identity" statement, this can be used as a base for
-        # other identities, and hence we add it to the dictionary different
-        # identities that might need to be built in the future.
-        if not val in identity_d:
-          identity_d[val] = {}
+          prefix,value = ident.split(":")
+          prefix,value = unicode(prefix),unicode(value)
+          if not value in identity_d[base_id]:
+            identity_d[base_id][value] = {}
+          if not value in identity_d:
+            identity_d[value] = {}
+          # check whether the base existed with the prefix that was
+          # used for this value too, as long as the base_id is not
+          # already resolved
+          if not ":" in base_id:
+            resolved_base = unicode("%s:%s" % (prefix, base_id))
+            if not resolved_base in identity_d:
+              reprocess = True
+            else:
+              identity_d[resolved_base][ident] = {}
+              identity_d[resolved_base][value] = {}
+        if not ident in identity_d[base_id]:
+          identity_d[base_id][ident] = {}
+        if not ident in identity_d:
+          identity_d[ident] = {}
       else:
+        reprocess = True
+
+      if reprocess:
         # Fall-out from the loop of resolving the identity. If we've looped
         # around many times, we can't find a base for the identity, which means
         # it is invalid.
@@ -345,6 +369,7 @@ def build_identities(ctx, defnd):
         else:
           unresolved_ids.append(ident)
           unresolved_idc[ident] += 1
+
 
   # Remove those identities that do not have any members. This would remove
   # identities that are solely bases, but have no other members. However, this
