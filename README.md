@@ -258,6 +258,7 @@ This will serialise the output of ```get(filter=True)``` into JSON. It is notabl
 Copyright 2015, Rob Shakir (rjs@rob.sh)
 
 This project has been supported by:
+          * Jive Communications, Inc.
           * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -279,5 +280,6 @@ Please send bug-reports or comments to rjs@rob.sh - or open an [issue on GitHub]
 
 ## ACKs
 * This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
+* Ongoing development and support for this project is supported by [Jive Communications, Inc](www.jive.com).
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
 * Thanks to folks from Juniper Networks for their views on Python mapping, particularly the ```split-class-dir``` functionality was inspired by their views.

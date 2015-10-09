@@ -1,7 +1,8 @@
 """
-Copyright 2015  Rob Shakir (rjs@rob.sh)
+Copyright 2015  Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
 This project has been supported by:
+          * Jive Communcations, Inc.
           * BT plc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
