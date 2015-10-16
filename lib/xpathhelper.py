@@ -81,7 +81,7 @@ class PybindXpathHelper(object):
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>.*)\[(?P<arg>.*)\]$")
-  _arg_re = re.compile("^[@]?(?P<cmd>[a-zA-Z0-9\-\_]+)([ ]+)?=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?(?P<remainder>.*)")
+  _arg_re = re.compile("^[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?(?P<remainder>.*)")
   _relative_path_re = re.compile("^(\.|\.\.)")
 
   def __init__(self):
@@ -115,7 +115,7 @@ class YANGPathHelper(PybindXpathHelper):
     parts.append(buf)
     return parts
 
-  def _encode_path(self, path, mode="search", find_parent=False, normalise_namespace=True):
+  def _encode_path(self, path, mode="search", find_parent=False, normalise_namespace=True, caller=False):
     if not mode in ["search", "set"]:
       raise XPathError("Path can only be encoded based on searching or setting attributes")
 
@@ -132,13 +132,26 @@ class YANGPathHelper(PybindXpathHelper):
     else:
       epath = "/"
     for i in range(startelem,lastelem):
-      (tagname, attributes) = self._tagname_attributes(parts[i])
+      (tagname, attributes) = self._tagname_attributes(parts[i], normalise_namespace=normalise_namespace)
       if ":" in tagname and normalise_namespace:
         tagname = tagname.split(":")[1]
 
       if attributes is not None:
         epath += tagname + "["
         for k,v in attributes.iteritems():
+          # handling for rfc6020 current() specification
+          if "current()" in v:
+            remaining_path = re.sub("current\(\)(?P<remaining>.*)", '\g<remaining>', v).split("/")
+            # since the calling leaf may not exist, we need to do a
+            # lookup on a path that will do, which is the parent
+            if remaining_path[1] == "..":
+              lookup = caller[:-1] + remaining_path[2:]
+            else:
+              lookup = caller + remaining_path[1:]
+            resolved_current_attr = self.get(lookup)
+            if not len(resolved_current_attr) == 1:
+              raise XPathError('XPATH specified a current() expression that returned a non-unique list')
+            v=resolved_current_attr[0]
           epath += "@%s='%s' " % (k,v)
           if mode == "search":
             epath += "and "
@@ -151,7 +164,7 @@ class YANGPathHelper(PybindXpathHelper):
     epath = epath.rstrip("/")
     return epath
 
-  def _tagname_attributes(self, tag):
+  def _tagname_attributes(self, tag, normalise_namespace=True):
       tagname,attributes = tag,None
       if self._attr_re.match(tag):
         tagname,arg = self._attr_re.sub('\g<tagname>||\g<arg>', tag).split("||")
@@ -161,10 +174,12 @@ class YANGPathHelper(PybindXpathHelper):
         while len(tmp_arg):
           if self._arg_re.match(tmp_arg):
             c,a,r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>', tmp_arg).split("||")
+            if ":" in c and normalise_namespace:
+              c = c.split(":")[1]
             attributes[c] = a
             tmp_arg = r
           else:
-            raise XPathError, "invalid attribute string specified for %s - %s" % (tagname, arg)
+            raise XPathError, "invalid attribute string specified for %s - %s (err part: %s)" % (tagname, arg, tmp_arg)
       return (tagname, attributes)
 
   def register(self, object_path, object_ptr, caller=False):
@@ -225,10 +240,10 @@ class YANGPathHelper(PybindXpathHelper):
       obj.getparent().remove(obj)
 
   def _get_etree(self, object_path, caller=False):
-    fx_q = self._encode_path(object_path)
+    fx_q = self._encode_path(object_path, caller=caller)
     if self._relative_path_re.match(fx_q) and caller:
       fx_q = "." + self._encode_path(caller)
-      fx_q += "/" + self._encode_path(object_path)
+      fx_q += "/" + self._encode_path(object_path, caller=caller)
     else:
       if not fx_q == "/":
         fx_q = "."+fx_q

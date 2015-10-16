@@ -818,6 +818,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
         class_str["arg"] += ", extmethods=self._extmethods"
         if "extensions" in i:
           class_str["arg"] += ", extensions=%s" % i["extensions"]
+        if keyval and i["yang_name"] in keyval:
+          class_str["arg"] += ", is_keyval=True"
         classes[i["name"]] = class_str
 
     # TODO: get and set methods currently have errors that are reported that

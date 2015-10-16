@@ -630,6 +630,7 @@ def YANGDynClass(*args,**kwargs):
   supplied_register_path = kwargs.pop("register_path", None)
   extensions = kwargs.pop("extensions", None)
   extmethods = kwargs.pop("extmethods", None)
+  is_keyval = kwargs.pop("is_keyval", False)
   if not base_type:
     raise TypeError, "must have a base type"
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -660,7 +661,8 @@ def YANGDynClass(*args,**kwargs):
     if is_container:
       __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
                    '_supplied_register_path', '_path_helper', '_base_type', '_is_leaf',
-                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods',)
+                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods',
+                   '_is_keyval')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
 
@@ -681,6 +683,7 @@ def YANGDynClass(*args,**kwargs):
       self._is_container = is_container
       self._extensionsd = extensions
       self._extmethods = extmethods
+      self._is_keyval = is_keyval
 
       if default:
         self._default = default
@@ -863,11 +866,13 @@ def ReferenceType(*args,**kwargs):
       if self._path_helper:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
-        # TODO: verify whether the path_chk[0]._is_leaf test here is
-        # valid. If not, may need to check that path_chk[0].parent
-        # specifies that this is a list. Need to check leaf-list
-        # cases too. Based on discussion on OpenConfig call 16/09/15.
-        if len(path_chk) == 1 and path_chk[0]._is_leaf == True:
+        # if the lookup returns only one leaf, then this means that we have something
+        # that could potentially be a pointer. However, this is not sufficient to tell
+        # whether it is (it could be a single list entry) - thus perform two additional
+        # checks. 1) check whether this is the key value of a list (if it is then this
+        # is something that can be externally referenced) and 2) check that this is not
+        # a list itself (including a leaf-list)
+        if len(path_chk) == 1 and not path_chk[0]._is_keyval and not is_yang_list(path_chk[0]):
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.
           path_parts = self._referenced_path.split("/")

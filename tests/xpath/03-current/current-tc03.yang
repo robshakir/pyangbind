@@ -1,0 +1,45 @@
+module current-tc03 {
+    yang-version "1";
+    namespace "http://rob.sh/yang/xpathelper/tc03";
+    prefix "tc03";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    list src-list {
+        key "referenced value";
+
+        leaf referenced {
+            type string;
+        }
+
+        leaf value {
+            type string;
+        }
+    }
+
+    list referencing-list {
+        key "testnum";
+
+        leaf testnum {
+            type uint8;
+        }
+
+        leaf source-val {
+            type string;
+        }
+
+        leaf reference {
+            type leafref {
+                path "/src-list[referenced=current()/../source-val]/value";
+                require-instance true;
+            }
+        }
+    }
+}
