@@ -865,7 +865,6 @@ def ReferenceType(*args,**kwargs):
 
       if self._path_helper:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
-
         # if the lookup returns only one leaf, then this means that we have something
         # that could potentially be a pointer. However, this is not sufficient to tell
         # whether it is (it could be a single list entry) - thus perform two additional
@@ -894,11 +893,14 @@ def ReferenceType(*args,**kwargs):
               value = unicode(value)
             lookup_o = []
             path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
+
             found = False
-            if value in path_chk:
-              self._referenced_object = path_chk[path_chk.index(value)]
-              found = True
-            else:
+            for i in path_chk:
+              if unicode(i) == unicode(value):
+                found = True
+                self._referenced_object = i
+
+            if not found and len(path_chk) and isinstance(path_chk[0], list):
               for i in path_chk:
                 try:
                   self._referenced_object = i[i.index(value)]

@@ -19,6 +19,7 @@ limitations under the License.
 """
 from serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
 import json
+import copy
 
 def remove_path(tree, path):
   this_part = path.pop(0)
@@ -56,7 +57,19 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
   tree = obj.get(filter=filter)
   for p in skip_subtrees:
     pp = p.split("/")[1:]
-    tree = remove_path(tree, pp)
+    # Iterate through the skip path and the object's own path to determine
+    # whether they match, then skip the relevant subtrees.
+    match = True
+    trimmed_path = copy.deepcopy(pp)
+    for i,j in zip(obj._path(), pp):
+      if not i == j:
+        match = False
+        break
+      trimmed_path.pop(0)
+
+    if match and len(trimmed_path):
+      tree = remove_path(tree, trimmed_path)
+
   if select:
     key_del = []
     for t in tree:
