@@ -69,7 +69,7 @@ def main():
         "string_default_leaf did not have the correct hidden default value (value: %s)" % \
           test_instance.string_container.string_default_leaf._default
 
-  assert test_instance.string_container.restricted_string_default._default == "b", \
+  assert test_instance.string_container.restricted_string_default._default == "beep", \
         "restricted_string_default did not have the correct hidden defualt value (value: %s)" % \
           test_instance.string_container.restricted_string_default
 

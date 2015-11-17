@@ -701,7 +701,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
       # extension that were provided with the leaf, etc.).
       class_str = {}
       if "default" in i and not i["default"] is None:
-        default_arg = repr(i["default"]) if i["quote_arg"] else "%s" \
+        default_arg = "\"%s\"" % (i["default"]) if i["quote_arg"] else "%s" \
                                     % i["default"]
 
       if i["class"] == "leaf-list":

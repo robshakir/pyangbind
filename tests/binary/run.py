@@ -44,18 +44,26 @@ def main():
       passed = False
     assert passed == value[1], "could incorrectly set b1 to %s" % value[0]
 
+  print t.container.b2._default
+  print t.container.b2
+
   assert t.container.b2._default == bitarray("0100"), \
     "Default for leaf b2 was not set correctly (%s != %s)" \
        % (t.container.b2._default, bitarray("0100"))
+
+
   assert t.container.b2 == bitarray(), \
     "Value of bitarray was not null when checking b2 (%s != %s)" \
         % (t.container.b2, bitarray())
+
   assert t.container.b2._changed() == False, \
     "Unset bitarray specified changed when was default (%s != False)" \
         % (t.container.b2._changed())
+
   t.container.b2 = bitarray("010")
   assert t.container.b2 == bitarray('010'), \
     "Bitarray not successfuly set (%s != %s)" % (t.container.b2, bitarray('010'))
+
   assert t.container.b2._changed() == True, \
     "Bitarray value not flagged as changed (%s != %s)" % (t.container.b2._changed(), True)
 

@@ -46,6 +46,14 @@ def is_yang_list(arg):
       return True
   return False
 
+def is_yang_leaflist(arg):
+  pygen = getattr(arg, "_pybind_generated_by", None)
+  if pygen is None:
+    return False
+  elif pygen == "TypedListType":
+    return True
+  return False
+
 def remove_path_attributes(p):
   new_path = []
   for i in p:
@@ -865,6 +873,7 @@ def ReferenceType(*args,**kwargs):
 
       if self._path_helper:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
+
         # if the lookup returns only one leaf, then this means that we have something
         # that could potentially be a pointer. However, this is not sufficient to tell
         # whether it is (it could be a single list entry) - thus perform two additional
@@ -889,24 +898,25 @@ def ReferenceType(*args,**kwargs):
           if not value:
             self._referenced_object = None
           else:
-            if isinstance(value, str):
-              value = unicode(value)
+            found = False
             lookup_o = []
             path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
-            found = False
-            for i in path_chk:
-              if unicode(i) == unicode(value):
-                found = True
-                self._referenced_object = i
-
-            if not found and len(path_chk) and isinstance(path_chk[0], list):
-              for i in path_chk:
-                try:
-                  self._referenced_object = i[i.index(value)]
+            if len(path_chk) == 1 and is_yang_leaflist(path_chk[0]):
+              index = 0
+              for i in path_chk[0]:
+                if unicode(i) == unicode(value):
                   found = True
-                except ValueError:
-                  pass
+                  self._referenced_object = path_chk[0][index]
+                  break
+                index += 1
+            else:
+              found = False
+              for i in path_chk:
+                if unicode(i) == unicode(value):
+                  found = True
+                  self._referenced_object = i
+
             if not found:
               raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
         else:

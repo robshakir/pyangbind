@@ -40,13 +40,13 @@ module string {
 
         leaf restricted-string-default {
             type string {
-                pattern "^b.*";
+                pattern "b.*";
             }
             description
                 "A test leaf with a restriction that
                 the string can only start with a b
                 and a default value";
-            default "b";
+            default "beep";
         }
 
         leaf restricted-length-string {
@@ -84,20 +84,6 @@ module string {
             description
                 "A test leaf that has a restricted
                 length that is a range but not max";
-        }
-
-        leaf string-broken-description {
-            type string;
-            description
-                "Node’s <- has non-ascii characters";
-        }
-
-        container container-broken-description {
-            description
-                "Node’s <- has non-ascii characters";
-            leaf test-leaf {
-                type string;
-            }
         }
     }
 }
