@@ -141,5 +141,23 @@ module int {
                 range "0..10 | 11..12 | 16..18";
             }
         }
+
+        leaf complex-range-with-negative {
+            type int8 {
+                range "-10..20 | 25..30";
+            }
+        }
+
+        leaf intLeafWithRange {
+            type int8 {
+                range "-10 .. -5 | 10 .. 30";
+            }
+        }
+
+        leaf complex-range-with-equals-case {
+            type int16 {
+                range "-42..42 | 100..154 | 255";
+            }
+        }
     }
 }

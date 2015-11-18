@@ -38,5 +38,12 @@ module decimal {
             description
                 "A test decimal64 with restriction & default";
         }
+
+        leaf dec64LeafWithRange {
+            type decimal64 {
+                fraction-digits 6;
+                range "-444.44 | -333.33 .. -222.22 | 111.1 | 444.444 .. 555.555";
+            }
+        }
     }
 }

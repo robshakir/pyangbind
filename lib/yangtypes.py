@@ -169,19 +169,30 @@ def RestrictedClassType(*args, **kwargs):
         return pattern
 
       def in_range_check(low_high_tuples):
-        if low is None and high is None:
-          raise AttributeError("invalid means of specifying a range check")
-        def int_range_check(value):
+        for check_tuple in low_high_tuples:
+          all_none = True
+          for i in range(0,len(check_tuple)):
+            if check_tuple[i] is not None:
+              all_none = False
+          if all_none:
+            raise AttributeError("Cannot specify a range that is all max and min")
+        def range_check(value):
           range_results = []
           for check_tuple in low_high_tuples:
             chk = True
-            if check_tuple[0] is not None and value < check_tuple[0]:
-              chk = False
-            if check_tuple[1] is not None and value > check_tuple[1]:
-              chk = False
+            if len(check_tuple) == 2:
+              if check_tuple[0] is not None and value < check_tuple[0]:
+                chk = False
+              if check_tuple[1] is not None and value > check_tuple[1]:
+                chk = False
+            elif len(check_tuple) == 1:
+              if value != float(check_tuple[0]):
+                chk = False
+            else:
+              raise AttributeError("Invalid check tuple length specified")
             range_results.append(chk)
           return True in range_results
-        return int_range_check
+        return range_check
 
       def match_pattern_check(regexp):
         #return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
@@ -207,7 +218,8 @@ def RestrictedClassType(*args, **kwargs):
           return True
         return lgt_check
 
-      range_regex = re.compile("(?P<low>[0-9]+)([ ]+)?\.\.([ ]+)?(?P<high>([0-9]+|max))")
+      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?(?P<high>(\-?[0-9\.]+|max))")
+      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
 
       val = False
       try:
@@ -227,15 +239,30 @@ def RestrictedClassType(*args, **kwargs):
         elif rtype == "range":
           ranges = []
           for range_spec in rarg:
-            low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
-            high = base_type(high) if not high == "max" else None
-            low = base_type(low) if not low == "min" else None
-            ranges.append((low,high))
+            if range_regex.match(range_spec):
+              low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
+              high = base_type(high) if not high == "max" else None
+              low = base_type(low) if not low == "min" else None
+              ranges.append((low,high))
+            elif range_single_value_regex.match(range_spec):
+              eqval = range_single_value_regex.sub('\g<value>', range_spec)
+              eqval = base_type(eqval) if not eqval in ["max", "min"] else None
+              ranges.append((eqval,))
           self._restriction_tests.append(in_range_check(ranges))
-          try:
-            val = int(val)
-          except:
-            raise TypeError, "must specify a numeric type for a range argument"
+          if val:
+            try:
+              preval = val
+              val = base_type(val)
+              #
+              # FIXME / TODO: numpy types overflow, so when we get a value that is actually
+              # invalid here, we can accidentially make it invalid whilst casting it to the
+              # right type. Needs some thought about whether numpy is the best option. Also
+              # have open requests to remove numpy dependencies.
+              #
+              if not float(val) == float(preval):
+                raise ValueError("Could not set value, overflowed when cast to native type")
+            except:
+              raise TypeError, "must specify a numeric type for a range argument"
         elif rtype == "length":
           if range_regex.match(rarg):
             minlength,maxlength = range_regex.sub('\g<low>,\g<high>', rarg).split(",")

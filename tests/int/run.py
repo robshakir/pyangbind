@@ -145,7 +145,7 @@ def main():
     assert passed == i[1], "restricted range using max was not set correctly (%d -> %s != %s)" % \
       (i[0], passed, i[1])
 
-  for tc in [(0,True), (11, False), (-20, False), (5, True), (16, True)]:
+  for i in [(0,True), (13, False), (-20, False), (5, True), (16, True)]:
     passed = False
     try:
       u.int_container.complex_range = i[0]
@@ -163,6 +163,37 @@ def main():
       pass
     assert passed == i[1], "complex range with spaces and three elements not set correctly (%d -> %s != %s)" % \
        (i[0], passed, i[1])
+
+  for i in [(-2, True), (42, False)]:
+    passed = False
+    try:
+      u.int_container.complex_range_with_negative = i[0]
+      passed = True
+    except ValueError, m:
+      pass
+    assert passed == i[1], "complex range with negatives not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
+
+  for i in [(-11, False), (-5, True), (0, False), (5, False), (10, True), (25, True), (31, False)]:
+    passed = False
+    try:
+      u.int_container.intLeafWithRange = i[0]
+      passed = True
+    except ValueError, m:
+      pass
+    assert passed == i[1], "complex range with negatives and additional spaces not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
+
+  for i in [(-43, False), (-40, True), (98, False), (122, True), (254, False), (255, True), (256, False)]:
+    passed = False
+    try:
+      u.int_container.complex_range_with_equals_case = i[0]
+      passed = True
+    except ValueError, m:
+      pass
+    assert passed == i[1], "complex range with equals case was not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
+
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

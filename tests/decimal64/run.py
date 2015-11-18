@@ -44,6 +44,15 @@ def main():
   assert q.container.d3._default == Decimal("1"), "default was set wrong for d3 (%s)" \
           % q.container.d3._default
 
+  for i in [(-452.6729, False), (-444.44, True), (-443.22, False), (-330, True), (-222.21, False), (111.2, False), (111.1, True), (446.56, True), (555.55559282, False)]:
+    passed = False
+    try:
+      q.container.dec64LeafWithRange = i[0]
+      passed = True
+    except ValueError, m:
+      pass
+    assert passed == i[1], "decimal64 leaf with range was not correctly set (%f -> %s != %s)" % (i[0], passed, i[1])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
