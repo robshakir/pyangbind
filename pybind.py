@@ -995,7 +995,11 @@ def build_elemtype(ctx, et, prefix=False):
     restrictions['length'] = length_stmt.arg
 
   if range_stmt:
-    restrictions['range'] = range_stmt.arg
+    # Complex ranges are separated by pipes
+    if "|" in range_stmt.arg:
+      restrictions['range'] = [i.replace(' ', '') for i in range_stmt.arg.split("|")]
+    else:
+      restrictions['range'] = [range_stmt.arg]
 
   # Build RestrictedClassTypes based on the compiled dictionary and the
   # underlying base type.

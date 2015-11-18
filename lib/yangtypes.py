@@ -168,15 +168,19 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "%s$" % pattern
         return pattern
 
-      def in_range_check(low, high):
+      def in_range_check(low_high_tuples):
         if low is None and high is None:
           raise AttributeError("invalid means of specifying a range check")
         def int_range_check(value):
-          if low is not None and value < low:
-            return False
-          if high is not None and value > high:
-            return False
-          return True
+          range_results = []
+          for check_tuple in low_high_tuples:
+            chk = True
+            if check_tuple[0] is not None and value < check_tuple[0]:
+              chk = False
+            if check_tuple[1] is not None and value > check_tuple[1]:
+              chk = False
+            range_results.append(chk)
+          return True in range_results
         return int_range_check
 
       def match_pattern_check(regexp):
@@ -221,10 +225,13 @@ def RestrictedClassType(*args, **kwargs):
           tests = []
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
-          low,high = range_regex.sub("\g<low>,\g<high>", rarg).split(",")
-          high = base_type(high) if not high == "max" else None
-          low = base_type(low) if not low == "min" else None
-          self._restriction_tests.append(in_range_check(low, high))
+          ranges = []
+          for range_spec in rarg:
+            low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
+            high = base_type(high) if not high == "max" else None
+            low = base_type(low) if not low == "min" else None
+            ranges.append((low,high))
+          self._restriction_tests.append(in_range_check(ranges))
           try:
             val = int(val)
           except:

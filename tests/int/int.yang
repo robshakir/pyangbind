@@ -129,5 +129,17 @@ module int {
                 range "0..max";
             }
         }
+
+        leaf complex-range {
+            type int8 {
+                range "0..10|15..20";
+            }
+        }
+
+        leaf complex-range-two {
+            type int8 {
+                range "0..10 | 11..12 | 16..18";
+            }
+        }
     }
 }

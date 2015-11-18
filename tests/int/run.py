@@ -145,6 +145,25 @@ def main():
     assert passed == i[1], "restricted range using max was not set correctly (%d -> %s != %s)" % \
       (i[0], passed, i[1])
 
+  for tc in [(0,True), (11, False), (-20, False), (5, True), (16, True)]:
+    passed = False
+    try:
+      u.int_container.complex_range = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], "complex range was not set correctly (%d -> %s != %s)" % \
+      (i[0], passed, i[1])
+
+    passed = False
+    try:
+      u.int_container.complex_range_two = i[0]
+      passed = True
+    except ValueError, m:
+      pass
+    assert passed == i[1], "complex range with spaces and three elements not set correctly (%d -> %s != %s)" % \
+       (i[0], passed, i[1])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
