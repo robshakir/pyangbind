@@ -27,6 +27,9 @@ import re
 import uuid
 import sys
 
+class YANGPathHelperException(Exception):
+  pass
+
 class XPathError(Exception):
   pass
 
@@ -77,7 +80,6 @@ class PybindXpathHelper(object):
       * caller=False - the absolute path of the object calling the get() method.
     """
     raise PybindImplementationError("The path helper class specified does not implement get()")
-
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>.*)\[(?P<arg>.*)\]$")
@@ -252,10 +254,17 @@ class YANGPathHelper(PybindXpathHelper):
     return retr_obj
 
   def get(self, object_path, caller=False):
-    if isinstance(object_path, str):
+    if isinstance(object_path, str) or isinstance(object_path, unicode):
       object_path = self._path_parts(object_path)
 
     return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
+
+  def get_unique(self, object_path, caller=False, exception_to_raise=YANGPathHelperException):
+    obj = self.get(object_path, caller=caller)
+    if len(obj) != 1:
+      raise exception_to_raise("Supplied path for %s was not unique!" % object_path)
+    return obj[0]
+
 
   def tostring(self,pretty_print=False):
     return etree.tostring(self._root,pretty_print=pretty_print)
