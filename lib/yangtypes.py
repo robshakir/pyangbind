@@ -32,10 +32,13 @@ NUMPY_INTEGER_TYPES = [np.uint8, np.uint16, np.uint32, np.uint64,
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
 reserved_name = ["list", "str", "int", "global", "decimal", "float",
-                  "as", "if", "else", "elsif", "map", "set", "class",
+                  "as", "if", "else", "elif", "map", "set", "class",
                   "from", "import", "pass", "return", "is", "exec",
                   "pop", "insert", "remove", "add", "delete", "local",
-                  "get", "default", "yang_name"]
+                  "get", "default", "yang_name", "def", "print", "del",
+                  "break", "continue", "raise", "in", "assert", "while",
+                  "for", "try", "finally", "with", "except", "lambda", 
+                  "or", "and", "not", "yield"]
 
 def is_yang_list(arg):
   if isinstance(arg, list):
