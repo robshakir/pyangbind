@@ -62,10 +62,16 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
     match = True
     trimmed_path = copy.deepcopy(pp)
     for i,j in zip(obj._path(), pp):
+      # paths may have attributes in them, but the skip dictionary does
+      # not, so we ensure that the object's absolute path is attribute
+      # free,
+      if "[" in i:
+        i = i.split("[")[0]
       if not i == j:
         match = False
         break
       trimmed_path.pop(0)
+
 
     if match and len(trimmed_path):
       tree = remove_path(tree, trimmed_path)
