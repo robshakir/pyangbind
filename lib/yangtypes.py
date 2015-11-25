@@ -905,7 +905,7 @@ def ReferenceType(*args,**kwargs):
       else:
         value = None
 
-      if self._path_helper:
+      if self._path_helper and value is not None:
         path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
 
         # if the lookup returns only one leaf, then this means that we have something
