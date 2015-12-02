@@ -31,5 +31,17 @@ module binary {
                 length 2;
             }
         }
+
+        leaf b4 {
+            type binary {
+                length 2..4;
+            }
+        }
+
+        leaf b5 {
+            type binary {
+                length "2..4 | 6 | 10..42";
+            }
+        }
     }
 }

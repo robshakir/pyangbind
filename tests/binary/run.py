@@ -44,9 +44,6 @@ def main():
       passed = False
     assert passed == value[1], "could incorrectly set b1 to %s" % value[0]
 
-  print t.container.b2._default
-  print t.container.b2
-
   assert t.container.b2._default == bitarray("0100"), \
     "Default for leaf b2 was not set correctly (%s != %s)" \
        % (t.container.b2._default, bitarray("0100"))
@@ -67,7 +64,7 @@ def main():
   assert t.container.b2._changed() == True, \
     "Bitarray value not flagged as changed (%s != %s)" % (t.container.b2._changed(), True)
 
-  for v in [("0", True), ("01", True), ("010", False)]:
+  for v in [("0", False), ("01", True), ("010", False)]:
     try:
       t.container.b3 = v[0]
       passed = True
@@ -75,6 +72,25 @@ def main():
       passed = False
     assert passed == v[1], "limited length binary incorrectly set to %s (%s != %s)" \
       % (v[0], v[1], passed)
+
+  for v in [("0", False), ("01", True), ("1111", True), ("10000001", False)]:
+    try:
+      t.container.b4 = v[0]
+      passed = True
+    except ValueError:
+      passed = False
+    assert passed == v[1], "limited length binary with range incorrectly set to %s (%s != %s)" \
+      % (v[0], v[1], passed)
+
+  for v in [("0", False), ("01", True), ("010", True), ("01000", False), ("100000", True), ("10101010101010101010101010101", True), \
+            ("101010101010101010101010101010101010101010101010101010101010101010101010", False)]:
+    try:
+      t.container.b5 = v[0]
+      passed = True
+    except:
+      passed = False
+    assert passed == v[1], "limited length binary with complex length argument incorrecty set to %s (%s != %s)" \
+        % (v[0], v[1], passed)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

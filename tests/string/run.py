@@ -93,21 +93,21 @@ def main():
           test_instance.string_container.restricted_string
   assert exception_raised == True, "exception was not raised when invalid value set"
 
-  for tc in [("a", True), ("ab", True), ("abc", False)]:
+  for tc in [("a", False), ("ab", True), ("abc", False)]:
     try:
       test_instance.string_container.restricted_length_string = tc[0]
       passed = True
-    except:
+    except ValueError:
       passed = False
     assert passed == tc[1], "restricted len string was incorrectly set (%s -> %s exp: %s)" \
         % (tc[0], passed, tc[1])
 
 
-  for tc in [("a", True), ("b", False), ("abc", False)]:
+  for tc in [("a", False), ("b", False), ("abc", False), ("ab", True)]:
     try:
       test_instance.string_container.restricted_length_and_pattern_string = tc[0]
       passed = True
-    except:
+    except ValueError:
       passed = False
     assert passed == tc[1], "restricted len and pattern string was incorrectly set" + \
       "(%s-> %s exp: %s)" % (tc[0], passed, tc[1])
@@ -116,7 +116,7 @@ def main():
     try:
       test_instance.string_container.restricted_length_string_with_range = tc[0]
       passed = True
-    except:
+    except ValueError:
       passed = False
     assert passed == tc[1], "restricted length range string was incorrectly set" + \
       "(%s -> %s exp: %s)" % (tc[0], passed, tc[1])
@@ -125,10 +125,20 @@ def main():
     try:
       test_instance.string_container.restricted_length_string_range_two = tc[0]
       passed = True
-    except:
+    except ValueError:
       passed = False
     assert passed == tc[1], "restricted length range string two was incorrectly set" + \
       "(%s -> %s exp: %s)" % (tc[0], passed, tc[1])
+
+  for tc in [("strLength10", True), ("LengthTwelve", True), ("strTwentyOneCharsLong", False),
+             ("aReallyLongStringMoreThan30CharsLong", True), ("anEvenLongerStringThatIsMoreThanFortyChars", False)]:
+    try:
+      test_instance.string_container.stringLeafWithComplexLength = tc[0]
+      passed = True
+    except ValueError:
+      passed = False
+    assert passed == tc[1], "stringLeafWithComplexLength set to %s incorrectly (%s != %s)" % \
+        (tc[0], tc[1], passed)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -983,7 +983,6 @@ def build_elemtype(ctx, et, prefix=False):
   length_stmt = et.search_one('length') if not et.search_one('length') \
                                               is None else False
 
-
   # Determine whether there are any restrictions that are placed on this leaf,
   # and build a dictionary of the different restrictions to be placed on the
   # type.
@@ -992,7 +991,10 @@ def build_elemtype(ctx, et, prefix=False):
     restrictions['pattern'] = pattern_stmt.arg
 
   if length_stmt:
-    restrictions['length'] = length_stmt.arg
+    if "|" in length_stmt.arg:
+      restrictions['length'] = [i.replace(' ', '') for i in length_stmt.arg.split("|")]
+    else:
+      restrictions['length'] = [length_stmt.arg]
 
   if range_stmt:
     # Complex ranges are separated by pipes

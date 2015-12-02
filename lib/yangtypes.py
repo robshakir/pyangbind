@@ -37,7 +37,7 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "pop", "insert", "remove", "add", "delete", "local",
                   "get", "default", "yang_name", "def", "print", "del",
                   "break", "continue", "raise", "in", "assert", "while",
-                  "for", "try", "finally", "with", "except", "lambda", 
+                  "for", "try", "finally", "with", "except", "lambda",
                   "or", "and", "not", "yield"]
 
 def is_yang_list(arg):
@@ -164,6 +164,10 @@ def RestrictedClassType(*args, **kwargs):
         Create a new class instance, and dynamically define the
         _restriction_test method so that it can be called by other functions.
       """
+
+      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?(?P<high>(\-?[0-9\.]+|max))")
+      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
+
       def convert_regexp(pattern):
         if not pattern[0] == "^":
           pattern = "^%s" % pattern
@@ -171,7 +175,28 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "%s$" % pattern
         return pattern
 
-      def in_range_check(low_high_tuples):
+      def build_length_range_tuples(range, length=False):
+        if range_regex.match(range_spec):
+          low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
+          if not length:
+            high = base_type(high) if not high == "max" else None
+            low = base_type(low) if not low == "min" else None
+          else:
+            high = int(high) if not high == "max" else None
+            low = int(low) if not low == "min" else None
+          return (low, high)
+        elif range_single_value_regex.match(range_spec):
+          eqval = range_single_value_regex.sub('\g<value>', range_spec)
+          if not length:
+            eqval = base_type(eqval) if not eqval in ["max", "min"] else None
+          else:
+            eqval = int(eqval)
+          return (eqval,)
+        else:
+          raise ValueError("Invalid range or length argument specified")
+
+      def in_range_check(low_high_tuples, length=False):
+        # length argument is used for strings
         for check_tuple in low_high_tuples:
           all_none = True
           for i in range(0,len(check_tuple)):
@@ -180,6 +205,10 @@ def RestrictedClassType(*args, **kwargs):
           if all_none:
             raise AttributeError("Cannot specify a range that is all max and min")
         def range_check(value):
+          if length and isinstance(value, bitarray):
+            value = value.length()
+          elif length:
+            value = len(value)
           range_results = []
           for check_tuple in low_high_tuples:
             chk = True
@@ -198,7 +227,6 @@ def RestrictedClassType(*args, **kwargs):
         return range_check
 
       def match_pattern_check(regexp):
-        #return lambda i: True if re.compile(convert_regexp(regexp)).match(i) else False
         def mp_check(value):
           if not isinstance(value, basestring):
             return False
@@ -209,20 +237,6 @@ def RestrictedClassType(*args, **kwargs):
 
       def in_dictionary_check(dictionary):
         return lambda i: unicode(i) in dictionary
-
-      def length_check(maxlength, minlength=None):
-        if maxlength is None and minlength is None:
-          raise AttributeError("invalid means of specifying length check")
-        def lgt_check(value):
-          if maxlength is not None and len(value) > int(maxlength):
-            return False
-          if minlength is not None and len(value) < int(minlength):
-            return False
-          return True
-        return lgt_check
-
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?(?P<high>(\-?[0-9\.]+|max))")
-      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
 
       val = False
       try:
@@ -242,15 +256,7 @@ def RestrictedClassType(*args, **kwargs):
         elif rtype == "range":
           ranges = []
           for range_spec in rarg:
-            if range_regex.match(range_spec):
-              low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
-              high = base_type(high) if not high == "max" else None
-              low = base_type(low) if not low == "min" else None
-              ranges.append((low,high))
-            elif range_single_value_regex.match(range_spec):
-              eqval = range_single_value_regex.sub('\g<value>', range_spec)
-              eqval = base_type(eqval) if not eqval in ["max", "min"] else None
-              ranges.append((eqval,))
+            ranges.append(build_length_range_tuples(range_spec))
           self._restriction_tests.append(in_range_check(ranges))
           if val:
             try:
@@ -267,13 +273,10 @@ def RestrictedClassType(*args, **kwargs):
             except:
               raise TypeError, "must specify a numeric type for a range argument"
         elif rtype == "length":
-          if range_regex.match(rarg):
-            minlength,maxlength = range_regex.sub('\g<low>,\g<high>', rarg).split(",")
-            minlength = minlength if not minlength == "min" else None
-            maxlength = maxlength if not maxlength == "max" else None
-            self._restriction_tests.append(length_check(maxlength, minlength=minlength))
-          else:
-            self._restriction_tests.append(length_check(rarg))
+          lengths = []
+          for range_spec in rarg:
+            lengths.append(build_length_range_tuples(range_spec, length=True))
+          self._restriction_tests.append(in_range_check(lengths, length=True))
         elif rtype == "dict_key":
           new_rarg = copy.deepcopy(rarg)
           # populate enum values
