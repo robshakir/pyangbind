@@ -531,7 +531,7 @@ def YANGListType(*args,**kwargs):
             keys = [self._keyval,]
             keyparts = [k,]
             kv_obj = getattr(tmp, self._keyval)
-            path_keystring = "[%s=%s]" % (kv_obj.yang_name(), k)
+            path_keystring = "[%s='%s']" % (kv_obj.yang_name(), k)
 
           if not update:
             tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
