@@ -522,6 +522,19 @@ def build_typedefs(ctx, defnd):
         class_map[type_name]["default"] = default[0]
         class_map[type_name]["quote_default"] = default[1]
 
+def find_child_definitions(obj, defn, prefix, definitions):
+  for i in obj.search(defn):
+    if i.arg in definitions:
+      sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
+    else:
+      definitions["%s:%s" % (prefix, i.arg)] = i
+      definitions[i.arg] = i
+
+  for ch in obj.search('grouping'):
+    if ch.i_children:
+      find_child_definitions(ch, defn, prefix, definitions)
+
+  return definitions
 
 def find_definitions(defn, ctx, module, prefix):
   # Find the statements within a module that map to a particular type of
@@ -531,14 +544,9 @@ def find_definitions(defn, ctx, module, prefix):
   if mod is None:
     raise AttributeError("expected to be able to find module %s, " % \
                         (module.arg) + "but could not")
-  type_definitions = {}
-  for i in mod.search(defn):
-    if i.arg in type_definitions:
-      sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
-    else:
-      type_definitions["%s:%s" % (prefix, i.arg)] = i
-      type_definitions[i.arg] = i
-  return type_definitions
+  definitions = {}
+  defin = find_child_definitions(mod, defn, prefix, definitions)
+  return defin
 
 def get_children(ctx, fd, i_children, module, parent, path=str(), \
                  parent_cfg=True, choice=False):
@@ -620,6 +628,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
   if ctx.opts.split_class_dir:
     if len(import_req):
       for im in import_req:
+        if im == parent.arg:
+          im += "_"
         nfd.write("""import %s\n""" % safe_name(im))
 
   # 'container', 'module', 'list' and 'submodule' all have their own classes
@@ -1138,6 +1148,24 @@ def build_elemtype(ctx, et, prefix=False):
       cls = elemtype["class_override"]
   return (cls,elemtype)
 
+def find_absolute_default_type(default_type, default_value, elemname):
+  if not isinstance(default_type, list):
+    return default_type
+
+  for i in default_type:
+    if not i[1]["base_type"]:
+      test_type = class_map[i[1]["parent_type"]]
+    else:
+      test_type = i[1]["pytype"]
+    try:
+      tmp = test_type["pytype"](default_value)
+      default_type = test_type
+    except ValueError:
+      pass
+  return find_absolute_default_type(default_type, default_value, elemname)
+
+
+
 def get_element(ctx, fd, element, module, parent, path,
                   parent_cfg=True, choice=False):
   # Handle mapping of an invidual element within the model. This function
@@ -1179,6 +1207,7 @@ def get_element(ctx, fd, element, module, parent, path,
       chs = element.i_children
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg,\
                    choice=choice)
+
       elemdict = {"name": safe_name(element.arg), "origtype": element.keyword,
                           "class": element.keyword,
                           "path": safe_name(npath), "config": True,
@@ -1192,8 +1221,7 @@ def get_element(ctx, fd, element, module, parent, path,
         # If we were dealing with split classes, then rather than naming the
         # class based on a unique intra-file name - and rather we must import
         # the relative path to the module.class
-        elemdict["type"] = "%s.%s" % (safe_name(element.arg),\
-                                      safe_name(element.arg))
+        elemdict["type"] = "%s.%s" % (safe_name(element.arg), safe_name(element.arg))
 
       else:
         # Otherwise, give a unique name for the class within the dictionary.
@@ -1298,14 +1326,7 @@ def get_element(ctx, fd, element, module, parent, path,
       # a single option for the type. check the default
       # against each option, to get a to a single default_type
       if isinstance(default_type, list):
-        # "first valid wins" as per rfc6020
-        for i in default_type:
-          try:
-            disposible = i[1]["pytype"](elemdefault)
-            default_type = i[1]
-            break
-          except:
-            pass
+        default_type = find_absolute_default_type(default_type, elemdefault, element.arg)
 
       if not default_type["base_type"]:
         if "parent_type" in default_type:
