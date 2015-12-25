@@ -117,6 +117,10 @@ def main():
       "leaf-list of union of unions that had restricted types did not " \
       + "correctly validate the value (%s -> %s != %s)" % (i[0], passed, i[1])
 
+  assert type(u.container.u11._default) == unicode, \
+    "union of unions that has a string type default not correctly identified (%s)" % \
+      type(u.container.u11._default)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

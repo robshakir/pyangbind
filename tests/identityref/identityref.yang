@@ -29,6 +29,7 @@ module identityref {
         description "option two on the base";
     }
 
+
     container test-container {
         leaf id1 {
             type identityref {

@@ -63,7 +63,6 @@ def main():
       passed = False
     assert passed == True, "idr1 leaf was set to an invalid value (%s)" % k
 
-
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

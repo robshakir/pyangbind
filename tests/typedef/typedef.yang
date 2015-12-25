@@ -102,6 +102,18 @@ module typedef {
         }
     }
 
+    grouping scoped-typedef {
+        typedef scoped-type {
+            type string {
+                pattern "a.*";
+            }
+        }
+
+        leaf scoped-leaf {
+            type scoped-type;
+        }
+    }
+
     container container {
         description
             "A container";
@@ -182,5 +194,7 @@ module typedef {
         leaf reference {
             type referenced-leaf;
         }
+
+        uses scoped-typedef;
     }
 }

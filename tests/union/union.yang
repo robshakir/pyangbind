@@ -81,6 +81,24 @@ module union {
         }
     }
 
+    typedef second-level-union {
+        type union {
+            type string;
+            type uint32 {
+                range 10..20;
+            }
+        }
+    }
+
+    typedef top-level-union {
+        type union {
+            type second-level-union;
+            type uint32 {
+                range 100..200;
+            }
+        }
+    }
+
     container container {
 
         leaf u2 {
@@ -153,6 +171,9 @@ module union {
             }
         }
 
-
+        leaf u11 {
+            type top-level-union;
+            default "string";
+        }
     }
 }

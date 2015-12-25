@@ -129,6 +129,18 @@ def main():
       "definition which was a union including a typedef was not set correctly for %s (%s != %s)"  \
         % (i[0], i[1], wset)
 
+  # check that nested typedefs are detected
+  passed = None
+  try:
+    t.container.scoped_leaf = "aardwolf"
+    passed = True
+  except ValueError:
+    passed = False
+
+  assert passed == True, "scoped leaf was not set correctly (%s - %s != True)" % \
+          (t.container.scoped_leaf, passed)
+
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

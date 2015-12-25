@@ -569,8 +569,18 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), \
     else:
       pparts = path.split("/")
       npath = "/"
-      for pp in pparts:
-        npath += safe_name(pp) + "/"
+
+      # Check that we don't have the problem of containers that are nested
+      # with the same name
+      for i in range(1,len(pparts)):
+        if i > 0 and pparts[i] == pparts[i-1]:
+          pname = safe_name(pparts[i]) + "_"
+        elif i == 1 and pparts[i] == module.arg:
+          pname = safe_name(pparts[i]) + "_"
+        else:
+          pname = safe_name(pparts[i])
+        npath += pname + "/"
+
       bpath = ctx.pybind_split_basepath + npath
       if not os.path.exists(bpath):
         os.makedirs(bpath)
@@ -1156,10 +1166,11 @@ def find_absolute_default_type(default_type, default_value, elemname):
     if not i[1]["base_type"]:
       test_type = class_map[i[1]["parent_type"]]
     else:
-      test_type = i[1]["pytype"]
+      test_type = i[1]
     try:
       tmp = test_type["pytype"](default_value)
       default_type = test_type
+      break
     except ValueError:
       pass
   return find_absolute_default_type(default_type, default_value, elemname)
@@ -1221,7 +1232,11 @@ def get_element(ctx, fd, element, module, parent, path,
         # If we were dealing with split classes, then rather than naming the
         # class based on a unique intra-file name - and rather we must import
         # the relative path to the module.class
-        elemdict["type"] = "%s.%s" % (safe_name(element.arg), safe_name(element.arg))
+        if element.arg == parent.arg:
+          modname = safe_name(element.arg) + "_"
+        else:
+          modname = safe_name(element.arg)
+        elemdict["type"] = "%s.%s" % (modname, safe_name(element.arg))
 
       else:
         # Otherwise, give a unique name for the class within the dictionary.
@@ -1341,7 +1356,7 @@ def get_element(ctx, fd, element, module, parent, path,
             checked.append(check)
             if "parent_type" in tmp_class_map[check]:
               if isinstance(tmp_class_map[check]["parent_type"], list):
-                to_visit.expand(tmp_class_map[check]["parent_type"])
+                to_visit.extend(tmp_class_map[check]["parent_type"])
               else:
                 to_visit.append(tmp_class_map[check]["parent_type"])
         default_type = tmp_class_map[checked.pop()]
