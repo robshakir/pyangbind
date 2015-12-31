@@ -21,6 +21,7 @@ from serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
 import json
 import copy
 
+
 def remove_path(tree, path):
   this_part = path.pop(0)
   if len(path) == 0:
@@ -38,10 +39,13 @@ def remove_path(tree, path):
   return tree
 
 
-def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False):
-  return pybindJSONDecoder().load_json(d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
+          overwrite=False):
+  return pybindJSONDecoder().load_json(d, parent_pymod, yang_base,
+          path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
-def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
+
+def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
@@ -61,7 +65,7 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
     # whether they match, then skip the relevant subtrees.
     match = True
     trimmed_path = copy.deepcopy(pp)
-    for i,j in zip(obj._path(), pp):
+    for i, j in zip(obj._path(), pp):
       # paths may have attributes in them, but the skip dictionary does
       # not, so we ensure that the object's absolute path is attribute
       # free,
@@ -72,7 +76,6 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
         break
       trimmed_path.pop(0)
 
-
     if match and len(trimmed_path):
       tree = remove_path(tree, trimmed_path)
 
@@ -81,25 +84,31 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[],select=False):
     for t in tree:
       keep = True
       for k, v in select.iteritems():
-        if keep and not unicode(lookup_subdict(tree[t], k.split("."))) == unicode(v):
+        if keep and not \
+                unicode(lookup_subdict(tree[t], k.split("."))) == unicode(v):
           keep = False
       if not keep:
         key_del.append(t)
     for k in key_del:
       del tree[k]
-  return json.dumps(tree,cls=pybindJSONEncoder, indent=indent)
+  return json.dumps(tree, cls=pybindJSONEncoder, indent=indent)
+
 
 def dump(obj, fn, indent=4, filter=True, skip_subtrees=[]):
   try:
     fh = open(fn, 'w')
   except IOError, m:
     raise pybindJSONIOError("could not open file for writing: %s" % m)
-  fh.write(dumps(obj, indent=indent, filter=filter, skip_subtrees=skip_subtrees))
+  fh.write(dumps(obj, indent=indent, filter=filter,
+              skip_subtrees=skip_subtrees))
   fh.close()
 
-def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False):
+
+def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
+             overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
   except IOError, m:
     raise pybindJSONIOError("could not open file to read")
-  return loads(f, parent_pymod, yang_module, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+  return loads(f, parent_pymod, yang_module, path_helper=path_helper,
+                extmethods=extmethods, overwrite=overwrite)

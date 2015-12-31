@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import os, sys, getopt
+import os
+import sys
+import getopt
 
-TESTNAME="typedef"
+TESTNAME = "typedef"
+
 
 # generate bindings in this folder
-
 def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
@@ -18,22 +20,27 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
-  assert not pyangpath == False, "could not find path to pyang"
-  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+  pyangpath = os.environ.get('PYANGPATH') if \
+                os.environ.get('PYANGPATH') is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
+                os.environ.get('PYANGBINDPATH') is not None else False
+  assert pyangpath is not False, "could not find path to pyang"
+  assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
   os.system("%s --plugindir %s -f pybind \
             -p %s \
-            -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, this_dir, TESTNAME))
+            -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath,
+                this_dir, this_dir, this_dir, TESTNAME))
 
   from bindings import typedef
   t = typedef()
 
-  for element in ["string", "integer", "stringdefault", "integerdefault", \
-                  "new_string", "remote_new_type", "session_dir", "remote_local_type"]:
-    assert hasattr(t.container, element), "element %s did not exist within the container" % element
+  for element in ["string", "integer", "stringdefault", "integerdefault",
+                  "new_string", "remote_new_type", "session_dir",
+                  "remote_local_type"]:
+    assert hasattr(t.container, element), \
+        "element %s did not exist within the container" % element
 
   t.container.string = "hello"
   assert t.container.string == "hello", \
@@ -41,8 +48,8 @@ def main():
     % t.container.string
 
   assert t.container.stringdefault._default == "aDefaultValue", \
-    "incorrect default value for derived string type with a default (value: %s)" % \
-    t.container.stringdefault._default
+    "incorrect default value for derived string type with a default " + \
+    "(value: %s)" % t.container.stringdefault._default
 
   assert t.container.new_string._default == "defaultValue", \
     "incorrect default value where derived from typedef (value: %s)" % \
@@ -54,11 +61,11 @@ def main():
 
   passed = False
   try:
-    t.container.integer = 65 # outside of range
+    t.container.integer = 65  # outside of range
   except ValueError:
     passed = True
 
-  assert passed == True, "restricted int from typedef was set to invalid value"
+  assert passed is True, "restricted int from typedef was set to invalid value"
 
   t.container.remote_new_type = "testString"
   assert t.container.remote_new_type == "testString", \
@@ -70,7 +77,7 @@ def main():
     "incorrect value for remote definition which had local definition (%s)" % \
       t.container.remote_local_type
 
-  for i in [("aardvark", True), ("ant", False), ("duck",False)]:
+  for i in [("aardvark", True), ("ant", False), ("duck", False)]:
     wset = True
     try:
       t.container.inheritance = i[0]
@@ -78,9 +85,9 @@ def main():
       wset = False
     assert wset == i[1], \
       "inherited pattern was not correctly followed for %s (%s != %s)" \
-        % (i[0],i[1],wset)
+        % (i[0], i[1], wset)
 
-  for i in [(2,True),(10,False),(1,False)]:
+  for i in [(2, True), (10, False), (1, False)]:
     wset = True
     try:
       t.container.int_inheritance = i[0]
@@ -90,13 +97,16 @@ def main():
       "inherited range was not correctly followed for %s (%s != %s)" \
         % (i[0], i[1], wset)
 
-  for i in [("aardvark", True), ("bear", True), ("chicken", False), ("deer", False), ("zebra", True)]:
+  for i in [("aardvark", True), ("bear", True), ("chicken", False),
+            ("deer", False), ("zebra", True)]:
     try:
       t.container.stacked_union.append(i[0])
       passed = True
     except ValueError:
       passed = False
-    assert passed == i[1], "incorrectly dealt with %s when added as a list key (%s != %s)" % (i[0], passed, i[1])
+    assert passed == i[1], \
+        "incorrectly dealt with %s when added as a list key (%s != %s)" % \
+            (i[0], passed, i[1])
 
   for i in [("zebra", True), ("yak", False)]:
     try:
@@ -105,8 +115,8 @@ def main():
     except ValueError:
       wset = False
     assert wset == i[1], \
-      "definition with hybrid typedef across two modules was not set correctly for %s (%s != %s)" \
-        % (i[0], i[1], wset)
+      "definition with hybrid typedef across two modules was not set " + \
+        "correctly for %s (%s != %s)" % (i[0], i[1], wset)
 
   for i in [("IDONE", True), ("IDTWO", True), ("IDTHREE", False)]:
     try:
@@ -115,19 +125,19 @@ def main():
     except ValueError:
       wset = False
     assert wset == i[1], \
-      "definition with a typedef which references an identity was not set correctly for %s (%s != %s)" \
-        % (i[0], i[1], wset)
+      "definition with a typedef which references an identity was not set " + \
+          "correctly for %s (%s != %s)" (i[0], i[1], wset)
 
-  for i in [("aardvark", True), ("bear", True), ("chicken", False), ("quail", True), ("zebra", False)]:
-    #t.container.union_with_union = i[0]
+  for i in [("aardvark", True), ("bear", True), ("chicken", False),
+            ("quail", True), ("zebra", False)]:
     try:
       t.container.union_with_union = i[0]
       wset = True
     except ValueError:
       wset = False
     assert wset == i[1], \
-      "definition which was a union including a typedef was not set correctly for %s (%s != %s)"  \
-        % (i[0], i[1], wset)
+      "definition which was a union including a typedef was not set" + \
+          " correctly for %s (%s != %s)" % (i[0], i[1], wset)
 
   # check that nested typedefs are detected
   passed = None
@@ -137,9 +147,9 @@ def main():
   except ValueError:
     passed = False
 
-  assert passed == True, "scoped leaf was not set correctly (%s - %s != True)" % \
+  assert passed is True, \
+      "scoped leaf was not set correctly (%s - %s != True)" % \
           (t.container.scoped_leaf, passed)
-
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

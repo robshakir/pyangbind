@@ -20,6 +20,7 @@ limitations under the License.
 
 import copy
 
+
 class PybindBase(object):
 
   __slots__ = ()
@@ -47,7 +48,7 @@ class PybindBase(object):
         # this is a YANG container that has its own
         # get method
         d[element_id] = element.get(filter=filter)
-        if filter == True:
+        if filter is True:
           # if the element hadn't changed but we were
           # filtering unchanged elements, remove it
           # from the dictionary
@@ -68,8 +69,8 @@ class PybindBase(object):
       else:
         # this is an attribute that does not have get()
         # method
-        if filter == False and not element._changed():
-          if not element._default == False and element._default:
+        if filter is False and not element._changed():
+          if element._default is not False and element._default:
             d[element_id] = element._default
           else:
             d[element_id] = element

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import os, sys, getopt
+import os
+import sys
+import getopt
 
-TESTNAME="leaflist"
+TESTNAME = "leaflist"
+
 
 # generate bindings in this folder
-
 def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
@@ -18,14 +20,16 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
-  assert not pyangpath == False, "could not find path to pyang"
-  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+  pyangpath = os.environ.get('PYANGPATH') if \
+                os.environ.get('PYANGPATH') is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
+                os.environ.get('PYANGBINDPATH') is not None else False
+  assert pyangpath is not False, "could not find path to pyang"
+  assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
-
+  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" %
+              (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
   from bindings import leaflist
 
   leaflist_instance = leaflist()
@@ -54,7 +58,7 @@ def main():
 
   assert len(leaflist_instance.container.leaflist) == 1, \
     "appended an element to the list erroneously (%s, len %d vs. 1)" % \
-      (leaflist_instance.container.leaflist, \
+      (leaflist_instance.container.leaflist,
         len(leaflist_instance.container.leaflist))
 
   leaflist_instance.container.leaflist.append("itemTwo")
@@ -65,7 +69,7 @@ def main():
   assert leaflist_instance.container.leaflist[1] == "indexOne", \
     "setitem did not set the correct node"
 
-  leaflist_instance.container.leaflist.insert(0,"indexZero")
+  leaflist_instance.container.leaflist.insert(0, "indexZero")
   assert leaflist_instance.container.leaflist[0] == "indexZero", \
     "incorrectly set index 0 value"
   assert len(leaflist_instance.container.leaflist) == 4, \
@@ -76,7 +80,8 @@ def main():
     "list item not succesfully removed by delitem"
 
   assert leaflist_instance.get() == \
-    {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'], 'listtwo': [], 'listthree': []}}, \
+    {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'],
+        'listtwo': [], 'listthree': []}}, \
     "get did not correctly return the dictionary"
 
   try:
@@ -89,33 +94,33 @@ def main():
 
   passed = False
   try:
-    leaflist_instance.container.leaflist = [1,2]
+    leaflist_instance.container.leaflist = [1, 2]
   except ValueError:
     passed = True
-  assert passed == True, "an erroneous value was assigned to the list"
+  assert passed is True, "an erroneous value was assigned to the list"
 
   leaflist_instance.container.listtwo.append("a-valid-string")
-  assert len(leaflist_instance.container.listtwo) == 1, "restricted leaflist did not function correctly"
+  assert len(leaflist_instance.container.listtwo) == 1, \
+      "restricted leaflist did not function correctly"
 
   passed = False
   try:
     leaflist_instance.container.listtwo.append("broken-string")
   except ValueError:
     passed = True
-  assert passed == True, "an erroneous value was assigned to the list (restricted type)"
+  assert passed is True, \
+      "an erroneous value was assigned to the list (restricted type)"
 
-
-  for i in [(1,True), ("fish", True), ([], False)]:
+  for i in [(1, True), ("fish", True), ([], False)]:
     passed = False
     try:
       leaflist_instance.container.listthree.append(i[0])
       passed = True
     except ValueError:
       pass
-    assert passed == i[1], "leaf-list of union type had invalid result (%s != %s for %s)" \
-      % (passed, i[1], i[0])
-
-
+    assert passed == i[1], \
+        "leaf-list of union type had invalid result (%s != %s for %s)" \
+            % (passed, i[1], i[0])
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
