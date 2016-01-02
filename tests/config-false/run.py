@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import os, sys, getopt
+import os
+import sys
+import getopt
 
-TESTNAME="config-false"
+TESTNAME = "config-false"
+
 
 # generate bindings in this folder
-
 def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
@@ -18,32 +20,35 @@ def main():
     if o in ["-k", "--keepfiles"]:
       keepfiles = True
 
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
-  assert not pyangpath == False, "could not find path to pyang"
-  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+  pyangpath = os.environ.get('PYANGPATH') if \
+                os.environ.get('PYANGPATH') is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
+                os.environ.get('PYANGBINDPATH') is not None else False
+  assert pyangpath is not False, "could not find path to pyang"
+  assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
+  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" %
+              (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
 
   from bindings import config_false
 
   test_instance = config_false()
 
   structure_dict = {
-                      "container": {
-                                      "subone": {
-                                                  "a_leaf": True,
-                                                  "d_leaf": False,
-                                                },
-                                      "subtwo": {
-                                                  "b_leaf": False,
-                                                  "subsubtwo": {
-                                                                  "c_leaf": False,
-                                                                }
-                                                }
-                                    }
-                    }
+      "container": {
+          "subone": {
+              "a_leaf": True,
+              "d_leaf": False,
+          },
+          "subtwo": {
+              "b_leaf": False,
+              "subsubtwo": {
+                  "c_leaf": False,
+              }
+          }
+      }
+  }
 
   for i in structure_dict.keys():
     assert hasattr(test_instance, i), "top level %s does not exist" % i
@@ -68,7 +73,8 @@ def main():
   except AttributeError:
     passed = False
 
-  assert passed == structure_dict["container"]["subone"]["a_leaf"], "setting a_leaf did not result in expected outcome (%s != %s)" \
+  assert passed == structure_dict["container"]["subone"]["a_leaf"], \
+      "setting a_leaf did not result in expected outcome (%s != %s)" \
         % (structure_dict["container"]["subone"]["a_leaf"], passed)
 
   passed = True
@@ -77,7 +83,8 @@ def main():
   except AttributeError:
     passed = False
 
-  assert passed == structure_dict["container"]["subone"]["d_leaf"], "setting d_leaf did not result in expected outcome (%s != %s)" \
+  assert passed == structure_dict["container"]["subone"]["d_leaf"], \
+      "setting d_leaf did not result in expected outcome (%s != %s)" \
         % (structure_dict["container"]["subone"]["d_leaf"], passed)
 
   passed = True
@@ -86,7 +93,8 @@ def main():
   except AttributeError:
     passed = False
 
-  assert passed == structure_dict["container"]["subtwo"]["b_leaf"], "setting b_leaf did not result in expected outcome (%s != %s)" \
+  assert passed == structure_dict["container"]["subtwo"]["b_leaf"], \
+      "setting b_leaf did not result in expected outcome (%s != %s)" \
         % (structure_dict["container"]["subtwo"]["b_leaf"], passed)
 
   passed = True
@@ -95,8 +103,11 @@ def main():
   except AttributeError:
     passed = False
 
-  assert passed == structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"], "setting c_leaf did not result in expected outcome (%s != %s)" \
-        % (structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"], passed)
+  assert passed == \
+    structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"], \
+      "setting c_leaf did not result in expected outcome (%s != %s)" \
+        % (structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"],
+              passed)
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)

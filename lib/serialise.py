@@ -30,11 +30,14 @@ from yangtypes import safe_name
 from types import ModuleType
 import copy
 
+
 class pybindJSONIOError(Exception):
   pass
 
+
 class pybindJSONUpdateError(Exception):
   pass
+
 
 class pybindJSONEncoder(json.JSONEncoder):
   def _preprocess_element(self, d):
@@ -50,7 +53,7 @@ class pybindJSONEncoder(json.JSONEncoder):
                 nd[k] = self.default(d[k])
             # if we wanted to do this as per draft-ietf-netmod-yang-metadata
             # then the encoding is like this
-            #if not "@%s" % k in nd:
+            # if not "@%s" % k in nd:
             #  nd["@%s" % k] = {}
             #  nd["@%s" % k]['order'] = index
             # this has the downside that iterating over the dict gives you
@@ -69,9 +72,11 @@ class pybindJSONEncoder(json.JSONEncoder):
       if map_val in ["lib.yangtypes.RestrictedClass"]:
         map_val = getattr(obj, "_restricted_class_base")[0]
 
-      if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32", "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32", "numpy.int64"]:
+      if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
+              "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
+              "numpy.int64"]:
         return int(obj)
-      elif map_val in ["lib.yangtypes.ReferencePathType",]:
+      elif map_val in ["lib.yangtypes.ReferencePathType"]:
         return self.default(obj._get())
       elif map_val in ["lib.yangtypes.RestrictedPrecisionDecimal"]:
         return float(obj)
@@ -87,8 +92,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       else:
         print dir(obj)
         print obj.__class__
-        raise AttributeError("this was an unmapped pyangbind class... (%s)" % map_val)
-
+        raise AttributeError("this was an unmapped pyangbind class... (%s)"
+                              % map_val)
 
     if isinstance(obj, list):
       nlist = []
@@ -101,7 +106,9 @@ class pybindJSONEncoder(json.JSONEncoder):
       return jsonmap(obj, pybc)
     elif isinstance(obj, Decimal):
       return float(obj)
-    elif type(obj) in [int, numpy.uint8, numpy.uint16, numpy.uint32, numpy.uint64, numpy.int8, numpy.int16, numpy.int32, numpy.int64]:
+    elif type(obj) in [int, numpy.uint8, numpy.uint16, numpy.uint32,
+                      numpy.uint64, numpy.int8, numpy.int16, numpy.int32,
+                      numpy.int64]:
       return int(obj)
     elif isinstance(obj, str) or isinstance(obj, unicode):
       return unicode(obj)
@@ -110,9 +117,9 @@ class pybindJSONEncoder(json.JSONEncoder):
     return json.JSONEncoder.default(self, obj)
 
 
-
 class pybindJSONDecoder(object):
-  def load_json(self, d, parent, yang_base, obj=None, path_helper=None, extmethods=None, overwrite=False):
+  def load_json(self, d, parent, yang_base, obj=None, path_helper=None,
+                extmethods=None, overwrite=False):
     if obj is None:
       # we need to find the class to create, as one has not been supplied.
       base_mod_cls = getattr(parent, safe_name(yang_base))
@@ -127,7 +134,8 @@ class pybindJSONDecoder(object):
         elif len(existing_objs) == 1:
           obj = existing_objs[0]
         else:
-          raise pybindJSONUpdateError('update was attempted to a node that was not unique')
+          raise pybindJSONUpdateError('update was attempted to a node that ' +
+                                      'was not unique')
       else:
         # in this case, we cannot check for an existing object
         obj = base_mod_class(path_helper=path_helper, extmethods=extmethods)
@@ -135,7 +143,8 @@ class pybindJSONDecoder(object):
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
       if child is None:
-        raise AttributeError("JSON object contained a key that did not exist (%s)" % (key))
+        raise AttributeError("JSON object contained a key that" +
+                              "did not exist (%s)" % (key))
       chobj = child()
       set_via_stdmethod = True
       pybind_attr = getattr(chobj, '_pybind_generated_by', None)
@@ -150,42 +159,42 @@ class pybindJSONDecoder(object):
         # we need to add each key to the list and then skip a level in the
         # JSON hierarchy
         for child_key in d[key]:
-          if not child_key in chobj:
+          if child_key not in chobj:
             chobj.add(child_key)
           parent = chobj[child_key]
           self.load_json(d[key][child_key], parent, yang_base, obj=parent)
           set_via_stdmethod = False
         if overwrite:
           for child_key in chobj:
-            if not child_key in d[key]:
+            if child_key not in d[key]:
               chobj.delete(child_key)
       elif pybind_attr in ["TypedListType"]:
         if not overwrite:
           list_obj = getattr(obj, "_get_%s" % safe_name(key))()
           for item in d[key]:
-            if not item in list_obj:
+            if item not in list_obj:
               list_obj.append(item)
           list_copy = []
           for elem in list_obj:
             list_copy.append(elem)
           for e in list_copy:
-            if not e in d[key]:
+            if e not in d[key]:
               list_obj.remove(e)
           set_via_stdmethod = False
         else:
           # use the set method
           pass
-      elif pybind_attr in ["RestrictedClassType","ReferencePathType"]:
+      elif pybind_attr in ["RestrictedClassType", "ReferencePathType"]:
         # normal but valid types - which use the std set method
         pass
       elif pybind_attr is None:
         # not a pybind attribute at all - keep using the std set method
         pass
       else:
-        raise pybindJSONUpdateError("unknown pybind type when loading JSON: %s" % pybind_attr)
+        raise pybindJSONUpdateError("unknown pybind type when loading JSON: %s"
+                                     % pybind_attr)
       if set_via_stdmethod:
         # simply get the set method and then set the value of the leaf
         set_method = getattr(obj, "_set_%s" % safe_name(key))
         set_method(d[key])
     return obj
-

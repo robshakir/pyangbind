@@ -4,7 +4,8 @@ import sys
 import os
 import getopt
 
-TESTNAME="current-tc03"
+TESTNAME = "current-tc03"
+
 
 def main():
   try:
@@ -18,13 +19,17 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
-  assert not pyangpath == False, "could not find path to pyang"
-  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') \
+      is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
+      os.environ.get('PYANGBINDPATH') is not None else False
+  assert pyangpath is not False, "could not find path to pyang"
+  assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("%s --plugindir %s -f pybind -o %s/bindings.py --use-xpathhelper %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
+  os.system(("%s --plugindir %s -f pybind -o %s/bindings.py " +
+      "--use-xpathhelper %s/%s.yang") % (pyangpath, pyangbindpath, this_dir,
+          this_dir, TESTNAME))
 
   from bindings import current_tc03
   yhelper = YANGPathHelper()
@@ -36,13 +41,14 @@ def main():
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
+
 def t1_currentref(yobj, tree=False):
   del_tree = False
   if not tree:
     del_tree = True
     tree = YANGPathHelper()
 
-  for i in [(1,2,), (3,4), (5,6)]:
+  for i in [(1, 2), (3, 4), (5, 6)]:
     yobj.src_list.add("%s %s" % i)
 
   yobj.referencing_list.add(1)
@@ -53,17 +59,20 @@ def t1_currentref(yobj, tree=False):
   except ValueError:
     e = True
 
-  assert e == False, "incorrectly rejected valid reference"
+  assert e is False, "incorrectly rejected valid reference"
 
-  assert yobj.src_list["1 2"].referenced == "1", "referenced value was incorrectly set"
-  assert yobj.src_list["1 2"].value == "2", "referenced value was incorrectly set"
+  assert yobj.src_list["1 2"].referenced == "1", \
+      "referenced value was incorrectly set"
+  assert yobj.src_list["1 2"].value == "2", \
+      "referenced value was incorrectly set"
 
   if del_tree:
     del yhelper
 
 
 if __name__ == '__main__':
-  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../..")
+  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) +
+                  "/../../..")
   sys.path.insert(0, import_path)
   from lib.xpathhelper import YANGPathHelper, XPathError
   main()

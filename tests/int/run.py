@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
-import os, sys, getopt
+import os
+import sys
+import getopt
 
-TESTNAME="int"
+TESTNAME = "int"
+
 
 # generate bindings in this folder
-
 def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
@@ -18,13 +20,16 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if os.environ.get('PYANGBINDPATH') is not None else False
-  assert not pyangpath == False, "could not find path to pyang"
-  assert not pyangbindpath == False, "could not resolve pyangbind directory"
+  pyangpath = os.environ.get('PYANGPATH') if \
+                os.environ.get('PYANGPATH') is not None else False
+  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
+                os.environ.get('PYANGBINDPATH') is not None else False
+  assert pyangpath is not False, "could not find path to pyang"
+  assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" % (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
+  os.system("%s --plugindir %s -f pybind -o %s/bindings.py %s/%s.yang" %
+              (pyangpath, pyangbindpath, this_dir, this_dir, TESTNAME))
 
   from bindings import int_ as i
 
@@ -33,14 +38,15 @@ def main():
   for name in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     for subname in ["", "default", "result", "restricted"]:
       assert hasattr(u.int_container, "%s%s" % (name, subname)) == True, \
-        "missing %s%s from container" % (name, subname)
+          "missing %s%s from container" % (name, subname)
 
   # tests default and equality
-  for e in [("eight", 2**7-1), ("sixteen", 2**15-1), ("thirtytwo", 2**31-1), ("sixtyfour", 2**63-1)]:
+  for e in [("eight", 2**7 - 1), ("sixteen", 2**15 - 1),
+            ("thirtytwo", 2**31 - 1), ("sixtyfour", 2**63 - 1)]:
     default_v = getattr(u.int_container, "%sdefault" % e[0])._default
     assert default_v == e[1], \
-      "defaults incorrectly set for %s, expected: %d, got %d" % (e[0], e[1], default_v)
-
+      "defaults incorrectly set for %s, expected: %d, got %d" \
+          % (e[0], e[1], default_v)
 
   u.int_container.eight = 42
   u.int_container.sixteen = 42
@@ -54,7 +60,7 @@ def main():
     v = getattr(u.int_container, i)
     assert v == 42, "incorrectly set %s, expected 42, got %d" % (i, v)
     c = getattr(u.int_container, "_changed")()
-    assert c == True, "incorrect changed flag for %s" % i
+    assert c is True, "incorrect changed flag for %s" % i
 
   # test math + negatives
   u.int_container.eight = 42
@@ -69,7 +75,6 @@ def main():
     v = getattr(u.int_container, i)
     assert v == -42, "incorrectly set %s, expected 42, got %d" % (i, v)
 
-
   for i in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     passed = False
     try:
@@ -77,83 +82,96 @@ def main():
       passed = True
     except ValueError:
       pass
-    assert passed == True, "could not set value of %srestricted to 10" % i
+    assert passed is True, "could not set value of %srestricted to 10" % i
 
   e = False
   try:
     u.int_container.eightrestricted = -100
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for eightrestricted (-100)"
+  assert e is True, \
+      "incorrectly allowed value outside of range for eightrestricted (-100)"
 
   e = False
   try:
     u.int_container.eightrestricted = 1001
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for eightrestricted (1001)"
+  assert e is True, \
+      "incorrectly allowed value outside of range for eightrestricted (1001)"
 
   e = False
   try:
     u.int_container.sixteenrestricted = -43
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (-43)"
+  assert e is True, \
+    \
+      "incorrectly allowed value outside of range for sixteenrestricted (-43)"
 
   e = False
   try:
     u.int_container.sixteenrestricted = 1001
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for sixteenrestricted (1001)"
+  assert e is True, \
+    "incorrectly allowed value outside of range for sixteenrestricted (1001)"
 
   e = False
   try:
     u.int_container.thirtytworestricted = 500001
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (500001)"
+  assert e is True, \
+    "incorrectly allowed value outside of range for thirtytworestricted " + \
+        "(500001)"
 
   e = False
   try:
     u.int_container.thirtytworestricted = -43
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for thirtytworestricted (9999)"
+  assert e is True, \
+    "incorrectly allowed value outside of range for thirtytworestricted (9999)"
 
   e = False
   try:
     u.int_container.sixtyfourrestricted = 72036854775809
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (72036854775809)"
+  assert e is True, \
+    "incorrectly allowed value outside of range for sixtyfourrestricted " + \
+        "(72036854775809)"
 
   e = False
   try:
     u.int_container.sixtyfourrestricted = -43
   except ValueError:
     e = True
-  assert e == True, "incorrectly allowed value outside of range for sixtyfourrestricted (-43)"
+  assert e is True, \
+    "incorrectly allowed value outside of range for sixtyfourrestricted (-43)"
 
-  for i in [(0,True), (10,True),(-10,False)]:
+  for i in [(0, True), (10, True), (-10, False)]:
     passed = False
     try:
       u.int_container.restricted_ueight_max = i[0]
       passed = True
     except ValueError:
       pass
-    assert passed == i[1], "restricted range using max was not set correctly (%d -> %s != %s)" % \
-      (i[0], passed, i[1])
+    assert passed == i[1], \
+        "restricted range using max was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
 
-  for i in [(0,True), (13, False), (-20, False), (5, True), (16, True)]:
+  for i in [(0, True), (13, False), (-20, False), (5, True), (16, True)]:
     passed = False
     try:
       u.int_container.complex_range = i[0]
       passed = True
     except ValueError:
       pass
-    assert passed == i[1], "complex range was not set correctly (%d -> %s != %s)" % \
-      (i[0], passed, i[1])
+    assert passed == i[1], \
+        "complex range was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
 
     passed = False
     try:
@@ -161,8 +179,9 @@ def main():
       passed = True
     except ValueError, m:
       pass
-    assert passed == i[1], "complex range with spaces and three elements not set correctly (%d -> %s != %s)" % \
-       (i[0], passed, i[1])
+    assert passed == i[1], \
+        "complex range with spaces and three elements not set correctly " + \
+            "(%d -> %s != %s)" % (i[0], passed, i[1])
 
   for i in [(-2, True), (42, False)]:
     passed = False
@@ -171,29 +190,33 @@ def main():
       passed = True
     except ValueError, m:
       pass
-    assert passed == i[1], "complex range with negatives not set correctly (%d -> %s != %s)" % \
-      (i[0], passed, i[1])
+    assert passed == i[1], \
+         "complex range with negatives not set correctly (%d -> %s != %s)" % \
+              (i[0], passed, i[1])
 
-  for i in [(-11, False), (-5, True), (0, False), (5, False), (10, True), (25, True), (31, False)]:
+  for i in [(-11, False), (-5, True), (0, False), (5, False), (10, True),
+            (25, True), (31, False)]:
     passed = False
     try:
       u.int_container.intLeafWithRange = i[0]
       passed = True
     except ValueError, m:
       pass
-    assert passed == i[1], "complex range with negatives and additional spaces not set correctly (%d -> %s != %s)" % \
-      (i[0], passed, i[1])
+    assert passed == i[1], \
+        "complex range with negatives and additional spaces not set " + \
+            "correctly (%d -> %s != %s)" % (i[0], passed, i[1])
 
-  for i in [(-43, False), (-40, True), (98, False), (122, True), (254, False), (255, True), (256, False)]:
+  for i in [(-43, False), (-40, True), (98, False), (122, True), (254, False),
+            (255, True), (256, False)]:
     passed = False
     try:
       u.int_container.complex_range_with_equals_case = i[0]
       passed = True
     except ValueError, m:
       pass
-    assert passed == i[1], "complex range with equals case was not set correctly (%d -> %s != %s)" % \
-      (i[0], passed, i[1])
-
+    assert passed == i[1], \
+        "complex range with equals case was not set correctly " + \
+            " (%d -> %s != %s)" % (i[0], passed, i[1])
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

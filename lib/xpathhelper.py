@@ -18,8 +18,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 xpathhelper:
-	This module maintains an XML ElementTree for the registered Python
-	classes, so that XPATH can be used to lookup particular items.
+  This module maintains an XML ElementTree for the registered Python
+  classes, so that XPATH can be used to lookup particular items.
 """
 
 from lxml import etree
@@ -27,14 +27,18 @@ import re
 import uuid
 import sys
 
+
 class YANGPathHelperException(Exception):
   pass
+
 
 class XPathError(Exception):
   pass
 
+
 class PybindImplementationError(Exception):
   pass
+
 
 class PybindXpathHelper(object):
   def register(self, path, object_ptr, caller=False):
@@ -54,7 +58,8 @@ class PybindXpathHelper(object):
         trying to perform a register. In general, it will not be used, but it
         is supplied to facilitate relative path lookups.
     """
-    raise PybindImplementationError("The path helper class specified does not implement register()")
+    raise PybindImplementationError("The path helper class specified does " +
+                                    "not implement register()")
 
   def unregister(self, path, caller=False):
     """
@@ -67,7 +72,8 @@ class PybindXpathHelper(object):
       * caller=False - the absolute path of the object calling the unregister()
         method.
     """
-    raise PybindImplementationError("The path helper class specified does not implement unregister()")
+    raise PybindImplementationError("The path helper class specified does " +
+                                    "not implement unregister()")
 
   def get(self, path, caller=False):
     """
@@ -77,13 +83,17 @@ class PybindXpathHelper(object):
       * path - the path to the object to be retrieved. This may be specified as
         a list of parts, or an XPATH expression.
 
-      * caller=False - the absolute path of the object calling the get() method.
+      * caller=False - the absolute path of the object calling the get method.
     """
-    raise PybindImplementationError("The path helper class specified does not implement get()")
+    raise PybindImplementationError("The path helper class specified does " +
+                                    "not implement get()")
+
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>.*)\[(?P<arg>.*)\]$")
-  _arg_re = re.compile("^[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?(?P<remainder>.*)")
+  _arg_re = re.compile("^[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?=([ ]+)?" +
+                       "[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?" +
+                       "(?P<remainder>.*)")
   _relative_path_re = re.compile("^(\.|\.\.)")
 
   def __init__(self):
@@ -117,9 +127,11 @@ class YANGPathHelper(PybindXpathHelper):
     parts.append(buf)
     return parts
 
-  def _encode_path(self, path, mode="search", find_parent=False, normalise_namespace=True, caller=False):
-    if not mode in ["search", "set"]:
-      raise XPathError("Path can only be encoded based on searching or setting attributes")
+  def _encode_path(self, path, mode="search", find_parent=False,
+                   normalise_namespace=True, caller=False):
+    if mode not in ["search", "set"]:
+      raise XPathError("Path can only be encoded based on searching or " +
+                       "setting attributes")
 
     parts = path
     if len(parts) == 0:
@@ -127,23 +139,25 @@ class YANGPathHelper(PybindXpathHelper):
     elif find_parent and len(parts) == 1:
       return []
 
-    lastelem = len(parts)-1 if find_parent else len(parts)
+    lastelem = len(parts) - 1 if find_parent else len(parts)
     startelem = 1 if parts[0] == '' else 0
     if self._relative_path_re.match(parts[0]):
       epath = ""
     else:
       epath = "/"
-    for i in range(startelem,lastelem):
-      (tagname, attributes) = self._tagname_attributes(parts[i], normalise_namespace=normalise_namespace)
+    for i in range(startelem, lastelem):
+      (tagname, attributes) = self._tagname_attributes(parts[i],
+                                    normalise_namespace=normalise_namespace)
       if ":" in tagname and normalise_namespace:
         tagname = tagname.split(":")[1]
 
       if attributes is not None:
         epath += tagname + "["
-        for k,v in attributes.iteritems():
+        for k, v in attributes.iteritems():
           # handling for rfc6020 current() specification
           if "current()" in v:
-            remaining_path = re.sub("current\(\)(?P<remaining>.*)", '\g<remaining>', v).split("/")
+            remaining_path = re.sub("current\(\)(?P<remaining>.*)",
+                                      '\g<remaining>', v).split("/")
             # since the calling leaf may not exist, we need to do a
             # lookup on a path that will do, which is the parent
             if remaining_path[1] == "..":
@@ -152,9 +166,10 @@ class YANGPathHelper(PybindXpathHelper):
               lookup = caller + remaining_path[1:]
             resolved_current_attr = self.get(lookup)
             if not len(resolved_current_attr) == 1:
-              raise XPathError('XPATH specified a current() expression that returned a non-unique list')
-            v=resolved_current_attr[0]
-          epath += "@%s='%s' " % (k,v)
+              raise XPathError('XPATH specified a current() expression that ' +
+                                'returned a non-unique list')
+            v = resolved_current_attr[0]
+          epath += "@%s='%s' " % (k, v)
           if mode == "search":
             epath += "and "
         if mode == "search":
@@ -167,21 +182,24 @@ class YANGPathHelper(PybindXpathHelper):
     return epath
 
   def _tagname_attributes(self, tag, normalise_namespace=True):
-      tagname,attributes = tag,None
+      tagname, attributes = tag, None
       if self._attr_re.match(tag):
-        tagname,arg = self._attr_re.sub('\g<tagname>||\g<arg>', tag).split("||")
+        tagname, arg = self._attr_re.sub('\g<tagname>||\g<arg>',
+                                          tag).split("||")
         attributes = {}
         cmd_arg_pairs = []
         tmp_arg = arg
         while len(tmp_arg):
           if self._arg_re.match(tmp_arg):
-            c,a,r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>', tmp_arg).split("||")
+            c, a, r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>',
+                                        tmp_arg).split("||")
             if ":" in c and normalise_namespace:
               c = c.split(":")[1]
             attributes[c] = a
             tmp_arg = r
           else:
-            raise XPathError, "invalid attribute string specified for %s - %s (err part: %s)" % (tagname, arg, tmp_arg)
+            raise XPathError("invalid attribute string specified for %s -" +
+                                " %s (err part: %s)" % (tagname, arg, tmp_arg))
       return (tagname, attributes)
 
   def register(self, object_path, object_ptr, caller=False):
@@ -193,7 +211,7 @@ class YANGPathHelper(PybindXpathHelper):
     # check whether we're updating
     this_obj_existing = self._get_etree(object_path)
     if len(this_obj_existing) > 1:
-      raise XPathError, "duplicate objects in tree - %s" % object_path
+      raise XPathError("duplicate objects in tree - %s" % object_path)
     if this_obj_existing is not None and not this_obj_existing == []:
       this_obj_existing = this_obj_existing[0]
       if self._library[this_obj_existing.get("obj_ptr")] == object_ptr:
@@ -215,16 +233,18 @@ class YANGPathHelper(PybindXpathHelper):
     else:
       parent_o = self._get_etree(parent)
       if len(parent_o) > 1:
-        raise XPathError, "multiple elements returned for parent %s, must be exact path for registration" \
-          % "/"+"/".join(parent)
+        raise XPathError("multiple elements returned for parent %s, must be " +
+                          "exact path for registration" % "/" +
+                          "/".join(parent))
       if parent_o == []:
-        raise XPathError, "parent node did not exist for %s @ %s" % (tagname, "/"+"/".join(parent))
+        raise XPathError("parent node did not exist for %s @ %s" % (tagname,
+                                    "/" + "/".join(parent)))
       parent_o = parent_o[0]
 
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
-      for k,v in attributes.iteritems():
-        added_item.set(k,v)
+      for k, v in attributes.iteritems():
+        added_item.set(k, v)
 
   def unregister(self, object_path, caller=False):
     if isinstance(object_path, str):
@@ -234,7 +254,7 @@ class YANGPathHelper(PybindXpathHelper):
 
     existing_objs = self._get_etree(object_path)
     if len(existing_objs) == 0:
-      raise XPathError, "object did not exist to unregister - %s" % object_path
+      raise XPathError("object did not exist to unregister - %s" % object_path)
 
     for obj in existing_objs:
       ref = obj.get("obj_ptr")
@@ -248,7 +268,7 @@ class YANGPathHelper(PybindXpathHelper):
       fx_q += "/" + self._encode_path(object_path, caller=caller)
     else:
       if not fx_q == "/":
-        fx_q = "."+fx_q
+        fx_q = "." + fx_q
 
     retr_obj = self._root.xpath(fx_q)
     return retr_obj
@@ -257,14 +277,16 @@ class YANGPathHelper(PybindXpathHelper):
     if isinstance(object_path, str) or isinstance(object_path, unicode):
       object_path = self._path_parts(object_path)
 
-    return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
+    return [self._library[i.get("obj_ptr")]
+              for i in self._get_etree(object_path, caller=caller)]
 
-  def get_unique(self, object_path, caller=False, exception_to_raise=YANGPathHelperException):
+  def get_unique(self, object_path, caller=False,
+                  exception_to_raise=YANGPathHelperException):
     obj = self.get(object_path, caller=caller)
     if len(obj) != 1:
-      raise exception_to_raise("Supplied path for %s was not unique!" % object_path)
+      raise exception_to_raise("Supplied path for %s was not unique!"
+                                  % object_path)
     return obj[0]
 
-
-  def tostring(self,pretty_print=False):
-    return etree.tostring(self._root,pretty_print=pretty_print)
+  def tostring(self, pretty_print=False):
+    return etree.tostring(self._root, pretty_print=pretty_print)

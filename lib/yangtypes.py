@@ -40,6 +40,7 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "for", "try", "finally", "with", "except", "lambda",
                   "or", "and", "not", "yield"]
 
+
 def is_yang_list(arg):
   if isinstance(arg, list):
     return True
@@ -49,6 +50,7 @@ def is_yang_list(arg):
       return True
   return False
 
+
 def is_yang_leaflist(arg):
   pygen = getattr(arg, "_pybind_generated_by", None)
   if pygen is None:
@@ -56,6 +58,7 @@ def is_yang_leaflist(arg):
   elif pygen == "TypedListType":
     return True
   return False
+
 
 def remove_path_attributes(p):
   new_path = []
@@ -65,6 +68,7 @@ def remove_path_attributes(p):
     else:
       new_path.append(i)
   return new_path
+
 
 def safe_name(arg):
   """
@@ -79,25 +83,28 @@ def safe_name(arg):
   # so that we can retrieve it when get() is called.
   return arg
 
+
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   """
     Function to return a new type that is based on decimal.Decimal with
     an arbitrary restricted precision.
   """
   precision = kwargs.pop("precision", False)
+
   class RestrictedPrecisionDecimal(Decimal):
     """
       Class extending decimal.Decimal to restrict the precision that is
       stored, supporting the fraction-digits argument of the YANG decimal64
       type.
     """
-    _precision = 10.0**(-1.0*int(precision))
+    _precision = 10.0**(-1.0 * int(precision))
+
     def __new__(self, *args, **kwargs):
       """
         Overloads the decimal __new__ function in order to round the input
         value to the new value.
       """
-      if not self._precision is None:
+      if self._precision is not None:
         if len(args):
           value = Decimal(args[0]).quantize(Decimal(str(self._precision)))
         else:
@@ -109,6 +116,7 @@ def RestrictedPrecisionDecimalType(*args, **kwargs):
       obj = Decimal.__new__(self, value, **kwargs)
       return obj
   return type(RestrictedPrecisionDecimal(*args, **kwargs))
+
 
 def RestrictedClassType(*args, **kwargs):
   """
@@ -125,7 +133,8 @@ def RestrictedClassType(*args, **kwargs):
   # this gives deserialisers some hints as to how to encode/decode this value
   # it must be a list since a restricted class can encapsulate a restricted
   # class
-  current_restricted_class_type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
+  current_restricted_class_type = re.sub("<(type|class) '(?P<class>.*)'>",
+                                          "\g<class>", str(base_type))
   if hasattr(base_type, "_restricted_class_base"):
     restricted_class_hint = getattr(base_type, "_restricted_class_base")
     restricted_class_hint.append(current_restricted_class_type)
@@ -142,7 +151,6 @@ def RestrictedClassType(*args, **kwargs):
     _pybind_generated_by = "RestrictedClassType"
 
     _restricted_class_base = restricted_class_hint
-
 
     def __init__(self, *args, **kwargs):
       """
@@ -165,19 +173,21 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?(?P<high>(\-?[0-9\.]+|max))")
+      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?" +
+                                "(?P<high>(\-?[0-9\.]+|max))")
       range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
 
       def convert_regexp(pattern):
         if not pattern[0] == "^":
           pattern = "^%s" % pattern
-        if not pattern[len(pattern)-1] == "$":
+        if not pattern[len(pattern) - 1] == "$":
           pattern = "%s$" % pattern
         return pattern
 
       def build_length_range_tuples(range, length=False):
         if range_regex.match(range_spec):
-          low,high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
+          low, high = \
+              range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
           if not length:
             high = base_type(high) if not high == "max" else None
             low = base_type(low) if not low == "min" else None
@@ -188,7 +198,7 @@ def RestrictedClassType(*args, **kwargs):
         elif range_single_value_regex.match(range_spec):
           eqval = range_single_value_regex.sub('\g<value>', range_spec)
           if not length:
-            eqval = base_type(eqval) if not eqval in ["max", "min"] else None
+            eqval = base_type(eqval) if eqval not in ["max", "min"] else None
           else:
             eqval = int(eqval)
           return (eqval,)
@@ -199,11 +209,13 @@ def RestrictedClassType(*args, **kwargs):
         # length argument is used for strings
         for check_tuple in low_high_tuples:
           all_none = True
-          for i in range(0,len(check_tuple)):
+          for i in range(0, len(check_tuple)):
             if check_tuple[i] is not None:
               all_none = False
           if all_none:
-            raise AttributeError("Cannot specify a range that is all max and min")
+            raise AttributeError("Cannot specify a range that is all max " +
+                                  "and min")
+
         def range_check(value):
           if length and isinstance(value, bitarray):
             value = value.length()
@@ -247,9 +259,10 @@ def RestrictedClassType(*args, **kwargs):
         if restriction_type is not None and restriction_arg is not None:
           self._restriction_dict = {restriction_type: restriction_arg}
         else:
-          raise ValueError, "must specify either a restriction dictionary or a type and argument"
+          raise ValueError("must specify either a restriction dictionary or" +
+                            " a type and argument")
 
-      for rtype,rarg in self._restriction_dict.iteritems():
+      for rtype, rarg in self._restriction_dict.iteritems():
         if rtype == "pattern":
           tests = []
           self._restriction_tests.append(match_pattern_check(rarg))
@@ -263,15 +276,18 @@ def RestrictedClassType(*args, **kwargs):
               preval = val
               val = base_type(val)
               #
-              # FIXME / TODO: numpy types overflow, so when we get a value that is actually
-              # invalid here, we can accidentially make it invalid whilst casting it to the
-              # right type. Needs some thought about whether numpy is the best option. Also
+              # FIXME / TODO: numpy types overflow, so when we get a value that
+              # is actually invalid here, we can accidentially make it invalid
+              # whilst casting it to the right type. Needs some thought about
+              # whether numpy is the best option. Also
               # have open requests to remove numpy dependencies.
               #
               if not float(val) == float(preval):
-                raise ValueError("Could not set value, overflowed when cast to native type")
+                raise ValueError("Could not set value, overflowed when cast " +
+                                  "to native type")
             except:
-              raise TypeError, "must specify a numeric type for a range argument"
+              raise TypeError("must specify a numeric type for a range " +
+                                  "argument")
         elif rtype == "length":
           lengths = []
           for range_spec in rarg:
@@ -288,22 +304,22 @@ def RestrictedClassType(*args, **kwargs):
           for k in new_rarg:
             while c in used_values:
               c += 1
-            if not "value" in new_rarg[k]:
+            if "value" not in new_rarg[k]:
               new_rarg[k]["value"] = c
             c += 1
           self._restriction_tests.append(in_dictionary_check(new_rarg))
           self._enumeration_dict = new_rarg
         else:
-          raise TypeError, "unsupported restriction type"
+          raise TypeError("unsupported restriction type")
 
-      if not val == False:
+      if val is not False:
         for test in self._restriction_tests:
           passed = False
           if test(val):
             passed = True
             break
         if not passed:
-          raise ValueError, "%s does not match a restricted type" % val
+          raise ValueError("%s does not match a restricted type" % val)
 
       obj = base_type.__new__(self, *args, **kwargs)
       return obj
@@ -316,7 +332,7 @@ def RestrictedClassType(*args, **kwargs):
       v = base_type(v)
       for chkfn in self._restriction_tests:
         if not chkfn(v):
-          raise ValueError, "did not match restricted type"
+          raise ValueError("did not match restricted type")
       return True
 
     def getValue(self, *args, **kwargs):
@@ -332,6 +348,7 @@ def RestrictedClassType(*args, **kwargs):
 
   return type(RestrictedClass(*args, **kwargs))
 
+
 def TypedListType(*args, **kwargs):
   """
     Return a type that consists of a list object where only
@@ -340,7 +357,8 @@ def TypedListType(*args, **kwargs):
   """
   allowed_type = kwargs.pop("allowed_type", unicode)
   if not isinstance(allowed_type, list):
-    allowed_type = [allowed_type,]
+    allowed_type = [allowed_type]
+
   class TypedList(collections.MutableSequence):
     _pybind_generated_by = "TypedListType"
     _list = list()
@@ -357,7 +375,7 @@ def TypedListType(*args, **kwargs):
           self.check(args[0])
           self._list.append(args[0])
 
-    def check(self,v):
+    def check(self, v):
       passed = False
       count = 0
       for i in self._allowed_type:
@@ -386,26 +404,32 @@ def TypedListType(*args, **kwargs):
             tmp = i(v)
             passed = True
             break
-        except (ValueError,TypeError):
+        except (ValueError, TypeError):
           # ValueError is generated by restricted classes in general
           # TypeError is generated by int when it receives a [] which
           # is valid for numpy, but not for standard int.
           pass
         count += 1
       if not passed:
-        raise ValueError("Cannot add %s to TypedList (accepts only %s)" % \
+        raise ValueError("Cannot add %s to TypedList (accepts only %s)" %
           (v, self._allowed_type))
 
-    def __len__(self): return len(self._list)
-    def __getitem__(self, i): return self._list[i]
-    def __delitem__(self, i): del self._list[i]
+    def __len__(self):
+      return len(self._list)
+
+    def __getitem__(self, i):
+      return self._list[i]
+
+    def __delitem__(self, i):
+      del self._list[i]
+
     def __setitem__(self, i, v):
       self.check(v)
-      self._list.insert(i,v)
+      self._list.insert(i, v)
 
     def insert(self, i, v):
       self.check(v)
-      self._list.insert(i,v)
+      self._list.insert(i, v)
 
     def append(self, v):
       self.check(v)
@@ -424,9 +448,10 @@ def TypedListType(*args, **kwargs):
 
     def get(self, filter=False):
       return self._list
-  return type(TypedList(*args,**kwargs))
+  return type(TypedList(*args, **kwargs))
 
-def YANGListType(*args,**kwargs):
+
+def YANGListType(*args, **kwargs):
   """
     Return a type representing a YANG list, with a contained class.
     A dict or ordered dict is used to store the list, and the
@@ -446,7 +471,8 @@ def YANGListType(*args,**kwargs):
     keyname = args[0]
     listclass = args[1]
   except:
-    raise TypeError, "A YANGList must be specified with a key value and a contained class"
+    raise TypeError("A YANGList must be specified with a key value and a " +
+                      "contained class")
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
@@ -454,7 +480,8 @@ def YANGListType(*args,**kwargs):
   path_helper = kwargs.pop("path_helper", None)
 
   class YANGList(object):
-    __slots__ = ('_pybind_generated_by', '_members', '_keyval', '_contained_class', '_path_helper')
+    __slots__ = ('_pybind_generated_by', '_members', '_keyval',
+                  '_contained_class', '_path_helper')
     _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
@@ -464,7 +491,7 @@ def YANGListType(*args,**kwargs):
         self._members = dict()
       self._keyval = keyname
       if not type(listclass) == type(int):
-        raise ValueError, "contained class of a YANGList must be a class"
+        raise ValueError("contained class of a YANGList must be a class")
       self._contained_class = listclass
       self._path_helper = path_helper
 
@@ -478,8 +505,9 @@ def YANGListType(*args,**kwargs):
       if self._contained_class is None:
         return False
       try:
-        tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name,
-                         is_container=is_container, path_helper=False)
+        tmp = YANGDynClass(base=self._contained_class, parent=parent,
+                            yang_name=yang_name, is_container=is_container,
+                            path_helper=False)
         if not tmp.__slots__ == v.__slots__:
           return False
       except:
@@ -492,7 +520,7 @@ def YANGListType(*args,**kwargs):
     def __iter__(self):
       return iter(self._members)
 
-    def __contains__(self,k):
+    def __contains__(self, k):
       if k in self._members:
         return True
       return False
@@ -501,78 +529,92 @@ def YANGListType(*args,**kwargs):
       return self._members[k]
 
     def __setitem__(self, k, v):
-      self.__set(k,v)
+      self.__set(k, v)
 
     def __set(self, k=False, v=False):
-      update=False
+      update = False
       if v and not self.__check__(v):
-        raise ValueError, "value must be set to an instance of %s" % \
-          (self._contained_class)
+        raise ValueError("value must be set to an instance of %s" %
+          (self._contained_class))
       if k in self._members:
-        update=True
+        update = True
       if self._keyval:
         try:
-          tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name,
-                              is_container='container', path_helper=False)
+          tmp = YANGDynClass(base=self._contained_class, parent=parent,
+                              yang_name=yang_name, is_container='container',
+                              path_helper=False)
           if " " in self._keyval:
             keys = self._keyval.split(" ")
             keyparts = k.split(" ")
             if not len(keyparts) == len(keys):
-              raise KeyError, "YANGList key must contain all key elements (%s)" % (self._keyval.split(" "))
+              raise KeyError("YANGList key must contain all key elements (%s)"
+                                % (self._keyval.split(" ")))
             path_keystring = "["
-            for kv,kp in zip(keys,keyparts):
+            for kv, kp in zip(keys, keyparts):
               kv_obj = getattr(tmp, kv)
-              path_keystring += "%s='%s' " % (kv_obj.yang_name(),kp)
+              path_keystring += "%s='%s' " % (kv_obj.yang_name(), kp)
             path_keystring = path_keystring.rstrip(" ")
             path_keystring += "]"
           else:
             if k == "":
               raise KeyError("Cannot set a null key for a list entry!")
-            keys = [self._keyval,]
-            keyparts = [k,]
+            keys = [self._keyval]
+            keyparts = [k]
             kv_obj = getattr(tmp, self._keyval)
             path_keystring = "[%s='%s']" % (kv_obj.yang_name(), k)
 
           if not update:
-            tmp = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
-                  is_container='container', path_helper=path_helper, \
-                  register_path=self._parent._path() + [self._yang_name+path_keystring], \
-                  extmethods=self._parent._extmethods)
+            tmp = YANGDynClass(base=self._contained_class, parent=parent,
+                               yang_name=yang_name,
+                               is_container='container',
+                               path_helper=path_helper,
+                               register_path=(self._parent._path() +
+                                [self._yang_name + path_keystring]),
+                               extmethods=self._parent._extmethods)
           else:
-            # hand the value to the init, rather than simply creating an empty object.
-            tmp = YANGDynClass(v, base=self._contained_class, parent=parent, yang_name=yang_name, \
-                  is_container='container', path_helper=path_helper, \
-                  register_path=self._parent._path() + [self._yang_name+path_keystring],
-                  extmethods=self._parent._extmethods)
+            # hand the value to the init, rather than simply creating an empty
+            # object.
+            tmp = YANGDynClass(v, base=self._contained_class, parent=parent,
+                                yang_name=yang_name,
+                                is_container='container',
+                                path_helper=path_helper,
+                                register_path=(self._parent._path() +
+                                [self._yang_name + path_keystring]),
+                                extmethods=self._parent._extmethods)
 
-          for i in range(0,len(keys)):
+          for i in range(0, len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
             key(keyparts[i])
           self._members[k] = tmp
         except ValueError, m:
-          raise KeyError, "key value must be valid, %s" % m
+          raise KeyError("key value must be valid, %s" % m)
       else:
         # this is a list that does not have a key specified, and hence
         # we generate a uuid that is used as the key, the method then
         # returns the uuid for the upstream process to use
         k = str(uuid.uuid1())
-        self._members[k] = YANGDynClass(base=self._contained_class, parent=parent, yang_name=yang_name, \
-                            is_container=is_container, path_helper=path_helper, extmethods=self._parent._extmethods)
+        self._members[k] = YANGDynClass(base=self._contained_class,
+                                          parent=parent, yang_name=yang_name,
+                                          is_container=is_container,
+                                          path_helper=path_helper,
+                                          extmethods=self._parent._extmethods)
         return k
 
     def __delitem__(self, k):
       del self._members[k]
 
-    def __len__(self): return len(self._members)
+    def __len__(self):
+      return len(self._members)
 
-    def keys(self): return self._members.keys()
+    def keys(self):
+      return self._members.keys()
 
     def add(self, k=None):
       if k in self._members:
-        raise KeyError, "%s is already defined as a list entry" % k
+        raise KeyError("%s is already defined as a list entry" % k)
       if self._keyval:
         if k is None:
-          raise KeyError, "a list with a key value must have a key specified"
+          raise KeyError("a list with a key value must have a key specified")
         self.__set(k)
       else:
         k = self.__set()
@@ -585,9 +627,9 @@ def YANGListType(*args,**kwargs):
           keyparts = self._keyval.split(" ")
           keyargs = k.split(" ")
           key_string = "["
-          for key,val in zip(keyparts,keyargs):
+          for key, val in zip(keyparts, keyargs):
             kv_o = getattr(self._members[k], key)
-            key_string += "%s=%s " % (kv_o.yang_name(),val)
+            key_string += "%s=%s " % (kv_o.yang_name(), val)
           key_string = key_string.rstrip(" ")
           key_string += "]"
         else:
@@ -601,7 +643,7 @@ def YANGListType(*args,**kwargs):
         if self._path_helper:
           self._path_helper.unregister(obj_path)
       except KeyError, m:
-        raise KeyError, "key %s was not in list (%s)" % (k,m)
+        raise KeyError("key %s was not in list (%s)" % (k, m))
 
     def get(self, filter=False):
       if user_ordered:
@@ -615,7 +657,8 @@ def YANGListType(*args,**kwargs):
           d[i] = self._members[i]
       return d
 
-  return type(YANGList(*args,**kwargs))
+  return type(YANGList(*args, **kwargs))
+
 
 class YANGBool(int):
   """
@@ -631,7 +674,7 @@ class YANGBool(int):
     true_args = ["true", "True", True, 1, "1"]
     if len(args):
       if not args[0] in false_args + true_args:
-        raise ValueError, "%s is an invalid value for a YANGBool" % args[0]
+        raise ValueError("%s is an invalid value for a YANGBool" % args[0])
       value = 0 if args[0] in false_args else 1
     else:
       value = 0
@@ -643,7 +686,8 @@ class YANGBool(int):
   def __str__(self):
     return str(self.__repr__())
 
-def YANGDynClass(*args,**kwargs):
+
+def YANGDynClass(*args, **kwargs):
   """
     Wrap an type - specified in the base_type arugment - with
     a set of custom attributes that YANG specifies (or are required
@@ -680,10 +724,10 @@ def YANGDynClass(*args,**kwargs):
   extmethods = kwargs.pop("extmethods", None)
   is_keyval = kwargs.pop("is_keyval", False)
   if not base_type:
-    raise TypeError, "must have a base type"
+    raise TypeError("must have a base type")
   if base_type in NUMPY_INTEGER_TYPES and len(args):
     if isinstance(args[0], list):
-      raise TypeError, "do not support creating numpy ndarrays!"
+      raise TypeError("do not support creating numpy ndarrays!")
   if isinstance(base_type, list):
     # this is a union, we must infer type
     if not len(args):
@@ -694,25 +738,26 @@ def YANGDynClass(*args,**kwargs):
       type_test = False
       for candidate_type in base_type:
         try:
-          type_test = candidate_type(args[0]) # does the slipper fit?
+          type_test = candidate_type(args[0])  # does the slipper fit?
           break
         except:
-          pass # don't worry, move on, plenty more fish (types) in the sea...
+          pass  # don't worry, move on, plenty more fish (types) in the sea...
       if not type_test:
         # we're left alone at midnight -- no types fit the arguments
-        raise TypeError, "did not find a valid type using the argument as a" + \
-                            "hint"
+        raise TypeError("did not find a valid type using the argument as a" +
+                            "hint")
       # otherwise, hop, skip and jump with the last candidate
       base_type = candidate_type
 
   class YANGBaseClass(base_type):
     if is_container:
       __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
-                   '_supplied_register_path', '_path_helper', '_base_type', '_is_leaf',
-                   '_is_container', '_extensionsd', '_pybind_base_class', '_extmethods',
-                   '_is_keyval')
+                   '_supplied_register_path', '_path_helper', '_base_type',
+                   '_is_leaf', '_is_container', '_extensionsd',
+                   '_pybind_base_class', '_extmethods', '_is_keyval')
 
-    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
+    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+                                  str(base_type))
 
     def __new__(self, *args, **kwargs):
       obj = base_type.__new__(self, *args, **kwargs)
@@ -754,7 +799,8 @@ def YANGDynClass(*args,**kwargs):
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except Exception as e:
-        raise TypeError, "couldn't generate dynamic type -> %s -> %s" % (type(e),e)
+        raise TypeError("couldn't generate dynamic type -> %s -> %s"
+                          % (type(e), e))
 
     def _changed(self):
       return self._mchanged
@@ -766,7 +812,7 @@ def YANGDynClass(*args,**kwargs):
       return self._register_path()
 
     def _yang_path(self):
-      return "/"+"/".join(self._register_path())
+      return "/" + "/".join(self._register_path())
 
     def __str__(self):
       return super(YANGBaseClass, self).__str__()
@@ -774,7 +820,7 @@ def YANGDynClass(*args,**kwargs):
     def __repr__(self):
       return super(YANGBaseClass, self).__repr__()
 
-    def _set(self,choice=False):
+    def _set(self, choice=False):
       if hasattr(self, '__choices__') and choice:
         for ch in self.__choices__:
           if ch == choice[0]:
@@ -783,11 +829,11 @@ def YANGDynClass(*args,**kwargs):
                 for elem in self.__choices__[ch][case]:
                   method = "_unset_%s" % elem
                   if not hasattr(self, method):
-                    raise AttributeError, "unmapped choice!"
+                    raise AttributeError("unmapped choice!")
                   x = getattr(self, method)
                   x()
       if self._choice and not choice:
-        choice=self._choice
+        choice = self._choice
       self._mchanged = True
       if self._parent and hasattr(self._parent, "_set"):
         self._parent._set(choice=choice)
@@ -804,10 +850,10 @@ def YANGDynClass(*args,**kwargs):
       super(YANGBaseClass, self).__setitem__(*args, **kwargs)
 
     def append(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass,self), "append"):
+      if not hasattr(super(YANGBaseClass, self), "append"):
         raise AttributeError("%s object has no attribute append" % base_type)
       self._set()
-      super(YANGBaseClass, self).append(*args,**kwargs)
+      super(YANGBaseClass, self).append(*args, **kwargs)
 
     def pop(self, *args, **kwargs):
       if not hasattr(super(YANGBaseClass, self), "pop"):
@@ -831,17 +877,16 @@ def YANGDynClass(*args,**kwargs):
       self._set()
       super(YANGBaseClass, self).extend(*args, **kwargs)
 
-
     def insert(self, *args, **kwargs):
-      if not hasattr(super(YANGBaseClass,self), "insert"):
+      if not hasattr(super(YANGBaseClass, self), "insert"):
         raise AttributeError("%s object has no attribute insert" % base_type)
       self._set()
       super(YANGBaseClass, self).insert(*args, **kwargs)
 
     def _register_path(self):
-      if not self._supplied_register_path is None:
+      if self._supplied_register_path is not None:
         return self._supplied_register_path
-      if not self._parent is None:
+      if self._parent is not None:
         return self._parent._path() + [self._yang_name]
       else:
         return []
@@ -878,7 +923,8 @@ def YANGDynClass(*args,**kwargs):
 
   return YANGBaseClass(*args, **kwargs)
 
-def ReferenceType(*args,**kwargs):
+
+def ReferenceType(*args, **kwargs):
   """
     A type which based on a path provided acts as a leafref.
     The caller argument is used to allow the path that is provided
@@ -890,10 +936,11 @@ def ReferenceType(*args,**kwargs):
   path_helper = kwargs.pop("path_helper", None)
   caller = kwargs.pop("caller", False)
   require_instance = kwargs.pop("require_instance", False)
+
   class ReferencePathType(object):
 
-    __slots__ = ('_referenced_path', '_path_helper', '_caller', '_referenced_object',
-                 '_ptr', '_require_instance', '_type')
+    __slots__ = ('_referenced_path', '_path_helper', '_caller',
+                  '_referenced_object', '_ptr', '_require_instance', '_type')
 
     _pybind_generated_by = "ReferencePathType"
 
@@ -912,15 +959,18 @@ def ReferenceType(*args,**kwargs):
         value = None
 
       if self._path_helper and value is not None:
-        path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
+        path_chk = self._path_helper.get(self._referenced_path,
+                                          caller=self._caller)
 
-        # if the lookup returns only one leaf, then this means that we have something
-        # that could potentially be a pointer. However, this is not sufficient to tell
-        # whether it is (it could be a single list entry) - thus perform two additional
-        # checks. 1) check whether this is the key value of a list (if it is then this
-        # is something that can be externally referenced) and 2) check that this is not
+        # if the lookup returns only one leaf, then this means that we have
+        # something that could potentially be a pointer. However, this is not
+        # sufficient to tell whether it is (it could be a single list entry)
+        # - thus perform two additional checks. 1) check whether this is the
+        # key value of a list (if it is then this is something that can be
+        # externally referenced) and 2) check that this is not
         # a list itself (including a leaf-list)
-        if len(path_chk) == 1 and not path_chk[0]._is_keyval and not is_yang_list(path_chk[0]):
+        if len(path_chk) == 1 and not path_chk[0]._is_keyval and \
+                      not is_yang_list(path_chk[0]):
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.
           path_parts = self._referenced_path.split("/")
@@ -928,11 +978,14 @@ def ReferenceType(*args,**kwargs):
           if ":" in leaf_name:
             # normalise the namespace
             leaf_name = leaf_name.split(":")[1]
-          set_method = getattr(path_chk[0]._parent, "_set_%s" % safe_name(leaf_name))
-          get_method = getattr(path_chk[0]._parent, "_get_%s" % safe_name(leaf_name))
+          set_method = getattr(path_chk[0]._parent, "_set_%s"
+                                % safe_name(leaf_name))
+          get_method = getattr(path_chk[0]._parent, "_get_%s"
+                                % safe_name(leaf_name))
           if value:
             set_method(value)
-          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(get_method()._base_type))
+          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+                                  str(get_method()._base_type))
           self._ptr = True
         elif self._require_instance:
           if not value:
@@ -940,7 +993,8 @@ def ReferenceType(*args,**kwargs):
           else:
             found = False
             lookup_o = []
-            path_chk = self._path_helper.get(self._referenced_path, caller=self._caller)
+            path_chk = self._path_helper.get(self._referenced_path,
+                                              caller=self._caller)
 
             if len(path_chk) == 1 and is_yang_leaflist(path_chk[0]):
               index = 0
@@ -958,7 +1012,8 @@ def ReferenceType(*args,**kwargs):
                   self._referenced_object = i
 
             if not found:
-              raise ValueError, "no such key (%s) existed in path (%s -> %s)" % (value, self._referenced_path, path_chk)
+              raise ValueError("no such key (%s) existed in path (%s -> %s)"
+                                  % (value, self._referenced_path, path_chk))
         else:
           # require instance is not set, so act like a string
           self._referenced_object = value
@@ -968,7 +1023,7 @@ def ReferenceType(*args,**kwargs):
         ptr = self._path_helper.get(self._referenced_path, caller=self._caller)
         if len(ptr) == 1:
           return ptr[0]
-      raise ValueError, "Invalid pointer specified"
+      raise ValueError("Invalid pointer specified")
 
     def __repr__(self):
       if not self._ptr:
@@ -985,4 +1040,4 @@ def ReferenceType(*args,**kwargs):
         return str(self._referenced_object)
       return str(self._get_ptr())
 
-  return type(ReferencePathType(*args,**kwargs))
+  return type(ReferencePathType(*args, **kwargs))
