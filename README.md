@@ -238,7 +238,7 @@ When ```require-instance``` is set to false, PyangBind will simply treat the lea
 **union**           | -                   | Supported               | tests/union
 **choice**          | -                   | Supported               | tests/choice
 
-## <a anchor="serialisation"></a>Seralisation
+## <a anchor="serialisation"></a>Serialisation
 
 As of September 2015 (no current release-tag), PyangBind also provides means to serialise classes from the default ```get()``` behaviour into a JSON format. This format tries to follow what one would consider sensible - but does not entirely conform with [draft-ietf-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json-04).
 
