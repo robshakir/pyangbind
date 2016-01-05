@@ -238,7 +238,9 @@ When ```require-instance``` is set to false, PyangBind will simply treat the lea
 **union**           | -                   | Supported               | tests/union
 **choice**          | -                   | Supported               | tests/choice
 
-## <a anchor="serialisation"></a>Serialisation
+## Serialisation and Deserialisation
+
+### <a anchor="serialisation"></a>Serialisation
 
 As of September 2015 (no current release-tag), PyangBind also provides means to serialise classes from the default ```get()``` behaviour into a JSON format. This format tries to follow what one would consider sensible - but does not entirely conform with [draft-ietf-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json-04).
 
@@ -252,6 +254,28 @@ print json.dumps(pyangbind_obj.get(filter=True), \
 
 This will serialise the output of ```get(filter=True)``` into JSON. It is notable that where ```ordered-by-user``` lists exists, PyangBind will add a meta-data element ```__yang_order``` such that it is safe to transmit these messages through intermediate platforms which may re-order them.
 
+### <a anchor="deserialisation"></a>Deserialisation
+
+PyangBind provides means to load JSON documents that represent instances of a YANG model into an instance (or set of instances) of the relevant Python classes - that is to say, it can deserialise objects.
+
+To use the deserialisation functions, the pyangbind JSON functions need to be given a pointer to where to find the classes that it needs to create instances of. This is done by providing the module, and then class name that is to be instantiated (since these cannot be inferred from the JSON object).
+
+```python
+# Deserialisation from a JSON file
+# Arguments are:
+#   path to JSON file
+#   Python module to find the class in
+#   The name of the class
+dst_ocif = pybindJSON.load("/tmp/ocif.json", ocbind, "openconfig_interfaces",
+								path_helper=ph)
+print pybindJSON.dumps(dst_ocif)
+```
+
+It is also possible to directly access the `pybindJSONDecoder` `load_json` function, which provides more direct access to how JSON is deserialised (e.g., into an existing object). This is less 'clean'.
+
+### Example
+
+An example of serialisation and deserialisation of the OpenConfig interfaces module can be found in [this GitHub gist](https://gist.github.com/robshakir/c4221228b209e0abe847). 
 ## Licence
 
 ```
