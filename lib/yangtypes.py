@@ -921,6 +921,9 @@ def YANGDynClass(*args, **kwargs):
     def _validate(self, *args, **kwargs):
       return self.__return_extmethod("validate", *args, **kwargs)
 
+    def _oam_check(self, *args, **kwargs):
+      return self.__return_extmethod("oam_check", *args, **kwargs)
+
   return YANGBaseClass(*args, **kwargs)
 
 
