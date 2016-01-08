@@ -723,6 +723,7 @@ def YANGDynClass(*args, **kwargs):
   extensions = kwargs.pop("extensions", None)
   extmethods = kwargs.pop("extmethods", None)
   is_keyval = kwargs.pop("is_keyval", False)
+  register_paths = kwargs.pop("register_paths", True)
   if not base_type:
     raise TypeError("must have a base type")
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -754,7 +755,8 @@ def YANGDynClass(*args, **kwargs):
       __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
                    '_supplied_register_path', '_path_helper', '_base_type',
                    '_is_leaf', '_is_container', '_extensionsd',
-                   '_pybind_base_class', '_extmethods', '_is_keyval')
+                   '_pybind_base_class', '_extmethods', '_is_keyval',
+                   '_register_paths')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
@@ -777,6 +779,7 @@ def YANGDynClass(*args, **kwargs):
       self._extensionsd = extensions
       self._extmethods = extmethods
       self._is_keyval = is_keyval
+      self._register_paths = register_paths
 
       if default:
         self._default = default
@@ -789,9 +792,11 @@ def YANGDynClass(*args, **kwargs):
       if not self._is_container == "list":
         if self._path_helper:
           if self._supplied_register_path is None:
-            self._path_helper.register(self._register_path(), self)
+            if self._register_paths:
+              self._path_helper.register(self._register_path(), self)
           else:
-            self._path_helper.register(self._supplied_register_path, self)
+            if self._register_paths:
+              self._path_helper.register(self._supplied_register_path, self)
 
       if self._is_container == 'list' or self._is_container == 'container':
         kwargs['path_helper'] = self._path_helper
