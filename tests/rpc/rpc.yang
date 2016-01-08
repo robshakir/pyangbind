@@ -1,0 +1,121 @@
+module rpc {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/rpc";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    rpc check {
+        description
+            "Basic RPC with a single input argument";
+        input {
+            leaf argument {
+                type string;
+            }
+        }
+    }
+
+    rpc check-two {
+        description
+            "Basic RPC check with two leaves in output";
+        output {
+            leaf arg-one {
+                type int8;
+            }
+
+            leaf arg-two {
+                type int8;
+            }
+        }
+    }
+
+    rpc check-three {
+        description
+            "RPC check with a container under input";
+        input {
+            container arguments {
+                leaf arg-one {
+                    type string;
+                }
+
+                leaf arg-two {
+                    type string;
+                }
+            }
+        }
+    }
+
+
+    rpc check-four {
+        description
+            "RPC check with multiple containers under output";
+        output {
+            container arguments {
+                leaf arg-one {
+                    type string;
+                }
+            }
+
+            container arguments-two {
+                leaf arg-two {
+                    type string;
+                }
+            }
+        }
+    }
+
+    rpc check-five {
+        description
+            "RPC check with input and output structures";
+
+        input {
+            container arguments {
+                leaf arg-one {
+                    type string;
+                }
+            }
+        }
+
+        output {
+            container return-values {
+                leaf return-val {
+                    type int8;
+                }
+            }
+        }
+    }
+
+    rpc check-six {
+        description
+            "RPC check with input and output values using a leafref which
+            requires use of the XPATHHELPER";
+
+        input {
+            leaf argument {
+                type leafref {
+                    path "/test/reference-target";
+                    require-instance true;
+                }
+            }
+        }
+
+        output {
+            leaf out {
+                type string;
+            }
+        }
+    }
+
+    container test {
+        leaf-list reference-target {
+            type string;
+        }
+    }
+}
