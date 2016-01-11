@@ -6,7 +6,14 @@ FAIL=0
 TESTDIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PYANGBINDPATH=$TESTDIR/../..
 export PYANGPATH=`which pyang`
-export XPATHLIBDIR=$TESTDIR/../../lib/
+#export XPATHLIBDIR=$TESTDIR/../../lib/
+
+if [ -z "$PATH_TO_PYBIND_TEST_PYTHON" ]; then
+    echo "INFO:   Testing against system pyangbind library"
+    PYPATH=`which python`
+else
+    PYPATH=$PATH_TO_PYBIND_TEST_PYTHON
+fi
 
 if [ $# -eq 0 ]; then
     FAIL=0
@@ -14,9 +21,9 @@ if [ $# -eq 0 ]; then
         if [ -e $i/run.py ]; then
             echo "TESTING $i..."
             if [ "$DEL" = true ]; then
-                $i/run.py > /dev/null
+                $PYPATH $i/run.py > /dev/null
             else
-                $i/run.py -k > /dev/null
+                $PYPATH $i/run.py -k > /dev/null
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";
@@ -34,10 +41,10 @@ else
         if [ -e $i/run.py ]; then
             echo "TESTING $i..."
             if [ "$DEL" = true ]; then
-                $i/run.py
+                $PYPATH $i/run.py
                 #> /dev/null
             else
-                $i/run.py -k
+                $PYPATH $i/run.py -k
                 #> /dev/null
             fi
             if [ $? -ne 0 ]; then

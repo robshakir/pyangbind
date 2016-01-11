@@ -8,8 +8,15 @@ export PYANGBINDPATH=$TESTDIR/..
 export PYANGPATH=`which pyang`
 export XPATHLIBDIR=$TESTDIR/../lib/
 
+if [ -z "$PATH_TO_PYBIND_TEST_PYTHON" ]; then
+    echo "INFO:  Testing against system pyangbind library"
+    PYPATH=`which python`
+else
+    PYPATH=$PATH_TO_PYBIND_TEST_PYTHON
+fi
+
 echo "RUNNING BASE"
-$PYANGPATH --plugindir $PYANGBINDPATH -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
+$PYPATH $PYANGPATH --plugindir $PYANGBINDPATH/pyangbind/plugin -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
     exit
@@ -22,9 +29,9 @@ if [ $# -eq 0 ]; then
         if [ -e $i/run.py ]; then
             echo "TESTING $i..."
             if [ "$DEL" = true ]; then
-                $i/run.py > /dev/null
+                $PYPATH $i/run.py > /dev/null
             else
-                $i/run.py -k > /dev/null
+                $PYPATH $i/run.py -k > /dev/null
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";
@@ -42,9 +49,9 @@ else
         if [ -e $i/run.py ]; then
             echo "TESTING $i..."
             if [ "$DEL" = true ]; then
-                $i/run.py
+                $PYPATH $i/run.py
             else
-                $i/run.py -k
+                $PYPATH $i/run.py -k
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";

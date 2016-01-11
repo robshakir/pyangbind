@@ -8,11 +8,11 @@ with open(path.join(thisdir, "README.rst"), encoding='utf-8') as readme:
   long_description = readme.read()
 
 setup(
-    name='PyangBind',
+    name='pyangbind',
 
     # PyangBind uses the same versioning approach as OpenConfig - see
     # http://www.openconfig.net/file-cabinet/Semantic_Versioning_for_OpenConfig.pdf?attredirects=0&d=1
-    version='0.1.1',
+    version='0.1.2',
 
     description="PyangBind is a plugin for pyang which converts YANG data" + \
                 "models into a Python class hierarchy, such that Python " +  \
@@ -26,7 +26,6 @@ setup(
     author_email="rjs@rob.sh",
 
     license="Apache",
-
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Telecommunications Industry',
@@ -38,6 +37,6 @@ setup(
     ],
     include_package_data=True,
     keywords="yang pyang",
-    packages=find_packages(),
+    packages=find_packages(exclude=['lib']),
     install_requires=['numpy', 'pyang', 'bitarray', 'lxml'],
 )

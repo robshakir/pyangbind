@@ -20,13 +20,9 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
-
+  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
+                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
+                  else sys.executable
   pyangpath = os.environ.get('PYANGPATH') if \
                 os.environ.get('PYANGPATH') is not None else False
   pyangbindpath = os.environ.get('PYANGBINDPATH') if \
@@ -35,12 +31,17 @@ def main():
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system(("%s --plugindir %s -f pybind --split-class-dir=%s/bindings " +
-        "--build-rpc --use-xpathhelper " +
-        "--pybind-class-dir=%s %s/%s.yang") % (pyangpath, pyangbindpath,
-            this_dir, pyangbindpath, this_dir, TESTNAME))
 
-  from lib.xpathhelper import YANGPathHelper
+  cmd = "%s "% pythonpath
+  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
+  cmd += " -f pybind "
+  cmd += " --split-class-dir=%s/bindings" % this_dir
+  cmd += " -p %s" % this_dir
+  cmd += " --use-xpathhelper --build-rpc"
+  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
+  os.system(cmd)
+
+  from pyangbind.lib.xpathhelper import YANGPathHelper
   ph = YANGPathHelper()
 
   import_error = None

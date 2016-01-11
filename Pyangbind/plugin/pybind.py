@@ -27,7 +27,7 @@ import decimal
 import copy
 import os
 from bitarray import bitarray
-from lib.yangtypes import safe_name, YANGBool
+from pyangbind.lib.yangtypes import safe_name, YANGBool
 
 from pyang import plugin
 from pyang import statements
@@ -201,14 +201,6 @@ class PyangBindClass(plugin.PyangPlugin):
                                dest="split_class_dir",
                                help="""Split the code output into
                                        multiple directories"""),
-          optparse.make_option("--pybind-class-dir",
-                                metavar="DIR",
-                                dest="pybind_class_dir",
-                                help="""Path in which the pyangbind
-                                        'lib' directionary can be found
-                                        - assumed to be the local
-                                        directory if this option
-                                        is not specified"""),
           optparse.make_option("--interesting-extension",
                               metavar="EXTENSION-MODULE",
                               default=[],
@@ -228,6 +220,14 @@ class PyangBindClass(plugin.PyangPlugin):
                               help="""Allow a path-keyed dictionary
                                       to be used to specify methods
                                       related to a particular class"""),
+          optparse.make_option("--build-rpcs",
+                              dest="build_rpcs",
+                              action="store_true",
+                              help="""Generate class bindings for
+                                      the input and output of RPCs
+                                      defined in each module. These
+                                      are placed at the root of
+                                      each module"""),
       ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -257,24 +257,17 @@ def build_pybind(ctx, modules, fd):
 
   # Build the common set of imports that all pyangbind files needs
   ctx.pybind_common_hdr = ""
-  if ctx.opts.pybind_class_dir:
-    # If we were asked to include a different directory for the library, then
-    # the header needs to extend the python system path to be able to include
-    # files from this directory.
-    libdir = os.path.abspath(ctx.opts.pybind_class_dir)
-    ctx.pybind_common_hdr += """import sys\n"""
-    ctx.pybind_common_hdr += """sys.path.append("%s")\n""" % libdir
   ctx.pybind_common_hdr += "\n"
 
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    ctx.pybind_common_hdr += "import lib.xpathhelper as xpathhelper\n"
-  ctx.pybind_common_hdr += """from lib.yangtypes import """
+    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as xpathhelper\n"
+  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
   ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
   ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from lib.yangtypes import YANGBool, """
+  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, """
   ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
-  ctx.pybind_common_hdr += """from lib.base import PybindBase\n"""
+  ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
   ctx.pybind_common_hdr += """from decimal import Decimal\n"""
   ctx.pybind_common_hdr += """import numpy as np\n"""
   ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
@@ -354,6 +347,15 @@ def build_pybind(ctx, modules, fd):
       children = [ch for ch in module.i_children
             if ch.keyword in statements.data_definition_keywords]
       get_children(ctx, fd, children, m, m)
+
+      if ctx.opts.build_rpcs:
+        rpcs = [ch for ch in module.i_children
+                  if ch.keyword == 'rpc']
+        # Build RPCs specifically under the module name, since this
+        # can be used as a proxy for the namespace.
+        if len(rpcs):
+          get_children(ctx, fd, rpcs, module, module, register_paths=False,
+                      path="/%s_rpc" % (safe_name(module.arg)))
 
 
 def build_identities(ctx, defnd):
@@ -601,7 +603,7 @@ def find_definitions(defn, ctx, module, prefix):
 
 
 def get_children(ctx, fd, i_children, module, parent, path=str(),
-                 parent_cfg=True, choice=False):
+                 parent_cfg=True, choice=False, register_paths=True):
   # Iterative function that is called for all elements that have childen
   # data nodes in the tree. This function resolves those nodes into the
   # relevant leaf, or container/list configuration and outputs the python
@@ -671,6 +673,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   # choice specified.
   if ctx.opts.split_class_dir:
     import_req = []
+
   for ch in i_children:
     if ch.keyword == "choice":
       for choice_ch in ch.i_children:
@@ -678,10 +681,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         for case_ch in choice_ch.i_children:
           elements += get_element(ctx, fd, case_ch, module, parent,
             path + "/" + ch.arg, parent_cfg=parent_cfg,
-            choice=(ch.arg, choice_ch.arg))
+            choice=(ch.arg, choice_ch.arg), register_paths=register_paths)
     else:
       elements += get_element(ctx, fd, ch, module, parent, path + "/" + ch.arg,
-        parent_cfg=parent_cfg, choice=choice)
+        parent_cfg=parent_cfg, choice=choice, register_paths=register_paths)
+
       if ctx.opts.split_class_dir:
         if hasattr(ch, "i_children") and len(ch.i_children):
           import_req.append(ch.arg)
@@ -696,7 +700,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
 
   # 'container', 'module', 'list' and 'submodule' all have their own classes
   # generated.
-  if parent.keyword in ["container", "module", "list", "submodule"]:
+  if parent.keyword in ["container", "module", "list", "submodule", "input",
+                         "output", "rpc"]:
     if ctx.opts.split_class_dir:
       nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
     else:
@@ -890,6 +895,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
           choices[i["choice"][0]][i["choice"][1]].append(i["name"])
         class_str["arg"] += ", path_helper=self._path_helper"
         class_str["arg"] += ", extmethods=self._extmethods"
+        class_str["arg"] += ", register_paths=%s" % i["register_paths"]
         if "extensions" in i:
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         if keyval and i["yang_name"] in keyval:
@@ -1239,7 +1245,7 @@ def find_absolute_default_type(default_type, default_value, elemname):
 
 
 def get_element(ctx, fd, element, module, parent, path,
-                  parent_cfg=True, choice=False):
+                  parent_cfg=True, choice=False, register_paths=True):
   # Handle mapping of an invidual element within the model. This function
   # produces a dictionary that can then be mapped into the relevant code that
   # dynamically generates a class.
@@ -1256,9 +1262,10 @@ def get_element(ctx, fd, element, module, parent, path,
     elemdescr = elemdescr.arg
 
   # If the element has an i_children attribute then this is a container, list
-  # leaf-list or choice.
+  # leaf-list or choice. Alternatively, it can be the 'input' or 'output'
+  # substmts of an RPC
   if hasattr(element, 'i_children'):
-    if element.keyword in ["container", "list"]:
+    if element.keyword in ["container", "list", "input", "output"]:
       has_children = True
     elif element.keyword in ["leaf-list"]:
       create_list = True
@@ -1278,7 +1285,7 @@ def get_element(ctx, fd, element, module, parent, path,
     if element.i_children:
       chs = element.i_children
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg,
-                   choice=choice)
+                   choice=choice, register_paths=register_paths)
 
       elemdict = {
           "name": safe_name(element.arg), "origtype": element.keyword,
@@ -1287,6 +1294,7 @@ def get_element(ctx, fd, element, module, parent, path,
           "description": elemdescr,
           "yang_name": element.arg,
           "choice": choice,
+          "register_paths": register_paths,
       }
       # Handle the different cases of class name, this depends on whether we
       # were asked to split the bindings into a directory structure or not.
@@ -1490,6 +1498,7 @@ def get_element(ctx, fd, element, module, parent, path,
         "quote_arg": quote_arg,
         "description": elemdescr, "yang_name": element.arg,
         "choice": choice,
+        "register_paths": register_paths,
     }
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]

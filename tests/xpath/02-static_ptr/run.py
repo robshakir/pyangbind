@@ -19,6 +19,9 @@ def main():
     if o in ["-k", "--keepfiles"]:
       k = True
 
+  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
+                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
+                  else sys.executable
   pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') \
       is not None else False
   pyangbindpath = os.environ.get('PYANGBINDPATH') if \
@@ -27,9 +30,14 @@ def main():
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  os.system(("%s --plugindir %s -f pybind -o %s/bindings.py " +
-      "--use-xpathhelper %s/%s.yang") % (pyangpath, pyangbindpath, this_dir,
-          this_dir, TESTNAME))
+
+  cmd = "%s " % pythonpath
+  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
+  cmd += " -f pybind -o %s/bindings.py" % this_dir
+  cmd += " -p %s" % this_dir
+  cmd += " --use-xpathhelper"
+  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
+  os.system(cmd)
 
   from bindings import ptr_tc02 as ytest
 
@@ -63,10 +71,6 @@ def t1_listkey(yobj, tree=False):
   if del_tree:
     del tree
 
-
 if __name__ == '__main__':
-  import_path = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) +
-                    "/../../..")
-  sys.path.insert(0, import_path)
-  from lib.xpathhelper import YANGPathHelper, XPathError
+  from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
   main()

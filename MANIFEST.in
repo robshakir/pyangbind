@@ -1,1 +1,3 @@
-include Pyangbind/plugin/*.py
+include pyangbind/plugin/*.py
+include *.md
+include LICENSE
