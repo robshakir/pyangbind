@@ -1,0 +1,3 @@
+include pyangbind/plugin/*.py
+include *.md
+include LICENSE

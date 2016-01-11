@@ -26,7 +26,7 @@ import json
 import numpy
 from collections import OrderedDict
 from decimal import Decimal
-from yangtypes import safe_name
+from pyangbind.lib.yangtypes import safe_name
 from types import ModuleType
 import copy
 
@@ -69,20 +69,20 @@ class pybindJSONEncoder(json.JSONEncoder):
 
   def default(self, obj):
     def jsonmap(obj, map_val):
-      if map_val in ["lib.yangtypes.RestrictedClass"]:
+      if map_val in ["pyangbind.lib.yangtypes.RestrictedClass"]:
         map_val = getattr(obj, "_restricted_class_base")[0]
 
       if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
               "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
               "numpy.int64"]:
         return int(obj)
-      elif map_val in ["lib.yangtypes.ReferencePathType"]:
+      elif map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
         return self.default(obj._get())
-      elif map_val in ["lib.yangtypes.RestrictedPrecisionDecimal"]:
+      elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
         return float(obj)
       elif map_val in ["bitarray.bitarray"]:
         return obj.to01()
-      elif map_val in ["lib.yangtypes.YANGBool"]:
+      elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
         if obj:
           return True
         else:
