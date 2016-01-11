@@ -13,7 +13,7 @@ else
 fi
 
 echo "RUNNING BASE"
-/usr/bin/env python $TESTDIR/00_pathhelper_base.py >/dev/null
+$PYPATH $TESTDIR/00_pathhelper_base.py >/dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
     exit

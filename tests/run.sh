@@ -21,8 +21,10 @@ if [ $? -ne 0 ]; then
     exit
 fi
 
+source $TESTDIR/pyvirtualenv/bin/activate
+
 echo "INSTALLING MODULE..."
-$TESTDIR/pyvirtualenv/bin/pip install $TESTDIR/../dist/pyangbind-0.1.1-py2-none-any.whl >/dev/null
+$TESTDIR/pyvirtualenv/bin/pip install $TESTDIR/../dist/*.whl
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN INSTALL"
     exit
