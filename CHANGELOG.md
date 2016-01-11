@@ -19,3 +19,8 @@
 
 	* Adopt semantic versioning.
 	* First release packaged for PyPi
+
+11-01-2016 - 0.1.3
+
+	* Final test release to PyPI's test repo.
+	* To be released as 0.2.0.

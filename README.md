@@ -11,10 +11,16 @@ Development of **PyangBind** has been motivated by consumption of the [**OpenCon
 **PyangBind** can be called by using the Pyang ```--plugindir``` argument:
 
 ```
-pyang --plugindir /path/to/repo -f pybind <yang-files>
+pyang --plugindir <path-to-pyangbind-plugindir> -f pybind <yang-files>
 ```
 
-Output can be written in two different ways:
+By default, the pyangbind plugin will be installed in the `site-packages/pyangbind/plugin` directory, this may be the Python system or user packages. It is possible to determine the plugin's path using 
+
+```
+/usr/bin/env python -c "import pyangbind; import os; print "%s/plugin" % os.path.dirname(pyangbind.__file__)"
+```
+
+Output is written based on the following options:
 
 * if no options given to pyang, it will write to ```stdout``` as per pyang's default behaviour.
 * if ```-o``` is given to pyang, all output will be written to the file specified as the target fd.
@@ -22,9 +28,10 @@ Output can be written in two different ways:
 
 Other options can be used on the command-line:
 
-* ```--use-xpath-helper``` - this currently uses the ```YANGPathHelper``` class in ```lib/xpathhelper.py``` to allow registration of objects into an XML tree, and hence allow XPATH references to be resolved ([see the relevant documentation](#leafref-helper)). In the future, arguments to this function will allow the user to load in their own helper function. See the documentation for ```PyangBindXpathHelper``` in ```lib/xpathhelper.py``` for the functions that this class should provide.
-* ```--pybind-class-dir=DIR``` - by default PyangBind will assume that in the module directory of any bindings file, there exists a ```lib/``` directory. This provides PyangBind access the relevant YANG type classes. Using this argument specifies an alternate directory which is then appended to the Python path variable, such that the user does not need to create ```lib``` symlinks. If you use ```--split-class-dir``` you *will* want to use this option!
-* ```--interesting-extension=EXTENSION-MODULE``` - PyangBind by default will do nothing with extension statements. If a module name (e.g., ```foo-extensions```) is specified on the command line, PyangBind will add entries to an extension dictionary where they are from an interesting module. Multiple modules may be specified. Such entries can then be accessed via ```yang_object.extensions()```.
+* ```--use-xpath-helper``` - Use the `path_helper` argument to each PyangBind class. The `path_helper` is used to register objects into an XML tree, and hence allow XPATH references to be resolved ([see the relevant documentation](#leafref-helper)). Whilst a `YANGPathHelper` class (see `pyangbind/lib/xpathhelper.py`) is currently expected, it is possible for an alternative to be utilised. See the documentation for ```PyangBindXpathHelper``` in ```pyangbind/lib/xpathhelper.py``` for the methods that an alternative class should provide.
+* ```--interesting-extension=EXTENSION-MODULE``` - PyangBind by default will do nothing with extension statements. If a module name (e.g., ```foo-extensions```) is specified on the command line, PyangBind will add entries to an extension dictionary where they are from an interesting module. Multiple modules may be specified. Such entries can then be accessed via ```yang_object._extensions()```.
+* ```--build-rpcs``` - this switch causes pyangbind to read the `rpc` statements that are defined in each YANG module and compile these into a set of classes that are stored in a Python module called ```<yang-module-name>_rpc```. Each RPC is created with the relevant `input` and `output` statements. Where instances of these classes are created, they do not register against the supplied XPath helper module (due to the fact that RPC instances are not part of the 'standard' data tree). A supplied `path_helper` argument will still be used by the modules to resolve leaf references where required.
+* ```--use-extmethods``` - this switches causes a dictionary of the form `{ "path": class }` to be referenced by each PyangBind object. It is then possible to call a set of extended method names (specified [here](https://github.com/robshakir/pyangbind/blob/master/lib/yangtypes.py#L917-L930)) against each object. When these methods are called, the object will look its path up in the supplied dictionary, and if an entry exists, call the corresponding method of the supplied class. This can be used to implement actions against certain classes without needing to change the generated code. Currently, the method names are static - a possible future extension is to make the set of extmethod names dynamic.
 
 Once bindings have been generated, each YANG module is included as a top-level class within the output bindings file. Using the following module as an example:
 
@@ -69,7 +76,7 @@ bindings = pyangbind_example()
 bindings.parent.integer = 12
 ```
 
-Note, that as of release.01, pyangbind expects a ```lib``` directory locally to the ```bindings.py``` file referenced above. This contains the ```xpathhelper``` and ```yangtypes``` modules - such that this code does not need to be duplicated across each ```bindings.py``` file. In the future, it is intended that these functions be provided as an installable module, but this is is still *TODO*. See the commentary relating to ```--pybind-class-dir``` if this sounds irritating :-).
+As of version 0.2.0, pyangbind is now packaged such that the helper modules can be installed through ```pip```. This means that all modules expect to be able to import ```pyangbind.lib.<modname>```. This version therefore **removes** those switches that were used to hack around the fact that pyangbind was not installable.
 
 Each data leaf can be referred to via the path described in the YANG module. Each leaf is represented by the base class that is described in the [type support](#type-support) section of this document.
 
@@ -92,7 +99,7 @@ Each native type is wrapped in a YANGDynClass dynamic type - which provides help
 * ```default()``` - returns the default value of the YANG leaf.
 * ```changed()``` - returns ```True``` if the value has been changed from the default, ```False``` otherwise.
 * ```yang_name()``` - returns the YANG data element's name (since not all data elements name are safe to be used in Python).
-* ```extensions()``` - returns the dictionary of interesting extensions.
+* ```_extensions()``` - returns the dictionary of interesting extensions.
 
 ### YANG Container Methods
 
@@ -103,7 +110,7 @@ In addition, a YANG container provides a set of methods to determine properties 
  * ```elements()``` - which provides a list of the elements of the YANG-described tree which branch from this container.
  * ```get(filter=False)``` - providing a means to return a Python dictionary hiearchy showing the tree branching from the container node. Where the ```filter``` argument is set to ```True``` only elements that have changed from their default values due to manipulation of the model are returned - when filter is not specified the default values of all leaves are returned.
 
-As of a recent release, iteration through container objects will return a key,value list which can be used to walk through leaf or container objects within a particular container.
+Iteration through container objects will return a key,value list which can be used to walk through leaf or container objects within a particular container.
 
 ### YANG List Methods
 
@@ -146,10 +153,10 @@ AttributeError: can't set attribute
 
 The ```YANGPathHelper``` class in the xpathhelper module provides a lightweight means to be able to establish a tree structure against which pyangbind modules register themselves. In order to enable this behaviour use the ```---with-xpathhelper``` flag during code generation.
 
-When ```--with-xpathhelper``` modules will automatically register themselves against the tree structure that is provided using the ```path_helper``` keyword-argument. ```path_helper``` is expected to be set to an instance of ```lib.xpathhelper.YANGPathHelper``` - which is created independently to the root YANG module, as shown below:
+When ```--with-xpathhelper``` modules will automatically register themselves against the tree structure that is provided using the ```path_helper``` keyword-argument. ```path_helper``` is expected to be set to an instance of ```pyangbind.lib.xpathhelper.YANGPathHelper``` - which is created independently to the root YANG module, as shown below:
 
 ```python
-from lib.xpathhelper import YANGPathHelper
+from pyangbind.lib.xpathhelper import YANGPathHelper
 from oc_bgp import bgp
 from oc_routing_policy import routing_policy as rpol
 
@@ -247,7 +254,7 @@ As of September 2015 (no current release-tag), PyangBind also provides means to 
 In order to use the JSON serialisation, the custom encoder needs to be imported:
 
 ```python
-from lib.serialise import pybindJSONEncoder
+from pyangbind.lib.serialise import pybindJSONEncoder
 print json.dumps(pyangbind_obj.get(filter=True), \
 		cls=pybindJSONEncoder, indent=4)
 ```
