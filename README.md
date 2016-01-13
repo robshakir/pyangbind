@@ -17,7 +17,7 @@ pyang --plugindir <path-to-pyangbind-plugindir> -f pybind <yang-files>
 By default, the pyangbind plugin will be installed in the `site-packages/pyangbind/plugin` directory, this may be the Python system or user packages. It is possible to determine the plugin's path using 
 
 ```
-/usr/bin/env python -c "import pyangbind; import os; print "%s/plugin" % os.path.dirname(pyangbind.__file__)"
+/usr/bin/env python -c 'import pyangbind; import os; print "%s/plugin" % os.path.dirname(pyangbind.__file__)'
 ```
 
 Output is written based on the following options:
