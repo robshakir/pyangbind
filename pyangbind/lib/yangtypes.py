@@ -584,7 +584,7 @@ def YANGListType(*args, **kwargs):
 
           for i in range(0, len(keys)):
             key = getattr(tmp, "_set_%s" % keys[i])
-            key(keyparts[i])
+            key(keyparts[i], load=True)
           self._members[k] = tmp
         except ValueError, m:
           raise KeyError("key value must be valid, %s" % m)
@@ -1025,6 +1025,9 @@ def ReferenceType(*args, **kwargs):
         else:
           # require instance is not set, so act like a string
           self._referenced_object = value
+      elif value is not None:
+        # No path helper and a value is set, just act like a string
+        self._referenced_object = value
 
     def _get_ptr(self):
       if self._ptr:

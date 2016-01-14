@@ -196,5 +196,5 @@ class pybindJSONDecoder(object):
       if set_via_stdmethod:
         # simply get the set method and then set the value of the leaf
         set_method = getattr(obj, "_set_%s" % safe_name(key))
-        set_method(d[key])
+        set_method(d[key], load=True)
     return obj

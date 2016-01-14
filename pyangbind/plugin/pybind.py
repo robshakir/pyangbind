@@ -993,7 +993,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
              description_str, i["name"]))
 
       nfd.write('''
-  def _set_%s(self,v):
+  def _set_%s(self, v, load=False):
     """
     Setter method for %s, mapped from YANG variable %s (%s)
     If this variable is read-only (config: false) in the
@@ -1003,6 +1003,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     """''' % (i["name"], i["name"], i["path"],
                           i["origtype"], i["name"], i["name"],
                           description_str))
+      if keyval and i["yang_name"] in keyval:
+        nfd.write("""
+    parent = getattr(self, "_parent", None)
+    if parent is not None and load is False:
+      raise AttributeError("Cannot set keys directly when" +
+                              " within an instantiated list")\n""")
       nfd.write("""
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
@@ -1031,8 +1037,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       if not i["config"]:
         rw = False
       elif not parent_cfg:
-        rw = False
-      elif keyval and i["yang_name"] in keyval:
         rw = False
 
       if not rw:
