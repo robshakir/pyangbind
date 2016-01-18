@@ -529,39 +529,65 @@ def YANGListType(*args, **kwargs):
       return self._members[k]
 
     def __setitem__(self, k, v):
-      self.__set(k, v)
+      self.__set(k=k, v=v)
 
-    def __set(self, k=False, v=False):
+    def __set(self, *args, **kwargs):
+      k = kwargs.pop("k", None)
+      v = kwargs.pop("v", None)
+      named_set = kwargs.pop("_named_set", False)
+
+      if k is None and self._keyval and not named_set:
+        k = args[0]
+      elif k is None:
+        # this is a list that does not have a key specified, and hence
+        # we generate a uuid that is used as the key, the method then
+        # returns the uuid for the upstream process to use
+        k = str(uuid.uuid1())
+
       update = False
-      if v and not self.__check__(v):
+      if v is not None and not self.__check__(v):
         raise ValueError("value must be set to an instance of %s" %
           (self._contained_class))
+
       if k in self._members:
         update = True
+
       if self._keyval:
         try:
           tmp = YANGDynClass(base=self._contained_class, parent=parent,
                               yang_name=yang_name, is_container='container',
                               path_helper=False)
-          if " " in self._keyval:
+
+          keydict = None
+
+          if " " in self._keyval and not named_set:
             keys = self._keyval.split(" ")
             keyparts = k.split(" ")
+            keydict = {}
+            for kp, kv in zip(keys, keyparts):
+              keydict[kp] = kv
+
             if not len(keyparts) == len(keys):
               raise KeyError("YANGList key must contain all key elements (%s)"
                                 % (self._keyval.split(" ")))
-            path_keystring = "["
-            for kv, kp in zip(keys, keyparts):
-              kv_obj = getattr(tmp, kv)
-              path_keystring += "%s='%s' " % (kv_obj.yang_name(), kp)
-            path_keystring = path_keystring.rstrip(" ")
-            path_keystring += "]"
+
+          elif " " in self._keyval and named_set:
+            k = kwargs.pop("_python_key", None)
+            keydict = copy.copy(kwargs)
           else:
             if k == "":
               raise KeyError("Cannot set a null key for a list entry!")
-            keys = [self._keyval]
-            keyparts = [k]
+            keydict = {self._keyval: k}
             kv_obj = getattr(tmp, self._keyval)
             path_keystring = "[%s='%s']" % (kv_obj.yang_name(), k)
+
+          if keydict is not None:
+            keys = self._keyval.split(" ")
+            path_keystring = "["
+            for kv in keys:
+              kv_obj = getattr(tmp, kv)
+              path_keystring += "%s='%s' " % (kv_obj.yang_name(), keydict[kv])
+            path_keystring += "]"
 
           if not update:
             tmp = YANGDynClass(base=self._contained_class, parent=parent,
@@ -582,17 +608,17 @@ def YANGListType(*args, **kwargs):
                                 [self._yang_name + path_keystring]),
                                 extmethods=self._parent._extmethods)
 
-          for i in range(0, len(keys)):
-            key = getattr(tmp, "_set_%s" % keys[i])
-            key(keyparts[i], load=True)
+          if keydict is not None:
+            for kn in keydict:
+              key = getattr(tmp, "_set_%s" % safe_name(kn))
+              key(keydict[kn], load=True)
+
+          print keydict
           self._members[k] = tmp
+
         except ValueError, m:
           raise KeyError("key value must be valid, %s" % m)
       else:
-        # this is a list that does not have a key specified, and hence
-        # we generate a uuid that is used as the key, the method then
-        # returns the uuid for the upstream process to use
-        k = str(uuid.uuid1())
         self._members[k] = YANGDynClass(base=self._contained_class,
                                           parent=parent, yang_name=yang_name,
                                           is_container=is_container,
@@ -609,13 +635,41 @@ def YANGListType(*args, **kwargs):
     def keys(self):
       return self._members.keys()
 
-    def add(self, k=None):
+    def add(self, *args, **kwargs):
+      if len(args) and len(kwargs):
+        raise AttributeError("Cannot add an entry to a list based on both " +
+                " keywords and string args")
+
+      keyargs = None
+      if len(args):
+        k = args[0]
+      elif len(kwargs.keys()):
+        keyargs = {}
+        k = ""
+        for kn in self._keyval.split(" "):
+          try:
+            keyargs[kn] = kwargs[kn]
+          except KeyError, m:
+            raise AttributeError("Keyword list add function must have all " +
+                "keys specified - cannot find %s" % m)
+          k += "%s " % kwargs[kn]
+        # remove the last space from the keyname
+        k = k[:-1]
+      else:
+        k = None
+
       if k in self._members:
         raise KeyError("%s is already defined as a list entry" % k)
-      if self._keyval:
+      if self._keyval and keyargs is None:
         if k is None:
           raise KeyError("a list with a key value must have a key specified")
-        self.__set(k)
+        self.__set(k=k)
+        return self._members[k]
+      elif self._keyval and keyargs is not None:
+        keyargs['_python_key'] = k
+        keyargs['_named_set'] = True
+        self.__set(**keyargs)
+        return self._members[k]
       else:
         k = self.__set()
         return k
@@ -644,6 +698,17 @@ def YANGListType(*args, **kwargs):
           self._path_helper.unregister(obj_path)
       except KeyError, m:
         raise KeyError("key %s was not in list (%s)" % (k, m))
+
+    def _item(self, *args, **kwargs):
+      keystr = ""
+      if " " in self._keyval:
+        for kn in self._keyval.split(" "):
+          try:
+            keystr += "%s " % kwargs[kn]
+          except KeyError:
+            raise KeyError("Must specify all keys to retrieve a list entry")
+        keystr = keystr[:-1]
+      return self._members[keystr]
 
     def get(self, filter=False):
       if user_ordered:
@@ -784,7 +849,10 @@ def YANGDynClass(*args, **kwargs):
       if default:
         self._default = default
       if len(args):
-        if not args[0] == self._default:
+        if not self._default is False:
+          if not args[0] == self._default:
+            self._set()
+        else:
           self._set()
 
       # lists themselves do not register, only elements within them
@@ -837,11 +905,15 @@ def YANGDynClass(*args, **kwargs):
                     raise AttributeError("unmapped choice!")
                   x = getattr(self, method)
                   x()
+
       if self._choice and not choice:
         choice = self._choice
+
       self._mchanged = True
+
       if self._parent and hasattr(self._parent, "_set"):
         self._parent._set(choice=choice)
+
 
     def yang_name(self):
       return self._yang_name
@@ -963,6 +1035,7 @@ def ReferenceType(*args, **kwargs):
 
       if len(args):
         value = args[0]
+        self._set()
       else:
         value = None
 
@@ -990,7 +1063,8 @@ def ReferenceType(*args, **kwargs):
                                 % safe_name(leaf_name))
           get_method = getattr(path_chk[0]._parent, "_get_%s"
                                 % safe_name(leaf_name))
-          if value:
+
+          if value is not None:
             set_method(value)
           self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))

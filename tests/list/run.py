@@ -77,7 +77,8 @@ def main():
       "aSecondDefaultValue"
 
   assert test_instance.get() == \
-    {'list-container': {'list-seven': {}, 'list-six': {}, 'list-five': {},
+    {'list-container': {'list-eight': {}, 'list-seven': {}, 
+        'list-six': {}, 'list-five': {},
         'list-two': {}, 'list-three': {}, 'list-four': {},
         'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
     2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
@@ -156,6 +157,22 @@ def main():
   assert test_instance.list_container.list_six[x].val == 10, \
     "a key-less list did not have the correct value set (%s %d != 10)" % \
       (x, test_instance.list_container.list_six[x].val)
+
+
+  y = test_instance.list_container.list_eight.add(val="value one",
+          additional="value two")
+  assert \
+    test_instance.list_container.list_eight["value one value two"].val == \
+      "value one", "Cannot retrieve a compound key with spaces in strkey " + \
+        "%s != 'value one'" % \
+          test_instance.list_container.list_eight["value one value two"].val
+
+  assert \
+    test_instance.list_container.list_eight._item(val="value one",
+      additional="value two").val == "value one", \
+        "Cannot retrieve a compound key with spaces in strkey using _item" + \
+        "%s != 'value one'" % \
+          test_instance.list_container.list_eight["value one value two"].val
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

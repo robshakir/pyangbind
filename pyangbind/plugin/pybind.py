@@ -1008,7 +1008,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     parent = getattr(self, "_parent", None)
     if parent is not None and load is False:
       raise AttributeError("Cannot set keys directly when" +
-                              " within an instantiated list")\n""")
+                             " within an instantiated list")\n""")
       nfd.write("""
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))

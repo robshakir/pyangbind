@@ -3,6 +3,8 @@
 # Find where we are meant to run the tests
 TESTDIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+DELENV=false
+
 # Build a virtual environment to do the tests in
 cd $TESTDIR/..
 rm -rf $TESTDIR/pyvirtualenv $TESTDIR/../dist $TESTDIR/../build $TESTDIR/../pyangbind.egg-info
@@ -36,4 +38,6 @@ $TESTDIR/yang_tests.sh
 $TESTDIR/xpath/xpath_tests.sh
 $TESTDIR/serialise/serialise_tests.sh
 
-rm -rf $TESTDIR/pyvirtualenv $TESTDIR/../dist $TESTDIR/../build $TESTDIR/../pyangbind.egg-info
+if [ "$DELENV" == "true" ]; then
+    rm -rf $TESTDIR/pyvirtualenv $TESTDIR/../dist $TESTDIR/../build $TESTDIR/../pyangbind.egg-info
+fi

@@ -122,5 +122,17 @@ module list {
                 }
             }
         }
+
+        list list-eight {
+            key "val additional";
+
+            leaf val {
+                type string;
+            }
+
+            leaf additional {
+                type string;
+            }
+        }
     }
 }
