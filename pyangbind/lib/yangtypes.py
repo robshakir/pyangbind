@@ -613,7 +613,6 @@ def YANGListType(*args, **kwargs):
               key = getattr(tmp, "_set_%s" % safe_name(kn))
               key(keydict[kn], load=True)
 
-          print keydict
           self._members[k] = tmp
 
         except ValueError, m:
