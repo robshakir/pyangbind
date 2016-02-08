@@ -587,6 +587,7 @@ def YANGListType(*args, **kwargs):
             for kv in keys:
               kv_obj = getattr(tmp, kv)
               path_keystring += "%s='%s' " % (kv_obj.yang_name(), keydict[kv])
+            path_keystring = path_keystring[:-1]
             path_keystring += "]"
 
           if not update:
@@ -1034,7 +1035,8 @@ def ReferenceType(*args, **kwargs):
 
       if len(args):
         value = args[0]
-        self._set()
+        if hasattr(self, "_set"):
+          self._set()
       else:
         value = None
 
