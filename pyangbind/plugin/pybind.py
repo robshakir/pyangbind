@@ -900,6 +900,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         if keyval and i["yang_name"] in keyval:
           class_str["arg"] += ", is_keyval=True"
+        class_str["arg"] += ", namespace='%s'" % i["namespace"]
+        class_str["arg"] += ", yang_type='%s'" % i["origtype"]
         classes[i["name"]] = class_str
 
     # TODO: get and set methods currently have errors that are reported that
@@ -1254,6 +1256,10 @@ def get_element(ctx, fd, element, module, parent, path,
   # produces a dictionary that can then be mapped into the relevant code that
   # dynamically generates a class.
 
+  # Find element's namespace
+  namespace = element.i_orig_module.search_one("namespace").arg \
+                if hasattr(element, "i_orig_module") else None
+
   this_object = []
   default = False
   has_children = False
@@ -1299,6 +1305,7 @@ def get_element(ctx, fd, element, module, parent, path,
           "yang_name": element.arg,
           "choice": choice,
           "register_paths": register_paths,
+          "namespace": namespace,
       }
       # Handle the different cases of class name, this depends on whether we
       # were asked to split the bindings into a directory structure or not.
@@ -1503,6 +1510,7 @@ def get_element(ctx, fd, element, module, parent, path,
         "description": elemdescr, "yang_name": element.arg,
         "choice": choice,
         "register_paths": register_paths,
+        "namespace": namespace,
     }
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]

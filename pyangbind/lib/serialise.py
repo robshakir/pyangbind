@@ -40,17 +40,17 @@ class pybindJSONUpdateError(Exception):
 
 
 class pybindJSONEncoder(json.JSONEncoder):
-  def _preprocess_element(self, d):
+  def _preprocess_element(self, d, mode="default"):
     nd = {}
     if isinstance(d, OrderedDict) or isinstance(d, dict):
         index = 0
         for k in d:
             if isinstance(d[k], dict) or isinstance(d[k], OrderedDict):
-                nd[k] = self._preprocess_element(d[k])
+                nd[k] = self._preprocess_element(d[k], mode=mode)
                 if isinstance(d, OrderedDict):
                     nd[k]['__yang_order'] = index
             else:
-                nd[k] = self.default(d[k])
+                nd[k] = self.default(d[k], mode=mode)
             # if we wanted to do this as per draft-ietf-netmod-yang-metadata
             # then the encoding is like this
             # if not "@%s" % k in nd:
@@ -67,17 +67,88 @@ class pybindJSONEncoder(json.JSONEncoder):
   def encode(self, obj):
     return json.JSONEncoder.encode(self, self._preprocess_element(obj))
 
-  def default(self, obj):
-    def jsonmap(obj, map_val):
+  def default(self, obj, mode="default"):
+
+    original_yang_type = getattr(obj, "_yang_type", None)
+
+    elem_name = getattr(obj, "_yang_name", None)
+    print "%s->%s" % (original_yang_type, elem_name)
+
+    if original_yang_type is None:
+      # check for specific elements such as dictionaries and lists
+      if isinstance(obj, list):
+        nlist = []
+        for elem in obj:
+          nlist.append(self.default(elem, mode=mode))
+        return nlist
+
+      if isinstance(obj, dict):
+        ndict = {}
+        for k,v in obj.iteritems():
+          ndict[k] = self.default(v, mode=mode)
+        return ndict
+    else:
+
+      if original_yang_type == "leafref":
+        print obj
+        print dir(obj)
+        print obj._get()
+        print dir(obj._get())
+        sys.exit(127)
+        if hasattr(obj, "_get"):
+          return self.default(obj._get(), mode=mode)
+        return unicode(obj)
+
+      if original_yang_type in ["int64", "uint64"]:
+        if mode == "ietf":
+          return unicode(obj)
+        return int(obj)
+
+      if original_yang_type in ["int8", "int16", "int32", "uint8",
+                                "uint16", "uint32"]:
+        return int(obj)
+
+      if original_yang_type == "string":
+        return unicode(obj)
+
+      if original_yang_type == "binary":
+        return obj.to01()
+
+      if original_yang_type == "decimal64":
+        if mode == "ietf":
+          return unicode(obj)
+        return float(obj)
+
+      if original_yang_type == "bool":
+        if obj:
+          return True
+        return False
+
+      if original_yang_type == "empty":
+        if obj and mode == "ietf":
+          return [None]
+        elif obj:
+          return True
+        return False
+
+      if original_yang_type == "leaf-list":
+        return [self.default(i, mode=mode) for i in obj]
+
+      # Now we hit derived types, and need to use additional information
+      map_val = getattr(obj, "_pybind_base_class", None)
+
       if map_val in ["pyangbind.lib.yangtypes.RestrictedClass"]:
         map_val = getattr(obj, "_restricted_class_base")[0]
 
       if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
               "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
               "numpy.int64"]:
+        if mode == "ietf":
+          if map_val in ["numpy.int64", "numpy.uint64"]:
+            return str(obj)
         return int(obj)
       elif map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
-        return self.default(obj._get())
+        return self.default(obj._get(), mode=mode)
       elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
         return float(obj)
       elif map_val in ["bitarray.bitarray"]:
@@ -89,33 +160,10 @@ class pybindJSONEncoder(json.JSONEncoder):
           return False
       elif map_val in ["unicode", unicode]:
         return unicode(obj)
-      else:
-        print dir(obj)
-        print obj.__class__
-        raise AttributeError("this was an unmapped pyangbind class... (%s)"
-                              % map_val)
+      elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
+        return [self.default(i,mode=mode) for i in obj]
 
-    if isinstance(obj, list):
-      nlist = []
-      for elem in obj:
-        nlist.append(self.default(elem))
-      return nlist
-
-    if hasattr(obj, "_pybind_base_class"):
-      pybc = getattr(obj, "_pybind_base_class")
-      return jsonmap(obj, pybc)
-    elif isinstance(obj, Decimal):
-      return float(obj)
-    elif type(obj) in [int, numpy.uint8, numpy.uint16, numpy.uint32,
-                      numpy.uint64, numpy.int8, numpy.int16, numpy.int32,
-                      numpy.int64]:
-      return int(obj)
-    elif isinstance(obj, str) or isinstance(obj, unicode):
-      return unicode(obj)
-    elif obj is None:
-      return unicode("None")
-    return json.JSONEncoder.default(self, obj)
-
+      raise AttributeError("Unmapped type: %s" % original_yang_type)
 
 class pybindJSONDecoder(object):
   def load_json(self, d, parent, yang_base, obj=None, path_helper=None,
@@ -198,3 +246,44 @@ class pybindJSONDecoder(object):
         set_method = getattr(obj, "_set_%s" % safe_name(key))
         set_method(d[key], load=True)
     return obj
+
+
+class pybindIETFJSONEncoder(pybindJSONEncoder):
+  def generate_element(self, obj, parent_namespace=None, flt=False):
+    """
+      Convert a pyangbind class to a format which encodes to the IETF JSON
+      specification, rather than the default .get() format, which does not
+      match this specification.
+
+      The implementation is based on draft-ietf-netmod-yang-json-07.
+    """
+    d = {}
+    for element_name in obj._pyangbind_elements:
+      element = getattr(obj, element_name, None)
+      yang_name = getattr(element, "yang_name", None)
+      yname = yang_name() if not yang_name is None else element_name
+
+      print parent_namespace
+      print element._namespace
+
+      if not element._namespace == parent_namespace:
+        yname = "%s:%s" % (element._namespace, yname)
+
+      generated_by = getattr(element, "_pybind_generated_by", None)
+      if generated_by  == "container":
+        d[yname] = self.generate_element(element, parent_namespace=element._namespace, flt=flt)
+      elif generated_by == "YANGListType":
+        d[yname] = [self.generate_element(i, parent_namespace=element._namespace, flt=flt) for i in element._members.itervalues()]
+      else:
+        if flt and element._changed():
+          d[yname] = element
+        elif not flt:
+          d[yname] = element
+    return d
+
+  def encode(self, obj):
+    return json.JSONEncoder.encode(self, self._preprocess_element(obj, mode="ietf"))
+
+  def default(self, obj, mode="ietf"):
+    print "called default with %s" % obj
+    return pybindJSONEncoder().default(obj, mode="ietf")

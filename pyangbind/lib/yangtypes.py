@@ -42,6 +42,8 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
 
 
 def is_yang_list(arg):
+  print "IN is_yang_list: %s" % type(arg)
+  print "\n\n\n"
   if isinstance(arg, list):
     return True
   elif hasattr(arg, "_pybind_generated_by"):
@@ -774,6 +776,7 @@ def YANGDynClass(*args, **kwargs):
                                 the path.
       - extensions:  The list of extensions that should be stored
                      with the type.
+      - namespace:   The namespace within which the leaf is defined
   """
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
@@ -788,6 +791,9 @@ def YANGDynClass(*args, **kwargs):
   extmethods = kwargs.pop("extmethods", None)
   is_keyval = kwargs.pop("is_keyval", False)
   register_paths = kwargs.pop("register_paths", True)
+  namespace = kwargs.pop("namespace", None)
+  yang_type = kwargs.pop("yang_type", None)
+
   if not base_type:
     raise TypeError("must have a base type")
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -820,7 +826,7 @@ def YANGDynClass(*args, **kwargs):
                    '_supplied_register_path', '_path_helper', '_base_type',
                    '_is_leaf', '_is_container', '_extensionsd',
                    '_pybind_base_class', '_extmethods', '_is_keyval',
-                   '_register_paths')
+                   '_register_paths', '_namespace', '_yang_type')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
@@ -844,6 +850,8 @@ def YANGDynClass(*args, **kwargs):
       self._extmethods = extmethods
       self._is_keyval = is_keyval
       self._register_paths = register_paths
+      self._namespace = namespace
+      self._yang_type = yang_type
 
       if default:
         self._default = default
@@ -1042,6 +1050,9 @@ def ReferenceType(*args, **kwargs):
         path_chk = self._path_helper.get(self._referenced_path,
                                           caller=self._caller)
 
+        print "DEBUG: %s %s" % (self._path_helper, value)
+        print "DEBUG: %s %s" % (path_chk, is_yang_list(path_chk))
+    
         # if the lookup returns only one leaf, then this means that we have
         # something that could potentially be a pointer. However, this is not
         # sufficient to tell whether it is (it could be a single list entry)
@@ -1050,7 +1061,7 @@ def ReferenceType(*args, **kwargs):
         # externally referenced) and 2) check that this is not
         # a list itself (including a leaf-list)
         if len(path_chk) == 1 and not path_chk[0]._is_keyval and \
-                      not is_yang_list(path_chk[0]):
+                      not is_yang_list(path_chk):
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.
           path_parts = self._referenced_path.split("/")
