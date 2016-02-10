@@ -1051,6 +1051,7 @@ def ReferenceType(*args, **kwargs):
         # key value of a list (if it is then this is something that can be
         # externally referenced) and 2) check that this is not
         # a list itself (including a leaf-list)
+        print path_chk
         if len(path_chk) == 1 and not path_chk[0]._is_keyval and \
                       not is_yang_list(path_chk[0]):
           # we are not checking whether this leaf exists, but rather
