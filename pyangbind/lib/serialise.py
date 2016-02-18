@@ -120,6 +120,7 @@ class pybindJSONEncoder(json.JSONEncoder):
 class pybindJSONDecoder(object):
   def load_json(self, d, parent, yang_base, obj=None, path_helper=None,
                 extmethods=None, overwrite=False):
+
     if obj is None:
       # we need to find the class to create, as one has not been supplied.
       base_mod_cls = getattr(parent, safe_name(yang_base))
@@ -138,7 +139,7 @@ class pybindJSONDecoder(object):
                                       'was not unique')
       else:
         # in this case, we cannot check for an existing object
-        obj = base_mod_class(path_helper=path_helper, extmethods=extmethods)
+        obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
 
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
@@ -153,7 +154,7 @@ class pybindJSONDecoder(object):
           for elem in chobj._pyangbind_elements:
             unsetchildelem = getattr(chobj, "_unset_%s" % elem)
             unsetchildelem()
-        self.load_json(d[key], chobj, yang_base, obj=chobj)
+        self.load_json(d[key], chobj, yang_base, obj=chobj, path_helper=path_helper)
         set_via_stdmethod = False
       elif pybind_attr in ["YANGListType", "list"]:
         # we need to add each key to the list and then skip a level in the
@@ -162,7 +163,7 @@ class pybindJSONDecoder(object):
           if child_key not in chobj:
             chobj.add(child_key)
           parent = chobj[child_key]
-          self.load_json(d[key][child_key], parent, yang_base, obj=parent)
+          self.load_json(d[key][child_key], parent, yang_base, obj=parent, path_helper=path_helper)
           set_via_stdmethod = False
         if overwrite:
           for child_key in chobj:

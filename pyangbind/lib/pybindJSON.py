@@ -41,6 +41,13 @@ def remove_path(tree, path):
 
 def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
           overwrite=False):
+  # This check is not really logical - since one would expect 'd' to be
+  # a string, given that this is loads. However, a previous issue meant
+  # that this really expected a dict, so this check simply makes sure
+  # that if the user really did give us a string, we're happy with that
+  # without breaking other code.
+  if isinstance(d, unicode) or isinstance(d, str):
+    d = json.loads(d)
   return pybindJSONDecoder().load_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 

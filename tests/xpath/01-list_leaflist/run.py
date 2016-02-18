@@ -45,24 +45,21 @@ def main():
   yhelper = YANGPathHelper()
   yobj = ytest(path_helper=yhelper)
 
-  t1_leaflist(yobj, tree=yhelper)
-  t2_list(yobj, tree=yhelper)
-  t3_leaflist_remove(yobj, tree=yhelper)
-  t4_list_remove(yobj, tree=yhelper)
-  t5_typedef_leaflist_add_del(yobj, tree=yhelper)
-  t6_typedef_list_add(yobj, tree=yhelper)
+  t1_leaflist(yobj, yhelper)
+  t2_list(yobj, yhelper)
+  t3_leaflist_remove(yobj, yhelper)
+  t4_list_remove(yobj, yhelper)
+  t5_typedef_leaflist_add_del(yobj, yhelper)
+  t6_typedef_list_add(yobj, yhelper)
+  t7_leaflist_of_leafrefs(yobj, yhelper)
+  t8_standalone_leaflist_check(yobj, yhelper)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
-def t1_leaflist(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-
+def t1_leaflist(yobj, tree):
   for a in ["mackerel", "trout", "haddock", "flounder"]:
     yobj.container.t1.append(a)
 
@@ -88,15 +85,8 @@ def t1_leaflist(yobj, tree=False):
       " leaflist with require_instance set to false " + \
         "(%s threw error, but it %s)" % tc[1]
 
-  if del_tree:
-    del tree
 
-
-def t2_list(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
+def t2_list(yobj, tree):
 
   for o in ["kangaroo", "wallaby", "koala", "dingo"]:
     yobj.container.t2.add(o)
@@ -112,16 +102,8 @@ def t2_list(yobj, tree=False):
       " (%s not in %s -> %s != %s)" % (tc[0], yobj.container.t2.keys(),
             validref, tc[1])
 
-  if del_tree:
-    del tree
 
-
-def t3_leaflist_remove(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-
+def t3_leaflist_remove(yobj, tree):
   for b in ["oatmeal-stout", "amber-ale", "pale-ale", "pils",
             "ipa", "session-ipa"]:
     yobj.container.t3.append(b)
@@ -164,15 +146,9 @@ def t3_leaflist_remove(yobj, tree=False):
     assert found == 0, "An element was not correctly removed from the " + \
         "leaf-list (%s -> %s [%s])" % (b[0], path, new_retr[0])
 
-  if del_tree:
-    del tree
 
 
-def t4_list_remove(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
+def t4_list_remove(yobj, tree):
 
   for b in ["steam", "liberty", "california-lager", "porter", "ipa",
             "foghorn"]:
@@ -196,15 +172,8 @@ def t4_list_remove(yobj, tree=False):
     assert len(new_retr) == 0, "An element was not correctly removed from " + \
         "the list (%s -> len(%s) = %d)" % (b[0], path, len(new_retr))
 
-  if del_tree:
-    del tree
-
 
 def t5_typedef_leaflist_add_del(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
 
   for a in ["quebec-city", "montreal", "laval", "gatineau"]:
     yobj.container.t5.append(a)
@@ -259,16 +228,8 @@ def t5_typedef_leaflist_add_del(yobj, tree=False):
         "element did not return expected result (%s->%s %s)" % (tc[0], tc[1],
               (new_retr[0]))
 
-  if del_tree:
-    del tree
 
-
-def t6_typedef_list_add(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-
+def t6_typedef_list_add(yobj, tree):
   for o in ["la-ciboire", "la-chipie", "la-joufflue", "la-matante"]:
     yobj.container.t6.add(o)
 
@@ -283,16 +244,8 @@ def t6_typedef_list_add(yobj, tree=False):
       " (%s not in %s -> %s != %s)" % (tc[0], yobj.container.t6.keys(),
             validref, tc[1])
 
-  if del_tree:
-    del tree
 
-
-def t7_leaflist_of_leafrefs(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-
+def t7_leaflist_of_leafrefs(yobj, tree):
   test_list = [("snapshot", True), ("ranger", True), ("trout-slayer", False)]
   for b in test_list:
     if b[1]:
@@ -308,6 +261,20 @@ def t7_leaflist_of_leafrefs(yobj, tree=False):
 
     assert passed == b[1], "A reference to a leaf-list of leafrefs " + \
         "was not correctly set (%s -> %s, expected %s)" % (b[0], passed, b[1])
+
+
+def t8_standalone_leaflist_check(yobj, tree):
+  yobj.standalone.ll.append(1)
+
+  x = tree.get("/standalone/ll")
+  print x[0]
+
+  yobj.standalone.l.add(1)
+  x = tree.get("/standalone/l")
+  print x
+
+  yobj.standalone.ref = 1
+  print yobj.standalone.ref._ptr
 
 if __name__ == '__main__':
   from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError

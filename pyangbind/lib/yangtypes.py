@@ -1051,7 +1051,6 @@ def ReferenceType(*args, **kwargs):
         # key value of a list (if it is then this is something that can be
         # externally referenced) and 2) check that this is not
         # a list itself (including a leaf-list)
-        print path_chk
         if len(path_chk) == 1 and not path_chk[0]._is_keyval and \
                       not is_yang_list(path_chk[0]):
           # we are not checking whether this leaf exists, but rather
@@ -1071,6 +1070,7 @@ def ReferenceType(*args, **kwargs):
           self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
           self._ptr = True
+          #self._referenced_object = path_chk[0]
         elif self._require_instance:
           if not value:
             self._referenced_object = None
@@ -1099,10 +1099,10 @@ def ReferenceType(*args, **kwargs):
               raise ValueError("no such key (%s) existed in path (%s -> %s)"
                                   % (value, self._referenced_path, path_chk))
         else:
-          # require instance is not set, so act like a string
+          # require instance is not set, so act like the referenced type
           self._referenced_object = value
       elif value is not None:
-        # No path helper and a value is set, just act like a string
+        # No path helper and a value is set, just act like the referenced type
         self._referenced_object = value
 
     def _get_ptr(self):
