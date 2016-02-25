@@ -1172,7 +1172,7 @@ def build_elemtype(ctx, et, prefix=False):
       require_instance = \
                   class_bool_map[et.search_one('require-instance').arg] \
                           if et.search_one('require-instance') \
-                            is not None else False
+                            is not None else True
       if ctx.opts.use_xpathhelper:
         elemtype = {"native_type": "ReferenceType",
                     "referenced_path": path_stmt.arg,
