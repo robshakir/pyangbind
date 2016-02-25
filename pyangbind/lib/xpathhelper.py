@@ -90,7 +90,7 @@ class PybindXpathHelper(object):
 
 
 class YANGPathHelper(PybindXpathHelper):
-  _attr_re = re.compile("^(?P<tagname>.*)\[(?P<arg>.*)\]$")
+  _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
   _arg_re = re.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?=([ ]+)?" +
                        "[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?" +
                        "(?P<remainder>.*)")
@@ -184,23 +184,25 @@ class YANGPathHelper(PybindXpathHelper):
   def _tagname_attributes(self, tag, normalise_namespace=True):
     tagname, attributes = tag, None
     if self._attr_re.match(tag):
-      tagname, arg = self._attr_re.sub('\g<tagname>||\g<arg>',
+      tagname, args = self._attr_re.sub('\g<tagname>||\g<args>',
                                         tag).split("||")
+      arg_parts = [i.strip("[") for i in args.split("]")]
+
       attributes = {}
-      cmd_arg_pairs = []
-      tmp_arg = arg
-      while len(tmp_arg):
-        if self._arg_re.match(tmp_arg):
-          c, a, r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>',
-                                      tmp_arg).split("||")
-          if ":" in c and normalise_namespace:
-            c = c.split(":")[1]
-          attributes[c] = a
-          tmp_arg = r
-        else:
-          raise XPathError("invalid attribute string specified" + 
-                           "for %s" % tagname +
-                           "(err part: %s (%s))" % (arg, tmp_arg))
+      for arg in arg_parts:
+        tmp_arg = arg
+        while len(tmp_arg):
+          if self._arg_re.match(tmp_arg):
+            c, a, r = self._arg_re.sub('\g<cmd>||\g<arg>||\g<remainder>',
+                                        tmp_arg).split("||")
+            if ":" in c and normalise_namespace:
+              c = c.split(":")[1]
+            attributes[c] = a
+            tmp_arg = r
+          else:
+            raise XPathError("invalid attribute string specified" + 
+                             "for %s" % tagname +
+                             "(err part: %s (%s))" % (arg, tmp_arg))
     return (tagname, attributes)
 
   def register(self, object_path, object_ptr, caller=False):
