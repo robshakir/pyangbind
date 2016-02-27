@@ -1,4 +1,4 @@
-module serialise-json {
+module json-serialise {
   yang-version "1";
   namespace "http://rob.sh/yang/test/serialise/json";
   prefix "foo";

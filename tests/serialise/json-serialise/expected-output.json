@@ -1,0 +1,79 @@
+{
+    "c1": {
+        "t1": {
+            "16": {
+                "target": "16"
+            }, 
+            "32": {
+                "target": "32"
+            }
+        }, 
+        "l2": {
+            "1": {
+                "__yang_order": 0, 
+                "k1": 1
+            }, 
+            "2": {
+                "__yang_order": 1, 
+                "k1": 2
+            }, 
+            "3": {
+                "__yang_order": 2, 
+                "k1": 3
+            }, 
+            "4": {
+                "__yang_order": 3, 
+                "k1": 4
+            }, 
+            "5": {
+                "__yang_order": 4, 
+                "k1": 5
+            }, 
+            "6": {
+                "__yang_order": 5, 
+                "k1": 6
+            }, 
+            "7": {
+                "__yang_order": 6, 
+                "k1": 7
+            }, 
+            "8": {
+                "__yang_order": 7, 
+                "k1": 8
+            }, 
+            "9": {
+                "__yang_order": 8, 
+                "k1": 9
+            }
+        }, 
+        "l1": {
+            "1": {
+                "one-leaf": "hi", 
+                "typedef-one": "test", 
+                "boolean": true, 
+                "binary": "010101", 
+                "union": "16", 
+                "k1": 1, 
+                "enumeration": "one", 
+                "identityref": "idone", 
+                "uint16": 1, 
+                "union-list": [
+                    16, 
+                    "chicken"
+                ], 
+                "uint32": 1, 
+                "int32": 1, 
+                "int16": 1, 
+                "string": "bear", 
+                "typedef-two": 8, 
+                "uint8": 1, 
+                "restricted-integer": 6, 
+                "leafref": "16", 
+                "int8": 1, 
+                "uint64": 1, 
+                "int64": 1, 
+                "restricted-string": "aardvark"
+            }
+        }
+    }
+}

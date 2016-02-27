@@ -5,8 +5,9 @@ import sys
 import getopt
 import json
 from pyangbind.lib.serialise import pybindJSONEncoder
+from pyangbind.lib.pybindJSON import dumps
 
-TESTNAME = "serialise-json"
+TESTNAME = "json-serialise"
 
 
 # generate bindings in this folder
@@ -41,8 +42,12 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
-  from bindings import serialise_json
-  js = serialise_json()
+  from bindings import json_serialise
+  from bitarray import bitarray
+  from pyangbind.lib.xpathhelper import YANGPathHelper
+
+  y = YANGPathHelper()
+  js = json_serialise(path_helper=y)
 
   js.c1.l1.add(1)
   for s in ["int", "uint"]:
@@ -58,9 +63,9 @@ def main():
   js.c1.l1[1].union_list.append("chicken")
 
   js.c1.t1.add(16)
+  js.c1.t1.add(32)
   js.c1.l1[1].leafref = 16
 
-  from bitarray import bitarray
   js.c1.l1[1].binary = bitarray("010101")
   js.c1.l1[1].boolean = True
   js.c1.l1[1].enumeration = "one"
@@ -69,12 +74,13 @@ def main():
   js.c1.l1[1].typedef_two = 8
   js.c1.l1[1].one_leaf = "hi"
 
-  # print js.get()
-
   for i in range(1, 10):
     js.c1.l2.add(i)
 
-  print json.dumps(js.get(), cls=pybindJSONEncoder, indent=4)
+  pybind_json = json.loads(dumps(js))
+  external_json = json.load(open("%s/expected-output.json" % this_dir, 'r'))
+
+  assert pybind_json == external_json, "JSON did not match the expected output"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

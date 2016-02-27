@@ -72,7 +72,6 @@ class pybindJSONEncoder(json.JSONEncoder):
 
     original_yang_type = getattr(obj, "_yang_type", None)
     elem_name = getattr(obj, "_yang_name", None)
-    print "%s->%s" % (original_yang_type, elem_name)
 
     if original_yang_type is None:
       # check for specific elements such as dictionaries and lists
@@ -88,9 +87,7 @@ class pybindJSONEncoder(json.JSONEncoder):
           ndict[k] = self.default(v, mode=mode)
         return ndict
 
-      print "WEASEL %s" % type(obj)
       if type(obj) in NUMPY_INTEGER_TYPES:
-        print "%s was an integer" % (obj)
         if type(obj) in [np.uint64, np.int64] and mode == "ietf":
           return unicode(obj)
         else:
@@ -146,8 +143,6 @@ class pybindJSONEncoder(json.JSONEncoder):
       # Now we hit derived types, and need to use additional information
       map_val = getattr(obj, "_pybind_base_class", None)
 
-      print "%s->%s" % (elem_name, map_val)
-
       if map_val in ["pyangbind.lib.yangtypes.RestrictedClass"]:
         map_val = getattr(obj, "_restricted_class_base")[0]
 
@@ -172,15 +167,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       elif map_val in ["unicode", unicode]:
         return unicode(obj)
       elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
-        print "%s calling default" % elem_name
-        print "%s->%s" % (elem_name, [self.default(i, mode=mode) for i in obj])
         keys = obj._list
-        for i in obj._list:
-          print "%s[%s] -> %s" % (elem_name, i, type(i))
-          print "%s[%s] -> default(%s)" % (elem_name, i, self.encode(i))
-        print "%s->%s" % (elem_name,keys)
-        print dir(obj)
-        print obj._allowed_type
         for i in obj._list:
           for t in obj._allowed_type:
             try:
@@ -188,7 +175,6 @@ class pybindJSONEncoder(json.JSONEncoder):
               break
             except ValueError:
               tmp = None
-          print "for %s->type is %s" % (i, t)
 
         return [self.default(i) for i in obj]
 
@@ -278,7 +264,7 @@ class pybindJSONDecoder(object):
     return obj
 
 
-  def load_ietf_json(d, parent, yang_base, obj=None, path_helper=None,
+  def load_ietf_json(self, d, parent, yang_base, obj=None, path_helper=None,
                 extmethods=None, overwrite=False):
     if obj is None:
       # we need to find the class to create, as one has not been supplied.
@@ -314,7 +300,7 @@ class pybindJSONDecoder(object):
         attr_get = getattr(obj, "_get_%s" % ykey, None)
         if attr_get is None:
           raise AttributeError("Invalid attribute specified")
-        load_json(d[key], None, None, obj=attr_get(), path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+        self.load_ietf_json(d[key], None, None, obj=attr_get(), path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
       elif isinstance(d[key], list):
         for elem in d[key]:
           # if this is a list, then this is a YANG list
@@ -332,7 +318,7 @@ class pybindJSONDecoder(object):
               pass
             else:
               nobj = this_attr.add(elem[this_attr._keyval])
-              load_json(elem, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+              self.load_ietf_json(elem, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
           else:
             std_method_set = True
       else:
@@ -341,7 +327,6 @@ class pybindJSONDecoder(object):
       if std_method_set:
         get_method = getattr(obj, "_get_%s" % safe_name(ykey), None)
         chk = get_method()
-        print "%s->%s" % (chk, chk._is_keyval)
         if chk._is_keyval is True:
           pass
         else:
@@ -366,9 +351,6 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
       yang_name = getattr(element, "yang_name", None)
       yname = yang_name() if not yang_name is None else element_name
 
-      print parent_namespace
-      print element._namespace
-
       if not element._namespace == parent_namespace:
         yname = "%s:%s" % (element._namespace, yname)
 
@@ -388,5 +370,4 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
     return json.JSONEncoder.encode(self, self._preprocess_element(obj, mode="ietf"))
 
   def default(self, obj, mode="ietf"):
-    print "called default with %s" % obj
     return pybindJSONEncoder().default(obj, mode="ietf")
