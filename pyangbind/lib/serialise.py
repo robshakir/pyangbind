@@ -23,13 +23,14 @@ serialise:
 """
 
 import json
-import numpy
+import numpy as np
 from collections import OrderedDict
 from decimal import Decimal
-from pyangbind.lib.yangtypes import safe_name
+from pyangbind.lib.yangtypes import safe_name, NUMPY_INTEGER_TYPES
 from types import ModuleType
 import copy
 
+import sys
 
 class pybindJSONIOError(Exception):
   pass
@@ -70,7 +71,6 @@ class pybindJSONEncoder(json.JSONEncoder):
   def default(self, obj, mode="default"):
 
     original_yang_type = getattr(obj, "_yang_type", None)
-
     elem_name = getattr(obj, "_yang_name", None)
     print "%s->%s" % (original_yang_type, elem_name)
 
@@ -87,14 +87,23 @@ class pybindJSONEncoder(json.JSONEncoder):
         for k,v in obj.iteritems():
           ndict[k] = self.default(v, mode=mode)
         return ndict
-    else:
 
+      print "WEASEL %s" % type(obj)
+      if type(obj) in NUMPY_INTEGER_TYPES:
+        print "%s was an integer" % (obj)
+        if type(obj) in [np.uint64, np.int64] and mode == "ietf":
+          return unicode(obj)
+        else:
+          return int(obj)
+
+      if type(obj) in [str, unicode]:
+        return unicode(obj)
+
+      if type(obj) in [int]:
+        return int(obj)
+
+    else:
       if original_yang_type == "leafref":
-        print obj
-        print dir(obj)
-        print obj._get()
-        print dir(obj._get())
-        sys.exit(127)
         if hasattr(obj, "_get"):
           return self.default(obj._get(), mode=mode)
         return unicode(obj)
@@ -137,6 +146,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       # Now we hit derived types, and need to use additional information
       map_val = getattr(obj, "_pybind_base_class", None)
 
+      print "%s->%s" % (elem_name, map_val)
+
       if map_val in ["pyangbind.lib.yangtypes.RestrictedClass"]:
         map_val = getattr(obj, "_restricted_class_base")[0]
 
@@ -161,7 +172,26 @@ class pybindJSONEncoder(json.JSONEncoder):
       elif map_val in ["unicode", unicode]:
         return unicode(obj)
       elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
-        return [self.default(i,mode=mode) for i in obj]
+        print "%s calling default" % elem_name
+        print "%s->%s" % (elem_name, [self.default(i, mode=mode) for i in obj])
+        keys = obj._list
+        for i in obj._list:
+          print "%s[%s] -> %s" % (elem_name, i, type(i))
+          print "%s[%s] -> default(%s)" % (elem_name, i, self.encode(i))
+        print "%s->%s" % (elem_name,keys)
+        print dir(obj)
+        print obj._allowed_type
+        for i in obj._list:
+          for t in obj._allowed_type:
+            try:
+              tmp = t(i)
+              break
+            except ValueError:
+              tmp = None
+          print "for %s->type is %s" % (i, t)
+
+        return [self.default(i) for i in obj]
+
 
       raise AttributeError("Unmapped type: %s" % original_yang_type)
 

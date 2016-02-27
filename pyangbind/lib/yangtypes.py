@@ -42,8 +42,6 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
 
 
 def is_yang_list(arg):
-  print "IN is_yang_list: %s" % type(arg)
-  print "\n\n\n"
   if isinstance(arg, list):
     return True
   elif hasattr(arg, "_pybind_generated_by"):
@@ -415,6 +413,7 @@ def TypedListType(*args, **kwargs):
       if not passed:
         raise ValueError("Cannot add %s to TypedList (accepts only %s)" %
           (v, self._allowed_type))
+      return tmp
 
     def __len__(self):
       return len(self._list)
@@ -430,12 +429,12 @@ def TypedListType(*args, **kwargs):
       self._list.insert(i, v)
 
     def insert(self, i, v):
-      self.check(v)
-      self._list.insert(i, v)
+      val = self.check(v)
+      self._list.insert(i, val)
 
     def append(self, v):
-      self.check(v)
-      self._list.append(v)
+      val = self.check(v)
+      self._list.append(val)
 
     def __str__(self):
       return str(self._list)
@@ -519,6 +518,16 @@ def YANGListType(*args, **kwargs):
     def iteritems(self):
       return self._members.iteritems()
 
+    def _key_to_native_key_type(self, k):
+      if self._keyval is False:
+        raise AttributeError("List does not have a key")
+      elif " " in self._keyval:
+        raise AttributeError("Multiple key, string type should be used")
+      else:
+        member = self._members[k]
+        getfn = getattr(member, "_get_%s" % keyval)
+        return getfn()
+
     def __iter__(self):
       return iter(self._members)
 
@@ -589,6 +598,7 @@ def YANGListType(*args, **kwargs):
             for kv in keys:
               kv_obj = getattr(tmp, kv)
               path_keystring += "%s='%s' " % (kv_obj.yang_name(), keydict[kv])
+            path_keystring = path_keystring[:-1]
             path_keystring += "]"
 
           if not update:
@@ -776,7 +786,6 @@ def YANGDynClass(*args, **kwargs):
                                 the path.
       - extensions:  The list of extensions that should be stored
                      with the type.
-      - namespace:   The namespace within which the leaf is defined
   """
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
@@ -791,9 +800,8 @@ def YANGDynClass(*args, **kwargs):
   extmethods = kwargs.pop("extmethods", None)
   is_keyval = kwargs.pop("is_keyval", False)
   register_paths = kwargs.pop("register_paths", True)
-  namespace = kwargs.pop("namespace", None)
   yang_type = kwargs.pop("yang_type", None)
-
+  namespace = kwargs.pop("namespace", None)
   if not base_type:
     raise TypeError("must have a base type")
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -879,8 +887,8 @@ def YANGDynClass(*args, **kwargs):
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except Exception as e:
-        raise TypeError("couldn't generate dynamic type -> %s -> %s"
-                          % (type(e), e))
+       raise TypeError("couldn't generate dynamic type -> %s -> %s"
+                         % (type(e), e))
 
     def _changed(self):
       return self._mchanged
@@ -1042,7 +1050,8 @@ def ReferenceType(*args, **kwargs):
 
       if len(args):
         value = args[0]
-        self._set()
+        if hasattr(self, "_set"):
+          self._set()
       else:
         value = None
 
@@ -1050,9 +1059,6 @@ def ReferenceType(*args, **kwargs):
         path_chk = self._path_helper.get(self._referenced_path,
                                           caller=self._caller)
 
-        print "DEBUG: %s %s" % (self._path_helper, value)
-        print "DEBUG: %s %s" % (path_chk, is_yang_list(path_chk))
-    
         # if the lookup returns only one leaf, then this means that we have
         # something that could potentially be a pointer. However, this is not
         # sufficient to tell whether it is (it could be a single list entry)
@@ -1061,7 +1067,7 @@ def ReferenceType(*args, **kwargs):
         # externally referenced) and 2) check that this is not
         # a list itself (including a leaf-list)
         if len(path_chk) == 1 and not path_chk[0]._is_keyval and \
-                      not is_yang_list(path_chk):
+                      not is_yang_list(path_chk[0]):
           # we are not checking whether this leaf exists, but rather
           # this is a pointer to some other value.
           path_parts = self._referenced_path.split("/")
@@ -1079,6 +1085,7 @@ def ReferenceType(*args, **kwargs):
           self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
           self._ptr = True
+          #self._referenced_object = path_chk[0]
         elif self._require_instance:
           if not value:
             self._referenced_object = None
@@ -1107,10 +1114,10 @@ def ReferenceType(*args, **kwargs):
               raise ValueError("no such key (%s) existed in path (%s -> %s)"
                                   % (value, self._referenced_path, path_chk))
         else:
-          # require instance is not set, so act like a string
+          # require instance is not set, so act like the referenced type
           self._referenced_object = value
       elif value is not None:
-        # No path helper and a value is set, just act like a string
+        # No path helper and a value is set, just act like the referenced type
         self._referenced_object = value
 
     def _get_ptr(self):
