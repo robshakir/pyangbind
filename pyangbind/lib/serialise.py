@@ -278,6 +278,79 @@ class pybindJSONDecoder(object):
     return obj
 
 
+  def load_ietf_json(d, parent, yang_base, obj=None, path_helper=None,
+                extmethods=None, overwrite=False):
+    if obj is None:
+      # we need to find the class to create, as one has not been supplied.
+      base_mod_cls = getattr(parent, safe_name(yang_base))
+      tmp = base_mod_cls(path_helper=False)
+
+      if path_helper is not None:
+        # check that this path doesn't already exist in the
+        # tree, otherwise we create a duplicate.
+        existing_objs = path_helper.get(tmp._path())
+        if len(existing_objs) == 0:
+          obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+        elif len(existing_objs) == 1:
+          obj = existing_objs[0]
+        else:
+          raise pybindJSONUpdateError('update was attempted to a node that ' +
+                                      'was not unique')
+      else:
+        # in this case, we cannot check for an existing object
+        obj = base_mod_class(path_helper=path_helper, extmethods=extmethods)
+
+    for key in d:
+      # Fix any namespace that was supplied in the JSON
+      if ":" in key:
+        ykey = key.split(":")[-1]
+      else:
+        ykey = key
+
+      std_method_set = False
+      # Handle the case that this is a JSON object
+      if isinstance(d[key], dict):
+        # Iterate through attributes and set to that value
+        attr_get = getattr(obj, "_get_%s" % ykey, None)
+        if attr_get is None:
+          raise AttributeError("Invalid attribute specified")
+        load_json(d[key], None, None, obj=attr_get(), path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+      elif isinstance(d[key], list):
+        for elem in d[key]:
+          # if this is a list, then this is a YANG list
+          this_attr = getattr(obj, "_get_%s" % safe_name(ykey), None)
+          if this_attr is None:
+            raise AttributeError("List specified that did not exist")
+          this_attr = this_attr()
+          if hasattr(this_attr, "_keyval"):
+            #  this handles YANGLists
+            if this_attr._keyval is False:
+              # Keyless list, generate a key
+              k = this_attr.add()
+            elif " " in this_attr._keyval:
+              raise AttributeError("TODO")
+              pass
+            else:
+              nobj = this_attr.add(elem[this_attr._keyval])
+              load_json(elem, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+          else:
+            std_method_set = True
+      else:
+        std_method_set = True
+
+      if std_method_set:
+        get_method = getattr(obj, "_get_%s" % safe_name(ykey), None)
+        chk = get_method()
+        print "%s->%s" % (chk, chk._is_keyval)
+        if chk._is_keyval is True:
+          pass
+        else:
+          set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
+          if set_method is None:
+            raise AttributeError("Invalid attribute specified in JSON - %s" % (ykey))
+          set_method(d[key])
+    return obj
+
 class pybindIETFJSONEncoder(pybindJSONEncoder):
   def generate_element(self, obj, parent_namespace=None, flt=False):
     """
