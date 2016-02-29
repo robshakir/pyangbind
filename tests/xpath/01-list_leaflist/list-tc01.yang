@@ -99,6 +99,26 @@ module list-tc01 {
         leaf-list t7-ptr {
             type leafref {
                 path "/container/t7";
+                require-instance true;
+            }
+        }
+    }
+
+    container standalone {
+        leaf-list ll {
+            type int8;
+        }
+
+        list l {
+            key x;
+            leaf x {
+                type int8;
+            }
+        }
+
+        leaf ref {
+            type leafref {
+                path "../l/x";
             }
         }
     }

@@ -129,6 +129,13 @@ def main():
             "invalid item added to a list with a union restricted" + \
             " key, %s" % i
 
+  for i in ["broccoli", "carrot", "avocado"]:
+    try:
+      test_instance.list_container.list_two.add(keyval=i)
+    except KeyError:
+      assert i in ["broccoli", "carrot"], "invalid item added to " + \
+        "list using keyword add (%s)" % i
+
   passed = False
   test_instance.list_container.list_element.add(22)
   try:

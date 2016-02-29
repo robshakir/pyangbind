@@ -582,7 +582,7 @@ def YANGListType(*args, **kwargs):
               raise KeyError("YANGList key must contain all key elements (%s)"
                                 % (self._keyval.split(" ")))
 
-          elif " " in self._keyval and named_set:
+          elif named_set:
             k = kwargs.pop("_python_key", None)
             keydict = copy.copy(kwargs)
           else:
