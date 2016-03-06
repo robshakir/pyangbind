@@ -379,6 +379,7 @@ def TypedListType(*args, **kwargs):
       count = 0
       for i in self._allowed_type:
         if isinstance(v, i):
+          tmp = v
           passed = True
           break
         try:
@@ -893,7 +894,7 @@ def YANGDynClass(*args, **kwargs):
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except Exception as e:
-       raise TypeError("couldn't generate dynamic type -> %s -> %s"
+        raise TypeError("couldn't generate dynamic type -> %s -> %s"
                          % (type(e), e))
 
     def _changed(self):

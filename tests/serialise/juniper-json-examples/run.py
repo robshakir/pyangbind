@@ -55,6 +55,7 @@ def main():
     wrdir = os.path.join(this_dir, fn[1])
     if not os.path.exists(wrdir):
       os.mkdir(wrdir)
+    if not wrdir in del_dirs:
       del_dirs.append(wrdir)
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):

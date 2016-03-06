@@ -1,0 +1,74 @@
+{
+    "ietf-json-serialise:c1": {
+        "t1": [
+            {
+                "target": "16"
+            }, 
+            {
+                "target": "32"
+            }
+        ], 
+        "l2": [
+            {
+                "k1": 1
+            }, 
+            {
+                "k1": 2
+            }, 
+            {
+                "k1": 3
+            }, 
+            {
+                "k1": 4
+            }, 
+            {
+                "k1": 5
+            }, 
+            {
+                "k1": 6
+            }, 
+            {
+                "k1": 7
+            }, 
+            {
+                "k1": 8
+            }, 
+            {
+                "k1": 9
+            }
+        ], 
+        "l1": [
+            {
+                "one-leaf": "hi", 
+                "typedef-one": "test", 
+                "boolean": true, 
+                "binary": "010101", 
+                "union": "16", 
+                "k1": 1, 
+                "enumeration": "one", 
+                "identityref": "idone", 
+                "uint16": 1, 
+                "union-list": [
+                    16, 
+                    "chicken"
+                ], 
+                "uint32": 1, 
+                "empty": [
+                    null
+                ], 
+                "int32": 1, 
+                "int16": 1, 
+                "string": "bear", 
+                "typedef-two": 8, 
+                "uint8": 1, 
+                "restricted-integer": 6, 
+                "leafref": "16", 
+                "int8": 1, 
+                "uint64": "1", 
+                "remote-identityref": "remote:stilton", 
+                "int64": "1", 
+                "restricted-string": "aardvark"
+            }
+        ]
+    }
+}

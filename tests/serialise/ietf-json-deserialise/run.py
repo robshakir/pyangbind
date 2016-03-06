@@ -6,6 +6,8 @@ import getopt
 import json
 from pyangbind.lib.serialise import pybindJSONDecoder
 from pyangbind.lib.pybindJSON import dumps
+from bitarray import bitarray
+from collections import OrderedDict
 
 TESTNAME = "ietf-json-deserialise"
 
@@ -72,6 +74,60 @@ def main():
   assert nobj.get(filter=True) == expected_get, "List with children load " + \
               "did not return expected JSON"
 
+
+  pth = os.path.join(this_dir, "json", "complete-obj.json")
+  nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
+                bindings, "ietf_json_deserialise")
+  expected_get = {
+    "c1": {
+      "l1": {
+        1:
+          {
+            "one-leaf": "hi",
+            "typedef-one": "test",
+            "boolean": True,
+            "binary": bitarray("111111"),
+            "union": "16",
+            "identityref":"idone",
+            "enumeration": "one",
+            "k1": 1,
+            "uint16": 1,
+            "union-list": [16, "chicken"],
+            "uint32": 1,
+            "int32": 1,
+            "int16": 1,
+            "string": "bear",
+            "typedef-two": 8,
+            "uint8": 1,
+            "restricted-integer": 6,
+            "leafref": "16",
+            "int8": 1,
+            "uint64": 1,
+            "remote-identityref": "remote:stilton",
+            "int64": 1,
+            "restricted-string": "aardvark"
+          }
+      },
+      "l2": OrderedDict(
+              [
+                (1, {"k1": 1}),
+                (2, {"k1": 2}),
+                (3, {"k1": 3}),
+                (4, {"k1": 4}),
+                (5, {"k1": 5}),
+                (6, {"k1": 6}),
+                (7, {"k1": 7}),
+                (8, {"k1": 8}),
+                (9, {"k1": 9})
+              ]),
+      "t1": {
+          "32": {"target": "32"},
+          "16": {"target": "16"}
+      }
+    }
+  }
+  assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
+    "complete object not as expected"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

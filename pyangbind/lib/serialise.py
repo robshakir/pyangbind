@@ -110,6 +110,15 @@ class pybindJSONEncoder(json.JSONEncoder):
           return unicode(obj)
         return int(obj)
 
+      if original_yang_type in ["identityref"]:
+        if mode == "ietf":
+          try:
+            emon = obj._enumeration_dict[obj]["module"]
+            if emon != obj._defining_module:
+               return "%s:%s" % (obj._enumeration_dict[obj]["module"], obj)
+          except KeyError:
+            pass
+
       if original_yang_type in ["int8", "int16", "int32", "uint8",
                                 "uint16", "uint32"]:
         return int(obj)
@@ -354,6 +363,9 @@ class pybindJSONDecoder(object):
         chk = get_method()
         if chk._is_keyval is True:
           pass
+        elif chk._yang_type == "empty":
+          if d[key] == None:
+            set_method(True)
         else:
           set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
           if set_method is None:
@@ -363,7 +375,8 @@ class pybindJSONDecoder(object):
     return obj
 
 class pybindIETFJSONEncoder(pybindJSONEncoder):
-  def generate_element(self, obj, parent_namespace=None, flt=False):
+  @staticmethod
+  def generate_element(obj, parent_namespace=None, flt=False):
     """
       Convert a pyangbind class to a format which encodes to the IETF JSON
       specification, rather than the default .get() format, which does not
@@ -384,9 +397,9 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
 
       generated_by = getattr(element, "_pybind_generated_by", None)
       if generated_by  == "container":
-        d[yname] = self.generate_element(element, parent_namespace=element._namespace, flt=flt)
+        d[yname] = pybindIETFJSONEncoder.generate_element(element, parent_namespace=element._namespace, flt=flt)
       elif generated_by == "YANGListType":
-        d[yname] = [self.generate_element(i, parent_namespace=element._namespace, flt=flt) for i in element._members.itervalues()]
+        d[yname] = [pybindIETFJSONEncoder.generate_element(i, parent_namespace=element._namespace, flt=flt) for i in element._members.itervalues()]
       else:
         if flt and element._changed():
           d[yname] = element
