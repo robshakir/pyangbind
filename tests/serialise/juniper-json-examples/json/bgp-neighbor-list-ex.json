@@ -1,0 +1,22 @@
+{
+   "configuration" : {
+      "bgp" : {
+         "neighbors" : {
+            "neighbor" : [
+               {
+                  "config" : {
+                     "peer-group" : "g1"
+                  },
+                  "neighbor-address" : "12.12.12.12"
+               },
+               {
+                  "neighbor-address" : "13.13.13.13",
+                  "config" : {
+                     "peer-group" : "g1"
+                  }
+               }
+            ]
+         }
+      }
+   }
+}

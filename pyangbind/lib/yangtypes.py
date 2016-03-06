@@ -74,7 +74,6 @@ def safe_name(arg):
   """
     Make a leaf or container name safe for use in Python.
   """
-  k = arg
   arg = arg.replace("-", "_")
   arg = arg.replace(".", "_")
   if arg in reserved_name:
@@ -82,7 +81,6 @@ def safe_name(arg):
   # store the unsafe->original version mapping
   # so that we can retrieve it when get() is called.
   return arg
-
 
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   """
@@ -368,12 +366,13 @@ def TypedListType(*args, **kwargs):
       self._list = list()
       if len(args):
         if isinstance(args[0], list):
+          tmp = []
           for i in args[0]:
-            self.check(i)
-          self._list.extend(args[0])
+            tmp.append(self.check(i))
+          self._list.extend(tmp)
         else:
-          self.check(args[0])
-          self._list.append(args[0])
+          tmp = self.check(args[0])
+          self._list.append(tmp)
 
     def check(self, v):
       passed = False
@@ -477,12 +476,13 @@ def YANGListType(*args, **kwargs):
   is_container = kwargs.pop("is_container", False)
   parent = kwargs.pop("parent", False)
   yang_name = kwargs.pop("yang_name", False)
+  yang_keys = kwargs.pop("yang_keys", False)
   user_ordered = kwargs.pop("user_ordered", False)
   path_helper = kwargs.pop("path_helper", None)
 
   class YANGList(object):
     __slots__ = ('_pybind_generated_by', '_members', '_keyval',
-                  '_contained_class', '_path_helper')
+                  '_contained_class', '_path_helper', '_yang_keys')
     _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
@@ -495,6 +495,7 @@ def YANGListType(*args, **kwargs):
         raise ValueError("contained class of a YANGList must be a class")
       self._contained_class = listclass
       self._path_helper = path_helper
+      self._yang_keys = yang_keys
 
     def __str__(self):
       return str(self._members)
@@ -802,6 +803,8 @@ def YANGDynClass(*args, **kwargs):
   register_paths = kwargs.pop("register_paths", True)
   yang_type = kwargs.pop("yang_type", None)
   namespace = kwargs.pop("namespace", None)
+  defining_module = kwargs.pop("defining_module", None)
+
   if not base_type:
     raise TypeError("must have a base type")
   if base_type in NUMPY_INTEGER_TYPES and len(args):
@@ -834,7 +837,8 @@ def YANGDynClass(*args, **kwargs):
                    '_supplied_register_path', '_path_helper', '_base_type',
                    '_is_leaf', '_is_container', '_extensionsd',
                    '_pybind_base_class', '_extmethods', '_is_keyval',
-                   '_register_paths', '_namespace', '_yang_type')
+                   '_register_paths', '_namespace', '_yang_type',
+                   '_defining_module', '_metadata')
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
@@ -860,6 +864,8 @@ def YANGDynClass(*args, **kwargs):
       self._register_paths = register_paths
       self._namespace = namespace
       self._yang_type = yang_type
+      self._defining_module = defining_module
+      self._metadata = {}
 
       if default:
         self._default = default
@@ -929,6 +935,8 @@ def YANGDynClass(*args, **kwargs):
       if self._parent and hasattr(self._parent, "_set"):
         self._parent._set(choice=choice)
 
+    def _add_metadata(self, k, v):
+      self._metadata[k] = v
 
     def yang_name(self):
       return self._yang_name

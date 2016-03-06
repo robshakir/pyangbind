@@ -1,0 +1,52 @@
+module ietf-json-deserialise {
+  yang-version "1";
+  namespace "http://rob.sh/yang/test/serialise/ietf-json-deserialise";
+  prefix "foo";
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+  description
+      "A test module";
+  revision 2014-01-01 {
+      description "april-fools";
+      reference "fooled-you";
+  }
+
+  list mkey {
+    key "leaf-one leaf-two";
+
+    leaf leaf-one {
+      type string;
+    }
+
+    leaf leaf-two {
+      type int8;
+    }
+  }
+
+  list skey {
+    key "leaf-one";
+
+    leaf leaf-one {
+      type string;
+    }
+  }
+
+  list chlist {
+    key "keyleaf";
+
+    leaf keyleaf {
+      type int8;
+    }
+
+    container child {
+      leaf number {
+        type int8;
+      }
+
+      leaf string {
+        type string;
+      }
+    }
+  }
+}

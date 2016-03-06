@@ -1,0 +1,13 @@
+{
+  "skey": [
+    {
+      "leaf-one": "one"
+    },
+    {
+      "leaf-one": "two"
+    },
+    {
+      "leaf-one": "three"
+    }
+  ]
+}

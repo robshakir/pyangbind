@@ -1,0 +1,14 @@
+{
+   "configuration" : {
+      "bgp" : {
+         "global" : {
+            "config" : {
+               "@router-id" : {
+                  "inactive" : true
+               },
+               "router-id" : "10.10.10.10"
+            }
+         }
+      }
+   }
+}
