@@ -251,7 +251,7 @@ def build_pybind(ctx, modules, fd):
   if len(ctx.errors):
     for e in ctx.errors:
       print "INFO: encountered %s" % str(e)
-      if not e[1] in ["BAD_VALUE", "UNUSED_IMPORT", "PATTERN_ERROR"]:
+      if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
         sys.exit(127)
