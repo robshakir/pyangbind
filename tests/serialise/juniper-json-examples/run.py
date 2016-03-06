@@ -4,6 +4,7 @@ import os
 import sys
 import getopt
 import json
+import requests
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
@@ -34,8 +35,36 @@ def main():
   assert pyangpath is not False, "could not find path to pyang"
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
+  FETCH_FILES = [
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/bgp/openconfig-bgp-multiprotocol.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/bgp/openconfig-bgp-operational.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/bgp/openconfig-bgp-policy.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/bgp/openconfig-bgp-types.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/bgp/openconfig-bgp.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/policy/openconfig-routing-policy.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/policy/openconfig-policy-types.yang", "openconfig"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/openconfig-extensions.yang", "include"),
+                  ("https://raw.githubusercontent.com/openconfig/public/master/release/models/openconfig-types.yang", "include"),
+                  ("https://raw.githubusercontent.com/YangModels/yang/master/standard/ietf/RFC/ietf-inet-types.yang", "include"),
+                  ("https://raw.githubusercontent.com/YangModels/yang/master/standard/ietf/RFC/ietf-yang-types.yang", "include"),
+                ]
+
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  files_str = " ".join([os.path.join(this_dir, "openconfig-bgp", i) for i in os.listdir(os.path.join(this_dir, "openconfig-bgp"))])
+  del_dirs = []
+  for fn in FETCH_FILES:
+    wrdir = os.path.join(this_dir, fn[1])
+    if not os.path.exists(wrdir):
+      os.mkdir(wrdir)
+      del_dirs.append(wrdir)
+    wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
+    if not os.path.exists(wrpath):
+      response = requests.get(fn[0])
+      assert response.status_code == 200, "Could not get %s" % fn[0]
+      f = open(wrpath, 'w')
+      f.write(response.content)
+      f.close()
+
+  files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in os.listdir(os.path.join(this_dir, "openconfig"))])
 
   cmd = "%s "% pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
@@ -142,9 +171,19 @@ def main():
   assert ljs.get(filter=True) == expected_ljs, "Router ID configuration example not loaded correctly"
   assert ljs.bgp.global_.config.router_id._metadata["inactive"] == True, "Metadata for router-id element not set correctly"
 
-
   if not k:
-    os.system("/bin/rm -rf %s/ocbind" % this_dir)
+    del_dirs.append(os.path.join(this_dir, "ocbind"))
+    for dirname in del_dirs:
+      for root, dirs, files in os.walk(os.path.join(dirname), topdown=False):
+        for name in files:
+          os.remove(os.path.join(root, name))
+        for name in dirs:
+          os.rmdir(os.path.join(root, name))
+      os.rmdir(dirname)
+
+    # os.system("/bin/rm -rf %s/ocbind" % this_dir)
+    # for d in del_dirs:
+    #   os.system("")
 
 if __name__ == '__main__':
   main()
