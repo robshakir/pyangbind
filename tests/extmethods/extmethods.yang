@@ -1,0 +1,20 @@
+module extmethods {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/extmethods";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container item {
+        leaf one {
+            type string;
+        }
+    }
+}
