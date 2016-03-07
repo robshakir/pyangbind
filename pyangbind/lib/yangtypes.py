@@ -846,6 +846,14 @@ def YANGDynClass(*args, **kwargs):
       self._is_keyval = is_keyval
       self._register_paths = register_paths
 
+      if self._extmethods:
+        chk_path = "/" + "/".join(remove_path_attributes(self._register_path()))
+        if chk_path in self._extmethods:
+          for method in [i for i in dir(self._extmethods[chk_path]) if not i.startswith("_")]:
+            member = getattr(self._extmethods[chk_path], method)
+            if hasattr(member, "__call__"):
+              setattr(self, "_" + method, self.__generate_extmethod(member))
+
       if default:
         self._default = default
       if len(args):
@@ -968,38 +976,12 @@ def YANGDynClass(*args, **kwargs):
       else:
         return []
 
-    def __has_extmethod(self, method):
-      if not self._extmethods:
-        return False
-      chk_path = "/" + "/".join(remove_path_attributes(self._register_path()))
-      if chk_path in self._extmethods:
-        if hasattr(self._extmethods[chk_path], method):
-          return getattr(self._extmethods[chk_path], method, False)
-        return False
-      return False
-
-    def __return_extmethod(self, method, *args, **kwargs):
-      cm = self.__has_extmethod(method)
-      if cm:
+    def __generate_extmethod(self, methodfn):
+      def extmethodfn(*args, **kwargs):
         kwargs['caller'] = self._register_path()
         kwargs['path_helper'] = self._path_helper
-        return cm(*args, **kwargs)
-      return None
-
-    def _presave(self, *args, **kwargs):
-      return self.__return_extmethod("presave", *args, **kwargs)
-
-    def _commit(self, *args, **kwargs):
-      return self.__return_extmethod("commit", *args, **kwargs)
-
-    def _postsave(self, *args, **kwargs):
-      return self.__return_extmethod("postsave", *args, **kwargs)
-
-    def _validate(self, *args, **kwargs):
-      return self.__return_extmethod("validate", *args, **kwargs)
-
-    def _oam_check(self, *args, **kwargs):
-      return self.__return_extmethod("oam_check", *args, **kwargs)
+        return methodfn(*args, **kwargs)
+      return extmethodfn
 
   return YANGBaseClass(*args, **kwargs)
 
