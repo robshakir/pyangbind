@@ -80,6 +80,12 @@ def main():
   expected_return = {'args': ('one',), 'kwargs': {'caller': ['item', 'one'], 'two': 2, 'path_helper': False}}
   assert x.item.one._echo('one', two=2) == expected_return, "args+kwargs not echoed correctly"
 
+  try:
+    x.item.two = False
+    assert False, "incorrectly set an attribute that did not exist in extmethods"
+  except AttributeError:
+    pass
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
