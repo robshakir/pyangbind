@@ -832,14 +832,28 @@ def YANGDynClass(*args, **kwargs):
       # otherwise, hop, skip and jump with the last candidate
       base_type = candidate_type
 
+  clsslots = ['_default', '_mchanged', '_yang_name', '_choice', '_parent',
+                 '_supplied_register_path', '_path_helper', '_base_type',
+                 '_is_leaf', '_is_container', '_extensionsd',
+                 '_pybind_base_class', '_extmethods', '_is_keyval',
+                 '_register_paths', '_namespace', '_yang_type',
+                 '_defining_module', '_metadata']
+
+  if extmethods:
+    rpath = None
+    if supplied_register_path is not None:
+      rpath = supplied_register_path
+    if parent_instance is not None:
+      rpath = parent_instance._path() + [yang_name]
+    else:
+      rpath = []
+    chk_path = "/" + "/".join(remove_path_attributes(rpath))
+    if chk_path in extmethods:
+      for method in [i for i in dir(extmethods[chk_path]) if not i.startswith("_")]:
+        clsslots.append("_" + method)
+
   class YANGBaseClass(base_type):
-    if is_container:
-      __slots__ = ('_default', '_mchanged', '_yang_name', '_choice', '_parent',
-                   '_supplied_register_path', '_path_helper', '_base_type',
-                   '_is_leaf', '_is_container', '_extensionsd',
-                   '_pybind_base_class', '_extmethods', '_is_keyval',
-                   '_register_paths', '_namespace', '_yang_type',
-                   '_defining_module', '_metadata')
+    __slots__ = tuple(clsslots)
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
@@ -872,9 +886,13 @@ def YANGDynClass(*args, **kwargs):
         chk_path = "/" + "/".join(remove_path_attributes(self._register_path()))
         if chk_path in self._extmethods:
           for method in [i for i in dir(self._extmethods[chk_path]) if not i.startswith("_")]:
+            # Don't allow methods to be overwritten
+            if hasattr(self, "_" + method):
+              continue
             member = getattr(self._extmethods[chk_path], method)
             if hasattr(member, "__call__"):
-              setattr(self, "_" + method, self.__generate_extmethod(member))
+              if not hasattr(self, "_method"):
+                setattr(self, "_" + method, self.__generate_extmethod(member))
 
       if default:
         self._default = default
