@@ -629,7 +629,7 @@ def YANGListType(*args, **kwargs):
 
           self._members[k] = tmp
 
-        except ValueError as m:   ###slieberth
+        except ValueError as m:      ###slieberth
           raise KeyError("key value must be valid, %s" % m)
       else:
         self._members[k] = YANGDynClass(base=self._contained_class,
