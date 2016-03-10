@@ -122,7 +122,7 @@ class_map = {
         "native_type": "unicode",
         "base_type": True,
         "quote_arg": True,
-        "pytype": unicode
+        "pytype": str       ###slieberth
     },
     'decimal64': {
         "native_type": "Decimal",
@@ -365,7 +365,7 @@ def build_identities(ctx, defnd):
   unresolved_idc = {}
   for i in defnd:
     unresolved_idc[i] = 0
-  unresolved_ids = defnd.keys()
+  unresolved_ids = list(defnd.keys())   ###slieberth
   error_ids = []
   identity_d = {}
 
@@ -376,19 +376,19 @@ def build_identities(ctx, defnd):
     ident = unresolved_ids.pop(0)
     base = defnd[ident].search_one('base')
     reprocess = False
-    if base is None and not unicode(ident) in identity_d:
-      identity_d[unicode(ident)] = {}
+    if base is None and not str(ident) in identity_d:    ###slieberth
+      identity_d[str(ident)] = {}                     ###slieberth
     else:
       # the identity has a base, so we need to check whether it
       # exists already
-      if unicode(base.arg) in identity_d:
-        base_id = unicode(base.arg)
+      if str(base.arg) in identity_d:       ###slieberth
+        base_id = str(base.arg)  ###slieberth
         # if it did, then we can now define the value - we want to
         # define it as both the resolved value (i.e., with the prefix)
         # and the unresolved value.
         if ":" in ident:
           prefix, value = ident.split(":")
-          prefix, value = unicode(prefix), unicode(value)
+          prefix, value = str(prefix), str(value)   ###slieberth
           if value not in identity_d[base_id]:
             identity_d[base_id][value] = {}
           if value not in identity_d:
@@ -397,7 +397,7 @@ def build_identities(ctx, defnd):
           # used for this value too, as long as the base_id is not
           # already resolved
           if ":" not in base_id:
-            resolved_base = unicode("%s:%s" % (prefix, base_id))
+            resolved_base = str("%s:%s" % (prefix, base_id))  ###slieberth
             if resolved_base not in identity_d:
               reprocess = True
             else:
@@ -453,14 +453,13 @@ def build_typedefs(ctx, defnd):
   unresolved_tc = {}
   for i in defnd:
     unresolved_tc[i] = 0
-  unresolved_t = defnd.keys()
+  unresolved_t = list(defnd.keys())
   error_ids = []
-  known_types = class_map.keys()
+  known_types = list(class_map.keys()) ###slieberth
   known_types.append('enumeration')
   known_types.append('leafref')
   process_typedefs_ordered = []
   while len(unresolved_t):
-
     t = unresolved_t.pop(0)
     base_t = defnd[t].search_one('type')
     if base_t.arg == "union":
@@ -501,7 +500,7 @@ def build_typedefs(ctx, defnd):
     # Copy the class_map entry - this is done so that we do not alter the
     # existing instance in memory as we add to it.
     cls, elemtype = copy.deepcopy(build_elemtype(ctx, item.search_one('type')))
-    known_types = class_map.keys()
+    known_types = list(class_map.keys())  ###slieberth
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
@@ -642,13 +641,15 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if not os.path.exists(fpath):
       try:
         nfd = open(fpath, 'w')
-      except IOError, m:
+      #except IOError, m:       ###slieberth
+      except IOError as m:      ###slieberth
         raise IOError("could not open pyangbind output file (%s)" % m)
       nfd.write(ctx.pybind_common_hdr)
     else:
       try:
         nfd = open(fpath, 'a')
-      except IOError, w:
+      #except IOError, m:       ###slieberth
+      except IOError as m:      ###slieberth
         raise IOError("could not open pyangbind output file (%s)" % m)
   else:
     # If we weren't asked to split the files, then just use the file handle
@@ -727,8 +728,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # code that is generated.
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n  YANG Description: %s" % \
-          parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+#       parent_descr = "\n\n  YANG Description: %s" % \
+#           parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      parent_descr = "\n\n  YANG Description: %s" 
     else:
       parent_descr = ""
 
@@ -981,8 +983,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n    YANG Description: %s" \
-            % i["description"].decode('utf-8').encode('ascii', 'ignore')
+#         description_str = "\n\n    YANG Description: %s" \
+#             % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        description_str = "\n\n    YANG Description: %s"
       nfd.write('''
   def _get_%s(self):
     """
@@ -1008,7 +1011,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     parent = getattr(self, "_parent", None)
     if parent is not None and load is False:
       raise AttributeError("Cannot set keys directly when" +
-                             " within an instantiated list")\n""")
+                              " within an instantiated list")\n""")
       nfd.write("""
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
@@ -1125,10 +1128,10 @@ def build_elemtype(ctx, et, prefix=False):
     if et.arg == "enumeration":
       enumeration_dict = {}
       for enum in et.search('enum'):
-        enumeration_dict[unicode(enum.arg)] = {}
+        enumeration_dict[str(enum.arg)] = {}   ###slieberth
         val = enum.search_one('value')
         if val is not None:
-          enumeration_dict[unicode(enum.arg)]["value"] = int(val.arg)
+          enumeration_dict[str(enum.arg)]["value"] = int(val.arg)  ###slieberth
       elemtype = {"native_type": """RestrictedClassType(base_type=unicode, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)""" %
