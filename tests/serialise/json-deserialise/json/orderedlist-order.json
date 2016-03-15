@@ -1,0 +1,6 @@
+{
+	"ordered": {
+		"one": {"index": "one", "__yang_order": 2},
+		"two": {"index": "two", "__yang_order": 1}
+	}
+}

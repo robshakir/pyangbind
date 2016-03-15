@@ -65,6 +65,18 @@ def main():
   assert len(test_instance.list_container.list_element) == 1, \
     "list item not added when correct key type used"
 
+  for i in test_instance.list_container.list_element.keys():
+    passed = True
+    try:
+      test_instance.list_container.list_element[i]
+    except:
+      passed = False
+    assert passed == True, "could not look up a list element using the " + \
+        " type it was cast to"
+
+  assert test_instance.list_container.list_element[1].keyval == 1, \
+    "getitem using a non-cast type did not work"
+
   assert test_instance.list_container.list_element[1].keyval == 1, \
     "keyvalue is not set as per list key by default"
 

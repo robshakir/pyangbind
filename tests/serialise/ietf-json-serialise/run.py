@@ -4,9 +4,10 @@ import os
 import sys
 import getopt
 import json
-from pyangbind.lib.serialise import pybindJSONEncoder
+from pyangbind.lib.serialise import pybindJSONEncoder, pybindIETFJSONEncoder
+from pyangbind.lib.pybindJSON import dumps
 
-TESTNAME = "serialise-json"
+TESTNAME = "ietf-json-serialise"
 
 
 # generate bindings in this folder
@@ -39,10 +40,15 @@ def main():
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
+  cmd += " %s/augment.yang" % this_dir
   os.system(cmd)
 
-  from bindings import serialise_json
-  js = serialise_json()
+  from bindings import ietf_json_serialise
+  from bitarray import bitarray
+  from pyangbind.lib.xpathhelper import YANGPathHelper
+
+  y = YANGPathHelper()
+  js = ietf_json_serialise(path_helper=y)
 
   js.c1.l1.add(1)
   for s in ["int", "uint"]:
@@ -56,25 +62,30 @@ def main():
   js.c1.l1[1].union = 16
   js.c1.l1[1].union_list.append(16)
   js.c1.l1[1].union_list.append("chicken")
+  js.c1.l1[1].empty = True
 
   js.c1.t1.add(16)
+  js.c1.t1.add(32)
   js.c1.l1[1].leafref = 16
 
-  from bitarray import bitarray
   js.c1.l1[1].binary = bitarray("010101")
   js.c1.l1[1].boolean = True
   js.c1.l1[1].enumeration = "one"
   js.c1.l1[1].identityref = "idone"
+  js.c1.l1[1].remote_identityref = "stilton"
   js.c1.l1[1].typedef_one = "test"
   js.c1.l1[1].typedef_two = 8
   js.c1.l1[1].one_leaf = "hi"
 
-  # print js.get()
+  js.augtarget.augleaf = "teststring"
 
   for i in range(1, 10):
     js.c1.l2.add(i)
 
-  print json.dumps(js.get(), cls=pybindJSONEncoder, indent=4)
+  pybind_json = json.loads(json.dumps(pybindIETFJSONEncoder.generate_element(js,flt=True), cls=pybindIETFJSONEncoder, indent=4))
+  external_json = json.load(open(os.path.join(this_dir, "json", "obj.json"), 'r'))
+
+  assert pybind_json == external_json, "JSON did not match the expected output"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -483,10 +483,12 @@ def YANGListType(*args, **kwargs):
 
   class YANGList(object):
     __slots__ = ('_pybind_generated_by', '_members', '_keyval',
-                  '_contained_class', '_path_helper', '_yang_keys')
+                  '_contained_class', '_path_helper', '_yang_keys',
+                  '_ordered')
     _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
+      self._ordered = True if user_ordered else False
       if user_ordered:
         self._members = collections.OrderedDict()
       else:
@@ -853,8 +855,7 @@ def YANGDynClass(*args, **kwargs):
         clsslots.append("_" + method)
 
   class YANGBaseClass(base_type):
-    if is_container:
-      __slots__ = tuple(clsslots)
+    __slots__ = tuple(clsslots)
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))

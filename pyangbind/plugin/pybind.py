@@ -250,6 +250,7 @@ def build_pybind(ctx, modules, fd):
   # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
+      print "INFO: encountered %s" % str(e)
       if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
@@ -383,6 +384,8 @@ def build_identities(ctx, defnd):
       # exists already
       if unicode(base.arg) in identity_d:
         base_id = unicode(base.arg)
+        namespace = defnd[ident].i_module.search_one('namespace').arg
+        module = defnd[ident].i_module.arg
         # if it did, then we can now define the value - we want to
         # define it as both the resolved value (i.e., with the prefix)
         # and the unresolved value.
@@ -390,7 +393,7 @@ def build_identities(ctx, defnd):
           prefix, value = ident.split(":")
           prefix, value = unicode(prefix), unicode(value)
           if value not in identity_d[base_id]:
-            identity_d[base_id][value] = {}
+            identity_d[base_id][value] = {'namespace': namespace, 'module': module}
           if value not in identity_d:
             identity_d[value] = {}
           # check whether the base existed with the prefix that was
@@ -402,7 +405,7 @@ def build_identities(ctx, defnd):
               reprocess = True
             else:
               identity_d[resolved_base][ident] = {}
-              identity_d[resolved_base][value] = {}
+              identity_d[resolved_base][value] = {'namespace': namespace, 'module': module}
         if ident not in identity_d[base_id]:
           identity_d[base_id][ident] = {}
         if ident not in identity_d:
@@ -814,6 +817,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         class_str["arg"] += ", is_container='list', user_ordered=%s" \
                                                   % i["user_ordered"]
         class_str["arg"] += ", path_helper=self._path_helper"
+        class_str["arg"] += ", yang_keys='%s'" % i["yang_keys"]
         if i["choice"]:
           class_str["arg"] += ", choice=%s" % repr(choice)
         class_str["arg"] += ")"
@@ -900,6 +904,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
           class_str["arg"] += ", extensions=%s" % i["extensions"]
         if keyval and i["yang_name"] in keyval:
           class_str["arg"] += ", is_keyval=True"
+        class_str["arg"] += ", namespace='%s'" % i["namespace"]
+        class_str["arg"] += ", defining_module='%s'" % i["defining_module"]
+        class_str["arg"] += ", yang_type='%s'" % i["origtype"]
         classes[i["name"]] = class_str
 
     # TODO: get and set methods currently have errors that are reported that
@@ -1169,7 +1176,7 @@ def build_elemtype(ctx, et, prefix=False):
       require_instance = \
                   class_bool_map[et.search_one('require-instance').arg] \
                           if et.search_one('require-instance') \
-                            is not None else False
+                            is not None else True
       if ctx.opts.use_xpathhelper:
         elemtype = {"native_type": "ReferenceType",
                     "referenced_path": path_stmt.arg,
@@ -1254,6 +1261,12 @@ def get_element(ctx, fd, element, module, parent, path,
   # produces a dictionary that can then be mapped into the relevant code that
   # dynamically generates a class.
 
+  # Find element's namespace
+  namespace = element.i_orig_module.search_one("namespace").arg \
+                if hasattr(element, "i_orig_module") else None
+  defining_module = element.i_orig_module.arg if \
+                      hasattr(element, "i_orig_module") else None
+
   this_object = []
   default = False
   has_children = False
@@ -1299,6 +1312,8 @@ def get_element(ctx, fd, element, module, parent, path,
           "yang_name": element.arg,
           "choice": choice,
           "register_paths": register_paths,
+          "namespace": namespace,
+          "defining_module": defining_module,
       }
       # Handle the different cases of class name, this depends on whether we
       # were asked to split the bindings into a directory structure or not.
@@ -1322,6 +1337,8 @@ def get_element(ctx, fd, element, module, parent, path,
       # ordered.
       if element.keyword == "list":
         elemdict["key"] = safe_name(element.search_one("key").arg) \
+            if element.search_one("key") is not None else False
+        elemdict["yang_keys"] = element.search_one("key").arg \
             if element.search_one("key") is not None else False
         user_ordered = element.search_one('ordered-by')
         elemdict["user_ordered"] = True if user_ordered is not None \
@@ -1503,6 +1520,8 @@ def get_element(ctx, fd, element, module, parent, path,
         "description": elemdescr, "yang_name": element.arg,
         "choice": choice,
         "register_paths": register_paths,
+        "namespace": namespace,
+        "defining_module": defining_module
     }
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]

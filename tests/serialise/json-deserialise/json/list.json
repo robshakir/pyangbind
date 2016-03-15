@@ -1,0 +1,16 @@
+{
+    "load-list": {
+        "1": {
+            "index": 1,
+            "value": "one"
+        },
+        "2": {
+            "index": 2,
+            "value": "two"
+        },
+        "3": {
+            "index": 3,
+            "value": "three"
+        }
+    }
+}

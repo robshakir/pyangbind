@@ -1,0 +1,18 @@
+{
+  "chlist": [
+    {
+      "keyleaf": 1,
+      "child": {
+        "number": 1,
+        "string": "one"
+      }
+    },
+    {
+      "keyleaf": 2,
+      "child": {
+        "number": 2,
+        "string": "two"
+      }
+    }
+  ]
+}

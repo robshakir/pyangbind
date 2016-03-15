@@ -32,7 +32,7 @@ module list {
 
             leaf keyval {
                 type uint8;
-                description 
+                description
                     "a key value for the list";
             }
 

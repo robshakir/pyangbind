@@ -1,7 +1,10 @@
-module serialise-json {
+module ietf-json-deserialise {
   yang-version "1";
-  namespace "http://rob.sh/yang/test/serialise/json";
+  namespace "http://rob.sh/yang/test/serialise/ietf-json-deserialise";
   prefix "foo";
+
+  import remote { prefix "remote"; }
+
   organization "BugReports Inc";
   contact "A bug reporter";
 
@@ -10,6 +13,52 @@ module serialise-json {
   revision 2014-01-01 {
       description "april-fools";
       reference "fooled-you";
+  }
+
+  identity fish {
+    description "base";
+  }
+
+  identity haddock {
+    base "fish";
+  }
+
+  list mkey {
+    key "leaf-one leaf-two";
+
+    leaf leaf-one {
+      type string;
+    }
+
+    leaf leaf-two {
+      type int8;
+    }
+  }
+
+  list skey {
+    key "leaf-one";
+
+    leaf leaf-one {
+      type string;
+    }
+  }
+
+  list chlist {
+    key "keyleaf";
+
+    leaf keyleaf {
+      type int8;
+    }
+
+    container child {
+      leaf number {
+        type int8;
+      }
+
+      leaf string {
+        type string;
+      }
+    }
   }
 
   identity id-base {
@@ -42,6 +91,10 @@ module serialise-json {
 
       leaf k1 {
           type uint32;
+      }
+
+      leaf empty {
+        type empty;
       }
 
       leaf uint8 {
@@ -133,6 +186,12 @@ module serialise-json {
         }
       }
 
+      leaf remote-identityref {
+        type identityref {
+          base remote:cheese;
+        }
+      }
+
       leaf typedef-one {
         type definedtype;
       }
@@ -171,4 +230,6 @@ module serialise-json {
       }
     }
   }
+
+
 }
