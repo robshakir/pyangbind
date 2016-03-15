@@ -39,6 +39,9 @@ class pybindJSONIOError(Exception):
 class pybindJSONUpdateError(Exception):
   pass
 
+class pybindJSONDecodeError(Exception):
+  pass
+
 
 class pybindJSONEncoder(json.JSONEncoder):
   def _preprocess_element(self, d, mode="default"):
@@ -233,7 +236,31 @@ class pybindJSONDecoder(object):
       elif pybind_attr in ["YANGListType", "list"]:
         # we need to add each key to the list and then skip a level in the
         # JSON hierarchy
-        for child_key in d[key]:
+        list_obj = getattr(obj, safe_name(key), None)
+        if list_obj is None:
+          raise pybindJSONDecodeError("Could not load list object with name %s" % key)
+        ordered_list = getattr(list_obj, "_ordered", None)
+        if ordered_list:
+          # Put keys in order:
+          okeys = []
+          kdict = {}
+          for k,v in d[key].iteritems():
+            if not "__yang_order" in v:
+              # Element is not specified in terms of order, so
+              # push to a list that keeps this order
+              okeys.append(k)
+            else:
+              kdict[v["__yang_order"]] = k
+              # Throw this metadata away
+              v.pop("__yang_order", None)
+          okeys.reverse()
+          key_order = [kdict[k] for k in sorted(kdict)]
+          for add_element in okeys:
+            key_order.append(add_element)
+        else:
+          key_order = d[key].keys()
+
+        for child_key in key_order:
           if child_key not in chobj:
             chobj.add(child_key)
           parent = chobj[child_key]

@@ -1,0 +1,41 @@
+{
+    "c1": {
+        "t1": {
+            "16": {
+                "target": "16"
+            }, 
+            "32": {
+                "target": "32"
+            }
+        }, 
+        "l1": {
+            "1": {
+                "one-leaf": "hi", 
+                "typedef-one": "test", 
+                "boolean": true, 
+                "binary": "010101", 
+                "union": "16", 
+                "k1": 1, 
+                "enumeration": "one", 
+                "identityref": "idone", 
+                "uint16": 1, 
+                "union-list": [
+                    16, 
+                    "chicken"
+                ], 
+                "uint32": 1, 
+                "int32": 1, 
+                "int16": 1, 
+                "string": "bear", 
+                "typedef-two": 8, 
+                "uint8": 1, 
+                "restricted-integer": 6, 
+                "leafref": "16", 
+                "int8": 1, 
+                "uint64": 1, 
+                "int64": 1, 
+                "restricted-string": "aardvark"
+            }
+        }
+    }
+}

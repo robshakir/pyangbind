@@ -1,10 +1,7 @@
-module ietf-json-serialise {
+module json-deserialise {
   yang-version "1";
-  namespace "http://rob.sh/yang/test/serialise/ietf-json";
+  namespace "http://rob.sh/yang/test/serialise/json-deserialise";
   prefix "foo";
-
-  import remote { prefix "remote"; }
-
   organization "BugReports Inc";
   contact "A bug reporter";
 
@@ -13,6 +10,18 @@ module ietf-json-serialise {
   revision 2014-01-01 {
       description "april-fools";
       reference "fooled-you";
+  }
+
+  list load-list {
+    key index;
+
+    leaf index {
+      type int8;
+    }
+
+    leaf value {
+      type string;
+    }
   }
 
   identity id-base {
@@ -45,10 +54,6 @@ module ietf-json-serialise {
 
       leaf k1 {
           type uint32;
-      }
-
-      leaf empty {
-        type empty;
       }
 
       leaf uint8 {
@@ -140,12 +145,6 @@ module ietf-json-serialise {
         }
       }
 
-      leaf remote-identityref {
-        type identityref {
-          base remote:cheese;
-        }
-      }
-
       leaf typedef-one {
         type definedtype;
       }
@@ -168,15 +167,6 @@ module ietf-json-serialise {
       }
     }
 
-    list l2 {
-      key "k1";
-      ordered-by user;
-
-      leaf k1 {
-       type uint32;
-      }
-    }
-
     list t1 {
       key "target";
       leaf target {
@@ -185,7 +175,13 @@ module ietf-json-serialise {
     }
   }
 
-  container augtarget {
+  list ordered {
+    ordered-by user;
+    key "index";
 
+    leaf index {
+      type string;
+    }
   }
+
 }

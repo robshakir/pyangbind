@@ -78,7 +78,7 @@ def main():
     js.c1.l2.add(i)
 
   pybind_json = json.loads(dumps(js))
-  external_json = json.load(open("%s/expected-output.json" % this_dir, 'r'))
+  external_json = json.load(open(os.path.join(this_dir, "json", "expected-output.json"), 'r'))
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 

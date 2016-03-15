@@ -70,5 +70,8 @@
                 "restricted-string": "aardvark"
             }
         ]
+    },
+    "ietf-json-serialise:augtarget": {
+        "augment:augleaf": "teststring"
     }
 }

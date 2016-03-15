@@ -1,0 +1,6 @@
+{
+	"ordered": {
+		"one": {"index": "one"},
+		"two": {"index": "two"}
+	}
+}

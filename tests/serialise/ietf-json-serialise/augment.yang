@@ -1,0 +1,24 @@
+module augment {
+  yang-version "1";
+  namespace "http://rob.sh/yang/test/serialise/ietf-json-serialise/augment";
+  prefix "augpfx";
+
+  import ietf-json-serialise { prefix ijs; }
+
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+  description
+      "A test module";
+  revision 2014-01-01 {
+      description "april-fools";
+      reference "fooled-you";
+  }
+
+  augment "/ijs:augtarget" {
+    leaf augleaf {
+      type string;
+    }
+  }
+
+}

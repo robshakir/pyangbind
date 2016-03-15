@@ -40,6 +40,7 @@ def main():
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
+  cmd += " %s/augment.yang" % this_dir
   os.system(cmd)
 
   from bindings import ietf_json_serialise
@@ -75,6 +76,8 @@ def main():
   js.c1.l1[1].typedef_one = "test"
   js.c1.l1[1].typedef_two = 8
   js.c1.l1[1].one_leaf = "hi"
+
+  js.augtarget.augleaf = "teststring"
 
   for i in range(1, 10):
     js.c1.l2.add(i)
