@@ -27,7 +27,7 @@
 11-01-2016 - 0.2.0
   * Released to PyPI.
 
-27-03-2016 - 0.3.1
+15-03-2016 - 0.3.1
   * Adds support for serialising and deserialising to IETF JSON.
   * Tests against Juniper Networks' code - thanks especially to Pallavi Mahajan, and Nilesh Simaria
     at Juniper for their example output.
