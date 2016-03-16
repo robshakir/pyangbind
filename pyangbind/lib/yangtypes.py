@@ -293,6 +293,9 @@ def RestrictedClassType(*args, **kwargs):
           self._restriction_tests.append(in_range_check(lengths, length=True))
         elif rtype == "dict_key":
           new_rarg = copy.deepcopy(rarg)
+          for k in rarg:
+            if k.startswith("@"):
+              new_rarg.pop(k, None)
           # populate enum values
           used_values = []
           for k in new_rarg:

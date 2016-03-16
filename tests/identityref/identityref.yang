@@ -29,6 +29,38 @@ module identityref {
         description "option two on the base";
     }
 
+    identity grandfather;
+
+    identity father {
+        base grandfather;
+    }
+
+    identity son {
+        base father;
+    }
+
+    identity greatgrandmother;
+
+    identity grandmother {
+        base greatgrandmother;
+    }
+
+    identity mother {
+        base grandmother;
+    }
+
+    identity aunt {
+        base grandmother;
+    }
+
+    identity cousin {
+        base aunt;
+    }
+
+    identity daughter {
+        base mother;
+    }
+
 
     container test-container {
         leaf id1 {
@@ -42,5 +74,68 @@ module identityref {
                 base defn:remote-base;
             }
         }
+
+        leaf id2 {
+            type identityref {
+                base grandfather;
+            }
+        }
+
+        leaf id3 {
+            type identityref {
+                base greatgrandmother;
+            }
+        }
+
+        leaf id4 {
+            type identityref {
+                base mother;
+            }
+        }
+
+        leaf id5 {
+            type identityref {
+                base grandmother;
+            }
+        }
+    }
+
+    // Example supplied by Ashish Kumar in issue #41
+    identity address-family {
+        description
+          "Base identity from which address
+           families are derived.";
+    }
+    identity lcaf {
+        base address-family;
+        description
+          "address family.";
+    }
+    identity source-dest {
+        base lcaf;
+        description
+          "Source/Dest LCAF type.";
+    }
+    typedef address-family-ref {
+        type identityref {
+          base address-family;
+        }
+        description
+          "address family reference.";
+    }
+
+    grouping address {
+        description
+          "Generic address.";
+        leaf address-type {
+          type address-family-ref;
+          mandatory true;
+          description
+            "Type of the address.";
+        }
+    }
+
+    container ak {
+        uses address;
     }
 }
