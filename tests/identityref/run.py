@@ -124,9 +124,20 @@ def main():
       "id5 leaf was set incorrectly (%s: %S != %s)" % \
         (k[0], k[1], passed)
 
+  for atype in [("source-dest", True), ("lcaf", True), ("unknown", False)]:
+    passed = True
+    try:
+      i.ak.address_type = atype[0]
+    except ValueError:
+      passed = False
+    assert passed is atype[1], "AK identity inheritance test failed - " + \
+      "%s: %s != %s" % (atype[0], atype[1], passed)
+
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
+
 
 if __name__ == '__main__':
   main()

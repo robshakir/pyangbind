@@ -99,4 +99,43 @@ module identityref {
             }
         }
     }
+
+    // Example supplied by Ashish Kumar in issue #41
+    identity address-family {
+        description
+          "Base identity from which address
+           families are derived.";
+    }
+    identity lcaf {
+        base address-family;
+        description
+          "address family.";
+    }
+    identity source-dest {
+        base lcaf;
+        description
+          "Source/Dest LCAF type.";
+    }
+    typedef address-family-ref {
+        type identityref {
+          base address-family;
+        }
+        description
+          "address family reference.";
+    }
+
+    grouping address {
+        description
+          "Generic address.";
+        leaf address-type {
+          type address-family-ref;
+          mandatory true;
+          description
+            "Type of the address.";
+        }
+    }
+
+    container ak {
+        uses address;
+    }
 }
