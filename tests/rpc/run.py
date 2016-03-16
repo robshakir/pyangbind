@@ -32,7 +32,7 @@ def main():
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
 
-  cmd = "%s "% pythonpath
+  cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind "
   cmd += " --split-class-dir=%s/bindings" % this_dir

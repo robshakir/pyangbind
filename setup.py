@@ -12,7 +12,7 @@ setup(
 
     # PyangBind uses the same versioning approach as OpenConfig - see
     # http://www.openconfig.net/file-cabinet/Semantic_Versioning_for_OpenConfig.pdf?attredirects=0&d=1
-    version='0.3.1',
+    version='0.3.2',
 
     description="PyangBind is a plugin for pyang which converts YANG data" + \
                 "models into a Python class hierarchy, such that Python " +  \

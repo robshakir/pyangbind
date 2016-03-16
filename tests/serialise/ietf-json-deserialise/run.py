@@ -37,7 +37,7 @@ def main():
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
 
-  cmd = "%s "% pythonpath
+  cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
@@ -59,7 +59,7 @@ def main():
   pth = os.path.join(this_dir, "json", "skeylist.json")
   nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
             bindings, "ietf_json_deserialise")
-  expected_get= {'skey': {u'one': {'leaf-one': u'one'}, u'three':
+  expected_get = {'skey': {u'one': {'leaf-one': u'one'}, u'three':
                   {'leaf-one': u'three'}, u'two': {'leaf-one': u'two'}}}
   assert nobj.get(filter=True) == expected_get, "Single key list load did " + \
             "not return expected JSON"
@@ -74,7 +74,6 @@ def main():
   assert nobj.get(filter=True) == expected_get, "List with children load " + \
               "did not return expected JSON"
 
-
   pth = os.path.join(this_dir, "json", "complete-obj.json")
   nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
                 bindings, "ietf_json_deserialise")
@@ -88,7 +87,7 @@ def main():
             "boolean": True,
             "binary": bitarray("111111"),
             "union": "16",
-            "identityref":"idone",
+            "identityref": "idone",
             "enumeration": "one",
             "k1": 1,
             "uint16": 1,

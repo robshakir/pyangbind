@@ -71,7 +71,7 @@ def main():
       test_instance.list_container.list_element[i]
     except:
       passed = False
-    assert passed == True, "could not look up a list element using the " + \
+    assert passed is True, "could not look up a list element using the " + \
         " type it was cast to"
 
   assert test_instance.list_container.list_element[1].keyval == 1, \
@@ -89,7 +89,7 @@ def main():
       "aSecondDefaultValue"
 
   assert test_instance.get() == \
-    {'list-container': {'list-eight': {}, 'list-seven': {}, 
+    {'list-container': {'list-eight': {}, 'list-seven': {},
         'list-six': {}, 'list-five': {},
         'list-two': {}, 'list-three': {}, 'list-four': {},
         'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
@@ -134,7 +134,7 @@ def main():
       test_instance.list_container.list_two.add(keyval=i)
     except KeyError:
       assert i in ["broccoli", "carrot"], "invalid item added to " + \
-        "list using keyword add (%s)" % i
+          "list using keyword add (%s)" % i
 
   passed = False
   test_instance.list_container.list_element.add(22)
@@ -176,7 +176,6 @@ def main():
   assert test_instance.list_container.list_six[x].val == 10, \
     "a key-less list did not have the correct value set (%s %d != 10)" % \
       (x, test_instance.list_container.list_six[x].val)
-
 
   y = test_instance.list_container.list_eight.add(val="value one",
           additional="value two")

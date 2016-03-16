@@ -31,7 +31,7 @@ def main():
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
-  
+
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir

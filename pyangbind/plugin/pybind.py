@@ -262,7 +262,8 @@ def build_pybind(ctx, modules, fd):
 
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as xpathhelper\n"
+    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as " + \
+                                "xpathhelper\n"
   ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
   ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
   ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
@@ -358,11 +359,14 @@ def build_pybind(ctx, modules, fd):
           get_children(ctx, fd, rpcs, module, module, register_paths=False,
                       path="/%s_rpc" % (safe_name(module.arg)))
 
+
 def build_identities(ctx, defnd):
   def find_all_identity_values(item, definitions, values=list()):
-    new_values = [k for k in definitions[item] if not k in ["@module", "@namespace"] and not k in values]
+    new_values = [k for k in definitions[item] if k not
+                    in ["@module", "@namespace"] and k not in values]
     for v in new_values:
-      values.extend([i for i in find_all_identity_values(v, definitions, values=values) if not i in values])
+      values.extend([i for i in find_all_identity_values(v, definitions,
+                        values=values) if i not in values])
     values.extend(new_values)
     return values
 
@@ -448,9 +452,10 @@ def build_identities(ctx, defnd):
   for identity in orig_identity_d:
     vals = find_all_identity_values(identity, orig_identity_d, values=[])
     for value in vals:
-      if not value in orig_identity_d[identity]:
-        identity_d[identity][value] = {k: v for k,v in 
-            orig_identity_d[value].iteritems() if k in ["@module", "@namespace"]}
+      if value not in orig_identity_d[identity]:
+        identity_d[identity][value] = {k: v for k, v in
+            orig_identity_d[value].iteritems() if k in
+            ["@module", "@namespace"]}
 
   # Add entries to the class_map such that this identity can be referenced by
   # elements that use this identity ref.
@@ -1280,7 +1285,7 @@ def get_element(ctx, fd, element, module, parent, path,
 
   # Find element's namespace
   namespace = element.i_orig_module.search_one("namespace").arg \
-                if hasattr(element, "i_orig_module") else None
+                    if hasattr(element, "i_orig_module") else None
   defining_module = element.i_orig_module.arg if \
                       hasattr(element, "i_orig_module") else None
 

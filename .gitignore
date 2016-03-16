@@ -6,3 +6,4 @@ dist/*
 tests/pyvirtualenv
 dev/*
 tmp/*
+*.PEP8-ERRORS

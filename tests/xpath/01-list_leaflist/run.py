@@ -147,7 +147,6 @@ def t3_leaflist_remove(yobj, tree):
         "leaf-list (%s -> %s [%s])" % (b[0], path, new_retr[0])
 
 
-
 def t4_list_remove(yobj, tree):
 
   for b in ["steam", "liberty", "california-lager", "porter", "ipa",

@@ -112,8 +112,8 @@ def main():
       "id4 leaf was set incorrectly (%s: %s != %s)" % \
         (k[0], k[1], passed)
 
-  for k in [("daughter", True), ("cousin", True), ("mother", True), ("aunt", True),
-              ("greatgrandmother", False)]:
+  for k in [("daughter", True), ("cousin", True), ("mother", True),
+            ("aunt", True), ("greatgrandmother", False)]:
     passed = True
     try:
       i.test_container.id5 = k[0]
@@ -136,7 +136,6 @@ def main():
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
-
 
 
 if __name__ == '__main__':

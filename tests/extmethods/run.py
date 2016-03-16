@@ -6,6 +6,7 @@ import getopt
 
 TESTNAME = "extmethods"
 
+
 class extmethodcls(object):
   def commit(self, *args, **kwargs):
     return "COMMIT_CALLED"
@@ -72,17 +73,22 @@ def main():
 
   for chk in results:
     method = getattr(x.item.one, "_" + chk[0], None)
-    assert (method is not None) == chk[1], "Method %s retrieved incorrectly, method was: %s" % method
+    assert (method is not None) == chk[1], \
+              "Method %s retrieved incorrectly, method was: %s" % method
     if method is not None:
       result = method()
-      assert result == chk[2], "Incorrect result returned from %s -> %s != %s" % (chk[0], result, chk[2])
+      assert result == chk[2], "Incorrect return from %s -> %s != %s" \
+              % (chk[0], result, chk[2])
 
-  expected_return = {'args': ('one',), 'kwargs': {'caller': ['item', 'one'], 'two': 2, 'path_helper': False}}
-  assert x.item.one._echo('one', two=2) == expected_return, "args+kwargs not echoed correctly"
+  expected_return = {'args': ('one',), 'kwargs': {'caller': ['item', 'one'],
+                    'two': 2, 'path_helper': False}}
+  assert x.item.one._echo('one', two=2) == expected_return, \
+          "args+kwargs not echoed correctly"
 
   try:
     x.item.two = False
-    assert False, "incorrectly set an attribute that did not exist in extmethods"
+    assert False, \
+        "incorrectly set an attribute that did not exist in extmethods"
   except AttributeError:
     pass
 

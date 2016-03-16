@@ -35,7 +35,7 @@ def main():
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
 
-  cmd = "%s "% pythonpath
+  cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
@@ -78,7 +78,8 @@ def main():
     js.c1.l2.add(i)
 
   pybind_json = json.loads(dumps(js))
-  external_json = json.load(open(os.path.join(this_dir, "json", "expected-output.json"), 'r'))
+  external_json = json.load(open(os.path.join(this_dir, "json",
+                          "expected-output.json"), 'r'))
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 

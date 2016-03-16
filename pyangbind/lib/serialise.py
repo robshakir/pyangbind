@@ -32,12 +32,14 @@ import copy
 
 import sys
 
+
 class pybindJSONIOError(Exception):
   pass
 
 
 class pybindJSONUpdateError(Exception):
   pass
+
 
 class pybindJSONDecodeError(Exception):
   pass
@@ -86,7 +88,7 @@ class pybindJSONEncoder(json.JSONEncoder):
 
       if isinstance(obj, dict):
         ndict = {}
-        for k,v in obj.iteritems():
+        for k, v in obj.iteritems():
           ndict[k] = self.default(v, mode=mode)
         return ndict
 
@@ -190,8 +192,8 @@ class pybindJSONEncoder(json.JSONEncoder):
 
         return [self.default(i) for i in obj]
 
-
       raise AttributeError("Unmapped type: %s" % original_yang_type)
+
 
 class pybindJSONDecoder(object):
   @staticmethod
@@ -231,21 +233,23 @@ class pybindJSONDecoder(object):
           for elem in chobj._pyangbind_elements:
             unsetchildelem = getattr(chobj, "_unset_%s" % elem)
             unsetchildelem()
-        pybindJSONDecoder.load_json(d[key], chobj, yang_base, obj=chobj, path_helper=path_helper)
+        pybindJSONDecoder.load_json(d[key], chobj, yang_base, obj=chobj,
+            path_helper=path_helper)
         set_via_stdmethod = False
       elif pybind_attr in ["YANGListType", "list"]:
         # we need to add each key to the list and then skip a level in the
         # JSON hierarchy
         list_obj = getattr(obj, safe_name(key), None)
         if list_obj is None:
-          raise pybindJSONDecodeError("Could not load list object with name %s" % key)
+          raise pybindJSONDecodeError("Could not load list object " +
+                    "with name %s" % key)
         ordered_list = getattr(list_obj, "_ordered", None)
         if ordered_list:
           # Put keys in order:
           okeys = []
           kdict = {}
-          for k,v in d[key].iteritems():
-            if not "__yang_order" in v:
+          for k, v in d[key].iteritems():
+            if "__yang_order" not in v:
               # Element is not specified in terms of order, so
               # push to a list that keeps this order
               okeys.append(k)
@@ -264,7 +268,8 @@ class pybindJSONDecoder(object):
           if child_key not in chobj:
             chobj.add(child_key)
           parent = chobj[child_key]
-          pybindJSONDecoder.load_json(d[key][child_key], parent, yang_base, obj=parent, path_helper=path_helper)
+          pybindJSONDecoder.load_json(d[key][child_key], parent, yang_base,
+                obj=parent, path_helper=path_helper)
           set_via_stdmethod = False
         if overwrite:
           for child_key in chobj:
@@ -305,8 +310,8 @@ class pybindJSONDecoder(object):
   def check_metadata_add(key, data, obj):
     keys = [unicode(k) for k in data]
     if ("@" + key) in keys:
-      for k,v in data["@" + key].iteritems():
-        obj._add_metadata(k,v)
+      for k, v in data["@" + key].iteritems():
+        obj._add_metadata(k, v)
 
   @staticmethod
   def load_ietf_json(d, parent, yang_base, obj=None, path_helper=None,
@@ -340,8 +345,8 @@ class pybindJSONDecoder(object):
 
       if key == "@":
         # Handle whole container metadata object
-        for k,v in d[key].iteritems():
-          obj._add_metadata(k,v)
+        for k, v in d[key].iteritems():
+          obj._add_metadata(k, v)
         continue
       elif "@" in key:
         # Don't handle metadata elements, each element
@@ -356,7 +361,9 @@ class pybindJSONDecoder(object):
         if attr_get is None:
           raise AttributeError("Invalid attribute specified (%s)" % ykey)
         pybindJSONDecoder.check_metadata_add(key, d, attr_get())
-        pybindJSONDecoder.load_ietf_json(d[key], None, None, obj=attr_get(), path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+        pybindJSONDecoder.load_ietf_json(d[key], None, None, obj=attr_get(),
+                  path_helper=path_helper, extmethods=extmethods,
+                      overwrite=overwrite)
       elif isinstance(d[key], list):
         for elem in d[key]:
           # if this is a list, then this is a YANG list
@@ -372,13 +379,15 @@ class pybindJSONDecoder(object):
               nobj = this_attr[k]
             elif " " in this_attr._keyval:
               kwargs = {}
-              for pkv,ykv in zip(this_attr._keyval.split(" "), this_attr._yang_keys.split(" ")):
+              for pkv, ykv in zip(this_attr._keyval.split(" "),
+                                      this_attr._yang_keys.split(" ")):
                 kwargs[pkv] = elem[ykv]
               nobj = this_attr.add(**kwargs)
-              #pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
             else:
               nobj = this_attr.add(elem[this_attr._yang_keys])
-            pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+            pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj,
+                path_helper=path_helper, extmethods=extmethods,
+                  overwrite=overwrite)
             pybindJSONDecoder.check_metadata_add(key, d, nobj)
           else:
             std_method_set = True
@@ -396,10 +405,12 @@ class pybindJSONDecoder(object):
         else:
           set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
           if set_method is None:
-            raise AttributeError("Invalid attribute specified in JSON - %s" % (ykey))
+            raise AttributeError("Invalid attribute specified in JSON - %s"
+                                    % (ykey))
           set_method(d[key])
         pybindJSONDecoder.check_metadata_add(key, d, get_method())
     return obj
+
 
 class pybindIETFJSONEncoder(pybindJSONEncoder):
   @staticmethod
@@ -415,7 +426,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
     for element_name in obj._pyangbind_elements:
       element = getattr(obj, element_name, None)
       yang_name = getattr(element, "yang_name", None)
-      yname = yang_name() if not yang_name is None else element_name
+      yname = yang_name() if yang_name is not None else element_name
 
       if not element._namespace == parent_namespace:
         # if the namespace is different, then precede with the module
@@ -423,10 +434,13 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         yname = "%s:%s" % (element._defining_module, yname)
 
       generated_by = getattr(element, "_pybind_generated_by", None)
-      if generated_by  == "container":
-        d[yname] = pybindIETFJSONEncoder.generate_element(element, parent_namespace=element._namespace, flt=flt)
+      if generated_by == "container":
+        d[yname] = pybindIETFJSONEncoder.generate_element(element,
+                      parent_namespace=element._namespace, flt=flt)
       elif generated_by == "YANGListType":
-        d[yname] = [pybindIETFJSONEncoder.generate_element(i, parent_namespace=element._namespace, flt=flt) for i in element._members.itervalues()]
+        d[yname] = [pybindIETFJSONEncoder.generate_element(i,
+                      parent_namespace=element._namespace, flt=flt)
+                        for i in element._members.itervalues()]
       else:
         if flt and element._changed():
           d[yname] = element
@@ -435,7 +449,8 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
     return d
 
   def encode(self, obj):
-    return json.JSONEncoder.encode(self, self._preprocess_element(obj, mode="ietf"))
+    return json.JSONEncoder.encode(self,
+        self._preprocess_element(obj, mode="ietf"))
 
   def default(self, obj, mode="ietf"):
     return pybindJSONEncoder().default(obj, mode="ietf")

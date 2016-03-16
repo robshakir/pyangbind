@@ -82,6 +82,7 @@ def safe_name(arg):
   # so that we can retrieve it when get() is called.
   return arg
 
+
 def RestrictedPrecisionDecimalType(*args, **kwargs):
   """
     Function to return a new type that is based on decimal.Decimal with
@@ -854,7 +855,8 @@ def YANGDynClass(*args, **kwargs):
       rpath = []
     chk_path = "/" + "/".join(remove_path_attributes(rpath))
     if chk_path in extmethods:
-      for method in [i for i in dir(extmethods[chk_path]) if not i.startswith("_")]:
+      for method in [i for i in dir(extmethods[chk_path])
+                                      if not i.startswith("_")]:
         clsslots.append("_" + method)
 
   class YANGBaseClass(base_type):
@@ -888,9 +890,11 @@ def YANGDynClass(*args, **kwargs):
       self._metadata = {}
 
       if self._extmethods:
-        chk_path = "/" + "/".join(remove_path_attributes(self._register_path()))
+        chk_path = \
+            "/" + "/".join(remove_path_attributes(self._register_path()))
         if chk_path in self._extmethods:
-          for method in [i for i in dir(self._extmethods[chk_path]) if not i.startswith("_")]:
+          for method in [i for i in dir(self._extmethods[chk_path]) if
+                                  not i.startswith("_")]:
             # Don't allow methods to be overwritten
             if hasattr(self, "_" + method):
               continue
@@ -902,7 +906,7 @@ def YANGDynClass(*args, **kwargs):
       if default:
         self._default = default
       if len(args):
-        if not self._default is False:
+        if self._default is not False:
           if not args[0] == self._default:
             self._set()
         else:
@@ -1099,7 +1103,6 @@ def ReferenceType(*args, **kwargs):
           self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
           self._ptr = True
-          #self._referenced_object = path_chk[0]
         elif self._require_instance:
           if not value:
             self._referenced_object = None

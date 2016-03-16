@@ -37,7 +37,7 @@ def main():
 
   this_dir = os.path.dirname(os.path.realpath(__file__))
 
-  cmd = "%s "% pythonpath
+  cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
@@ -56,19 +56,26 @@ def main():
   whole_obj = pbJ.load(os.path.join(this_dir, "json", "list.json"), bindings,
                 "json_deserialise", path_helper=y)
 
-  expected_whole_obj = {'load-list': {u'1': {'index': 1, 'value': u'one'}, u'3': {'index': 3, 'value': u'three'}, u'2': {'index': 2, 'value': u'two'}}}
-  assert expected_whole_obj == whole_obj.get(filter=True), "Whole object load did not return the correct list"
+  expected_whole_obj = {'load-list': {u'1': {'index': 1, 'value': u'one'},
+                          u'3': {'index': 3, 'value': u'three'},
+                              u'2': {'index': 2, 'value': u'two'}}}
+  assert expected_whole_obj == whole_obj.get(filter=True), \
+                      "Whole object load did not return the correct list"
   del whole_obj
 
   js = bindings.json_deserialise(path_helper=y)
   # Load into an existing class
-  pbS.pybindJSONDecoder.load_json(json.load(open(os.path.join(this_dir, "json", "list-items.json"), 'r')), None, None, obj=js)
-  expected_get = {'load-list': {u'5': {'index': 5, 'value': u'five'}, u'4': {'index': 4, 'value': u'four'}}}
-  assert expected_get == js.get(filter=True), "Existing object load did not return the correct list"
+  pbS.pybindJSONDecoder.load_json(json.load(
+            open(os.path.join(this_dir, "json", "list-items.json"), 'r')),
+              None, None, obj=js)
+  expected_get = {'load-list': {u'5': {'index': 5, 'value': u'five'},
+                    u'4': {'index': 4, 'value': u'four'}}}
+  assert expected_get == js.get(filter=True), \
+            "Existing object load did not return the correct list"
   del expected_get
 
-  all_items = pbJ.load(os.path.join(this_dir, "json", "alltypes.json"), bindings,
-                "json_deserialise", path_helper=y)
+  all_items = pbJ.load(os.path.join(this_dir, "json", "alltypes.json"),
+                bindings, "json_deserialise", path_helper=y)
   expected_get = {
       'c1': {
         'l1': {
@@ -103,18 +110,20 @@ def main():
         }
       }
     }
-  assert all_items.get(filter=True) == expected_get, "Load of object with all items not correct"
+  assert all_items.get(filter=True) == expected_get, \
+            "Load of object with all items not correct"
 
   del js
-  js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-order.json"), bindings,
-                "json_deserialise", path_helper=y)
-  assert js.ordered.keys() == ["two", "one"], "Did not correctly load a user ordered list"
+  js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-order.json"),
+                bindings, "json_deserialise", path_helper=y)
+  assert js.ordered.keys() == ["two", "one"], \
+            "Did not correctly load a user ordered list"
 
   del js
-  js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-no-order.json"), bindings,
-                "json_deserialise", path_helper=y)
-  assert js.ordered.keys() == ["one", "two"], "Did not correctly follow ordering in JSON file"
-
+  js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-no-order.json"),
+                bindings, "json_deserialise", path_helper=y)
+  assert js.ordered.keys() == ["one", "two"], \
+        "Did not correctly follow ordering in JSON file"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

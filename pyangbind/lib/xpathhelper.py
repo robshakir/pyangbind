@@ -91,8 +91,8 @@ class PybindXpathHelper(object):
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
-  _arg_re = re.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?=([ ]+)?" +
-                       "[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?" +
+  _arg_re = re.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?" +
+                       "=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?" +
                        "(?P<remainder>.*)")
   _relative_path_re = re.compile("^(\.|\.\.)")
 
@@ -200,7 +200,7 @@ class YANGPathHelper(PybindXpathHelper):
             attributes[c] = a
             tmp_arg = r
           else:
-            raise XPathError("invalid attribute string specified" + 
+            raise XPathError("invalid attribute string specified" +
                              "for %s" % tagname +
                              "(err part: %s (%s))" % (arg, tmp_arg))
     return (tagname, attributes)

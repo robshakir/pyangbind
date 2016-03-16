@@ -40,3 +40,6 @@
     WARNING).
   * Adds support for carrying the namespace and defined module in a class.
   * Adds a metadata element to carry JSON metadata that was received.
+
+16-03-2016 - 0.3.2
+  * Fixes an issue relating to to identity value inheritance.
