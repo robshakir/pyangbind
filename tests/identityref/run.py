@@ -77,6 +77,53 @@ def main():
       passed = False
     assert passed is True, "idr1 leaf was set to an invalid value (%s)" % k
 
+  for k in [("father", True), ("son", True), ("foo:father", True),
+              ("foo:son", True), ("elephant", False), ("hamster", False)]:
+    passed = True
+    try:
+      i.test_container.id2 = k[0]
+    except ValueError:
+      passed = False
+    assert passed is k[1], \
+        "id2 leaf was set incorrectly (%s: %s != %s)" % \
+            (k[0], k[1], passed)
+
+  for k in [("grandmother", True), ("mother", True), ("niece", False),
+              ("aunt", True), ("cousin", True), ("daughter", True),
+                ("son", False), ("father", False), ("grandfather", False)]:
+    passed = True
+    try:
+      i.test_container.id3 = k[0]
+    except ValueError:
+      passed = False
+
+    assert passed is k[1], \
+      "id3 leaf was set incorrectly (%s: %s != %s)" % \
+          (k[0], k[1], passed)
+
+  for k in [("daughter", True), ("cousin", False), ("aunt", False)]:
+    passed = True
+    try:
+      i.test_container.id4 = k[0]
+    except ValueError:
+      passed = False
+
+    assert passed is k[1], \
+      "id4 leaf was set incorrectly (%s: %s != %s)" % \
+        (k[0], k[1], passed)
+
+  for k in [("daughter", True), ("cousin", True), ("mother", True), ("aunt", True),
+              ("greatgrandmother", False)]:
+    passed = True
+    try:
+      i.test_container.id5 = k[0]
+    except ValueError:
+      passed = False
+
+    assert passed is k[1], \
+      "id5 leaf was set incorrectly (%s: %S != %s)" % \
+        (k[0], k[1], passed)
+
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

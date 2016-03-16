@@ -29,6 +29,38 @@ module identityref {
         description "option two on the base";
     }
 
+    identity grandfather;
+
+    identity father {
+        base grandfather;
+    }
+
+    identity son {
+        base father;
+    }
+
+    identity greatgrandmother;
+
+    identity grandmother {
+        base greatgrandmother;
+    }
+
+    identity mother {
+        base grandmother;
+    }
+
+    identity aunt {
+        base grandmother;
+    }
+
+    identity cousin {
+        base aunt;
+    }
+
+    identity daughter {
+        base mother;
+    }
+
 
     container test-container {
         leaf id1 {
@@ -40,6 +72,30 @@ module identityref {
         leaf idr1 {
             type identityref {
                 base defn:remote-base;
+            }
+        }
+
+        leaf id2 {
+            type identityref {
+                base grandfather;
+            }
+        }
+
+        leaf id3 {
+            type identityref {
+                base greatgrandmother;
+            }
+        }
+
+        leaf id4 {
+            type identityref {
+                base mother;
+            }
+        }
+
+        leaf id5 {
+            type identityref {
+                base grandmother;
             }
         }
     }

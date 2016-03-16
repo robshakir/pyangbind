@@ -116,9 +116,9 @@ class pybindJSONEncoder(json.JSONEncoder):
       if original_yang_type in ["identityref"]:
         if mode == "ietf":
           try:
-            emon = obj._enumeration_dict[obj]["module"]
+            emon = obj._enumeration_dict[obj]["@module"]
             if emon != obj._defining_module:
-               return "%s:%s" % (obj._enumeration_dict[obj]["module"], obj)
+               return "%s:%s" % (obj._enumeration_dict[obj]["@module"], obj)
           except KeyError:
             pass
 
@@ -418,8 +418,8 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
       yname = yang_name() if not yang_name is None else element_name
 
       if not element._namespace == parent_namespace:
-        # draft-ietf-yang-json is not 100% clear here, it seems to say that we
-        # use the defining module's name, when the namespace differs.
+        # if the namespace is different, then precede with the module
+        # name as per spec.
         yname = "%s:%s" % (element._defining_module, yname)
 
       generated_by = getattr(element, "_pybind_generated_by", None)

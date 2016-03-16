@@ -358,8 +358,14 @@ def build_pybind(ctx, modules, fd):
           get_children(ctx, fd, rpcs, module, module, register_paths=False,
                       path="/%s_rpc" % (safe_name(module.arg)))
 
-
 def build_identities(ctx, defnd):
+  def find_all_identity_values(item, definitions, values=list()):
+    new_values = [k for k in definitions[item] if not k in ["@module", "@namespace"] and not k in values]
+    for v in new_values:
+      values.extend([i for i in find_all_identity_values(v, definitions, values=values) if not i in values])
+    values.extend(new_values)
+    return values
+
   # Build dicionaries which determine how identities work. Essentially, an
   # identity is modelled such that it is a dictionary where the keys of that
   # dictionary are the valid values for an identityref.
@@ -386,6 +392,7 @@ def build_identities(ctx, defnd):
         base_id = unicode(base.arg)
         namespace = defnd[ident].i_module.search_one('namespace').arg
         module = defnd[ident].i_module.arg
+        defn_content = {'@namespace': namespace, '@module': module}
         # if it did, then we can now define the value - we want to
         # define it as both the resolved value (i.e., with the prefix)
         # and the unresolved value.
@@ -393,7 +400,7 @@ def build_identities(ctx, defnd):
           prefix, value = ident.split(":")
           prefix, value = unicode(prefix), unicode(value)
           if value not in identity_d[base_id]:
-            identity_d[base_id][value] = {'namespace': namespace, 'module': module}
+            identity_d[base_id][value] = defn_content
           if value not in identity_d:
             identity_d[value] = {}
           # check whether the base existed with the prefix that was
@@ -404,12 +411,12 @@ def build_identities(ctx, defnd):
             if resolved_base not in identity_d:
               reprocess = True
             else:
-              identity_d[resolved_base][ident] = {}
-              identity_d[resolved_base][value] = {'namespace': namespace, 'module': module}
+              identity_d[resolved_base][ident] = defn_content
+              identity_d[resolved_base][value] = defn_content
         if ident not in identity_d[base_id]:
-          identity_d[base_id][ident] = {}
+          identity_d[base_id][ident] = defn_content
         if ident not in identity_d:
-          identity_d[ident] = {}
+          identity_d[ident] = defn_content
       else:
         reprocess = True
 
@@ -434,6 +441,16 @@ def build_identities(ctx, defnd):
 
   if error_ids:
     raise TypeError("could not resolve identities %s" % error_ids)
+
+  # Loop through all identities and determine whether there are
+  # inheritance tasks to do
+  orig_identity_d = copy.deepcopy(identity_d)
+  for identity in orig_identity_d:
+    vals = find_all_identity_values(identity, orig_identity_d, values=[])
+    for value in vals:
+      if not value in orig_identity_d[identity]:
+        identity_d[identity][value] = {k: v for k,v in 
+            orig_identity_d[value].iteritems() if k in ["@module", "@namespace"]}
 
   # Add entries to the class_map such that this identity can be referenced by
   # elements that use this identity ref.
