@@ -45,8 +45,7 @@ class BgpNeighborHelper(object):
 
 A set of PyangBind classes (e.g., OpenConfig BGP) can be initialised with an `extmethods` dictionary that provides a mapping between an instance of the `BGPNeighborHelper` class and an XPATH expression. For example, between the `config/enabled` leaf of each BGP neighbor and this class:
 
-```
-
+```python
 bgp_helper =  BGPNeighborHelper()
 extmethods = {
       '/bgp/neighbors/neighbor/neighbor/config/enabled': bgp_helper
@@ -59,7 +58,7 @@ Each entry within the `/bgp/neighbors/neighbor` list would have methods named `s
 
 i.e., a hard reset or soft reset could be initiated by calling:
 
-```
+```python
 ocbgp.bgp.neighbors.neighbor["192.0.2.1"].config.enabled._hard_reset()
 ocbgp.bgp.neighbors.neighbor["192.0.2.1"].config.enabled._soft_reset()
 ```

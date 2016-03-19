@@ -24,7 +24,7 @@ Some YANG types, e.g., `leaf-list`, do not have a direct analogue in Python (a `
  -  `YANGBool` - a boolean type. This is generally required because `bool` is not extensible in Python.
  - `ReferenceType` - a type represeting a `leafref` which provides a lookup against the data tree for valid values, and allows pointer `leafref` items.
 
- ## YANG Data Types and Feature Support
+## YANG Data Types and Feature Support
 
 PyangBind does not currently try and be feature complete against the YANG language. Contributions to add new features are appreciated. The table below attempts to map the design choices that PyangBind makes, and provide pointers to tests which demonstrate how this functionality can be used:
 
