@@ -39,6 +39,18 @@ module ietf-json-serialise {
     }
   }
 
+  typedef nhopenum {
+    type enumeration {
+      enum DROP {}
+    }
+  }
+
+  typedef regexstring {
+    type string {
+      pattern "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+";
+    }
+  }
+
   container c1 {
     list l1 {
       key "k1";
@@ -164,6 +176,17 @@ module ietf-json-serialise {
           leaf two-leaf {
             type string;
           }
+        }
+      }
+      leaf-list ll {
+        type string;
+      }
+
+      leaf-list next-hop {
+        type union {
+          type regexstring;
+          type nhopenum;
+          type string;
         }
       }
     }

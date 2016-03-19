@@ -1043,8 +1043,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
       nfd.write("""
     except (TypeError, ValueError):
-      raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
-    self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
+       raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
+    self.__%s = t\n""" % (i["name"], i["origtype"], i["name"]))
       nfd.write("    if hasattr(self, '_set'):\n")
       nfd.write("      self._set()\n")
 

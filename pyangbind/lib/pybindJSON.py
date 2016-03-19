@@ -17,7 +17,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
+from .serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
+from .serialise import pybindIETFJSONEncoder
 import json
 import copy
 
@@ -52,7 +53,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
 
-def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False):
+def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="default"):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
@@ -65,7 +66,10 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False):
 
   if not isinstance(skip_subtrees, list):
     raise AttributeError('the subtrees to be skipped should be a list')
-  tree = obj.get(filter=filter)
+  if mode == 'ietf':
+    tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter)
+  else:
+    tree = obj.get(filter=filter)
   for p in skip_subtrees:
     pp = p.split("/")[1:]
     # Iterate through the skip path and the object's own path to determine
@@ -98,7 +102,13 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False):
         key_del.append(t)
     for k in key_del:
       del tree[k]
-  return json.dumps(tree, cls=pybindJSONEncoder, indent=indent)
+
+  if mode == "ietf":
+    cls = pybindIETFJSONEncoder
+  else:
+    cls = pybindJSONEncoder
+
+  return json.dumps(tree, cls=cls, indent=indent)
 
 
 def dump(obj, fn, indent=4, filter=True, skip_subtrees=[]):

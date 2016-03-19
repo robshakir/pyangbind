@@ -36,6 +36,18 @@ module json-serialise {
     }
   }
 
+  typedef nhopenum {
+    type enumeration {
+      enum DROP {}
+    }
+  }
+
+  typedef regexstring {
+    type string {
+      pattern "[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+";
+    }
+  }
+
   container c1 {
     list l1 {
       key "k1";
@@ -139,6 +151,18 @@ module json-serialise {
 
       leaf typedef-two {
         type definedtypeunion;
+      }
+
+      leaf-list ll {
+        type string;
+      }
+
+      leaf-list next-hop {
+        type union {
+          type regexstring;
+          type nhopenum;
+          type string;
+        }
       }
 
       choice test-choice {
