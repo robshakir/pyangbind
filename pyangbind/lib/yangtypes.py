@@ -831,7 +831,7 @@ def YANGDynClass(*args, **kwargs):
           break
         except:
           pass  # don't worry, move on, plenty more fish (types) in the sea...
-      if not type_test:
+      if not type_test and type(type_test).__name__ != 'RestrictedClass':
         # we're left alone at midnight -- no types fit the arguments
         raise TypeError("did not find a valid type using the argument as a" +
                             "hint")
