@@ -317,7 +317,7 @@ def RestrictedClassType(*args, **kwargs):
       if val is not False:
         for test in self._restriction_tests:
           passed = False
-          if test(val):
+          if test(val) is not False:
             passed = True
             break
         if not passed:
@@ -829,12 +829,12 @@ def YANGDynClass(*args, **kwargs):
         try:
           type_test = candidate_type(args[0])  # does the slipper fit?
           break
-        except:
+        except Exception as m:
           pass  # don't worry, move on, plenty more fish (types) in the sea...
-      if not type_test:
+      if type_test is False:
         # we're left alone at midnight -- no types fit the arguments
         raise TypeError("did not find a valid type using the argument as a" +
-                            "hint")
+                            " hint")
       # otherwise, hop, skip and jump with the last candidate
       base_type = candidate_type
 

@@ -135,6 +135,18 @@ def main():
     "union of unions that has a string type default not correctly " + \
       "identified (%s)" % type(u.container.u11._default)
 
+  for i in [('unlimited', True), (1, True), (0, True), ('fish', False),
+            (2**64, False)]:
+    passed = False
+    try:
+      u.container.u12 = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+      "Union specifying restricted class type was not set correctly " \
+        + "(%s -> %s != %s)" % (i[0], i[1], passed)
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
