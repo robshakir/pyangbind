@@ -742,12 +742,16 @@ def YANGListType(*args, **kwargs):
     def _item(self, *args, **kwargs):
       keystr = ""
       if " " in self._keyval:
-        for kn in self._keyval.split(" "):
-          try:
-            keystr += "%s " % kwargs[kn]
-          except KeyError:
-            raise KeyError("Must specify all keys to retrieve a list entry")
-        keystr = keystr[:-1]
+        keyparts = self._keyval.split(" ")
+      else:
+        keyparts = [self._keyval]
+      for kn in keyparts:
+        try:
+          keystr += "%s " % kwargs[kn]
+        except KeyError:
+          raise KeyError("Must specify all keys to retrieve a list entry")
+      keystr = keystr[:-1]
+
       return self._members[keystr]
 
     def get(self, filter=False):
