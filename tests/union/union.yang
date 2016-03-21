@@ -175,5 +175,17 @@ module union {
             type top-level-union;
             default "string";
         }
+
+        // issue reported in pull req #48
+        leaf u12 {
+            type union {
+                type enumeration {
+                    enum unlimited;
+                }
+                type int16 {
+                    range "0..max";
+                }
+            }
+        }
     }
 }
