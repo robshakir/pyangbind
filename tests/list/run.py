@@ -192,6 +192,81 @@ def main():
         "%s != 'value one'" % \
           test_instance.list_container.list_eight["value one value two"].val
 
+
+  test_instance.list_container.list_eight.add(val="one", additional="ten")
+  test_instance.list_container.list_eight.add(val="two", additional="twenty")
+
+  err = None
+  try:
+    test_instance.list_container.list_eight.delete(val="one", additional="ten")
+  except Exception as e:
+    err = e
+  assert err is None, "Could not remove entry from list with keyword arguments"
+
+  assert test_instance.list_container.list_eight.keys() == ['two twenty',
+      'value one value two'], "Entry remained in list after delete()"
+
+  err = False
+  try:
+    test_instance.list_container.list_eight.delete(val="two", additional="two")
+  except KeyError:
+    err = True
+  assert err is True, "list removal with kwarg succeeded on nonexistent entry"
+
+  leight = test_instance.list_container.list_eight._contained_class()
+  leight.val = "three"
+  leight.additional = "forty-two"
+  leight.numeric = -42
+  passed = True
+  try:
+    test_instance.list_container.list_eight.add(val=leight.val,
+          additional=leight.additional, _v=leight)
+  except Exception as e:
+    passed = False
+  assert passed is True, "list add with a specified value was not " + \
+    "successful, exception raised was: %s" % e
+
+  passed = True
+  try:
+    v = test_instance.list_container.list_eight["three forty-two"]
+  except Exception as e:
+    passed = False
+  assert passed is True, "list retrieve using getitem was not " + \
+    "succesful for an item that was set with _v"
+
+  assert \
+    test_instance.list_container.list_eight["three forty-two"].numeric \
+      == -42, "Value set with _v is not correct: %d != -42" % \
+        test_instance.list_container.list_eight["three forty-two"].numeric
+
+
+  leight_two = test_instance.list_container.list_eight._contained_class()
+  leight_two.val = "four"
+  leight_two.additional = "forty-four"
+  leight_two.numeric = 44
+  test_instance.list_container.list_eight["four forty-four"] = leight_two
+
+  passed = True
+  try:
+    v = test_instance.list_container.list_eight["four forty-four"]
+  except KeyError:
+    passed = False
+  assert passed is True, "Could not retrieve element with value set by " + \
+      "setitem"
+
+  assert test_instance.list_container.list_eight._item(val="four", \
+            additional="forty-four").numeric == 44, \
+              "Item value set by setitem using named getitem not valid"
+
+  passed = False
+  try:
+    test_instance.list_container.list_eight["four forty-four"].val = "ten"
+  except AttributeError:
+    passed = True
+
+  assert passed is True, "Set the key inside an instantiated list without " +\
+    "this being a load operation, error"
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

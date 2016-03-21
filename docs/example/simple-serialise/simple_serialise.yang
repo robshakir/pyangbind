@@ -1,0 +1,19 @@
+module simple_serialise {
+    yang-version "1";
+    namespace "http://rob.sh/yang/examples/ss";
+    prefix "ss";
+
+    container a-container {
+        leaf a-value {
+            type int8;
+        }
+    }
+
+    list a-list {
+        key "the-key";
+
+        leaf the-key {
+            type string;
+        }
+    }
+}

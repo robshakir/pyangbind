@@ -407,6 +407,9 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
 
       The implementation is based on draft-ietf-netmod-yang-json-07.
     """
+    generated_by = getattr(obj, "_pybind_generated_by", None)
+    if generated_by == "YANGListType":
+      return [pybindIETFJSONEncoder.generate_element(i) for i in obj.itervalues()]
     d = {}
     for element_name in obj._pyangbind_elements:
       element = getattr(obj, element_name, None)

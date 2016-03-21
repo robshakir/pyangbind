@@ -1,0 +1,32 @@
+module simple_rpc {
+    yang-version "1";
+    namespace "http://rob.sh/yang/examples/rpc";
+    prefix "srpc";
+
+    rpc test {
+        input {
+            container input-container {
+                leaf argument-one {
+                    type string;
+                }
+
+                leaf argument-two {
+                    type uint8;
+                }
+            }
+        }
+
+        output {
+            leaf response-id {
+                type uint32;
+            }
+
+            list elements {
+                leaf response-value {
+                    type string;
+                }
+            }
+
+        }
+    }
+}

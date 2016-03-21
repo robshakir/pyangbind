@@ -1,0 +1,9 @@
+{
+    "simple_serialise:a-container": {
+        "a-value": 8
+    },
+    "simple_serialise:a-list": [
+        {"the-key": "entry-one"},
+        {"the-key": "entry-two"}
+    ]
+}
