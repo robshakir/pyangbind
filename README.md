@@ -105,7 +105,7 @@ The `static` list is addressed exactly as per the path that it has within the YA
 The `add` method returns a reference to the newly created list object - such that we can use the `rt` object to change characteristics of the newly created list entry. For example, a tag can be set on the route:
 
 ```python
-t.config.set_tag = 42
+rt.config.set_tag = 42
 ```
 
 The tag value can then be accessed directly via the `rt` object, or via the original `oclr` object (which both refer to the same object in memory):
