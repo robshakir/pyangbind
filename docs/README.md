@@ -1,4 +1,4 @@
-![#PyangBind](http://rob.sh/img/pyblogo.png)
+![#PyangBind](http://rob.sh/img/pyblogo_gh.png)
 
 # PyangBind Documentation
 
