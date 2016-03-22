@@ -6,6 +6,8 @@ All RPC bindings have the property `register_paths` set to `False`. This results
 
 An class generated for an RPC has two member containers - `input` and `output` as per the specification provided in RFC6020. The corresponding data definitions are within these two elements (which act as per YANG containers).
 
+## Contents
+
 * [Example RPC](#examplerpc)  
 	* [Generating an RPC `input`](#exinput)
 	* [Parsing an RPC `output`](#exoutput)

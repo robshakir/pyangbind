@@ -1,5 +1,6 @@
 # Serialisation and Deserialisation of YANG-modelled Data
 
+
 PyangBind provides a set of helper classes which allow data to be loaded from, or serialised to a loaded data format. At the time of writing, the supported formats are:
 
  * IETF JSON - defined in `draft-ietf-netmod-yang-json-08`.
@@ -7,15 +8,29 @@ PyangBind provides a set of helper classes which allow data to be loaded from, o
 
 In the future, it is expected that an XML serialisation module may be required, given the current bias of devices towards this serialisation format.
 
-## Loading from JSON - Entire Module
+## Contents
+ * [Loading from JSON - Entire Module](#load-json-module)
+   - [Load Functions](#load-functions)
+     - [`loads` and `loads_ietf`](#json-loads)
+     - [`load` and `load_ietf`](#json-load)
+   - [Example Loading (Deserialisation)](#example-load)
+     - [Loading OpenConfig/PyangBind JSON-encoded Data](#example-load-oc)
+     - [Loading IETF-JSON encoded Data](#example-load-ietf)
+ * [Loading Data into an Existing Instance](#load-json-existing)
+   - [Example of Loading to Existing Instances](#load-json-existing-example)
+ * [Serialising Data into JSON](#serialising-json)
+   - [Example Serialisation](#example-serialisation)
+ * [Example Code](#example-code)
+
+## Loading from JSON - Entire Module <a name="load-json-module"></a>
 
 The module `pyangbind.lib.pyangbindJSON` provides a wrapper around the encoder and decoder classes that are defined in `pyangbind.lib.serialise`. These methods are heavily biased towards loading an entire module into a new instance of the data tree.
 
 The functions `loads`, `load`, `loads_ietf` and `load_ietf` are analagous to the Python `json` module's functions. The `loads.*` functions load from a string which is expected to be valid JSON, whereas the `load.*` functions load from a file name that is specified to the modules.
 
-### Load Functions
+### Load Functions <a name="load-json-module"></a>
 
-#### `loads(data, python_module, class_name)` and `loads_ietf(data, python_module, class_name)`
+#### `loads(data, python_module, class_name)` and `loads_ietf(data, python_module, class_name)` <a name="json-loads"></a>
 
 The arguments to the `loads` functions are expected to be:
  * `data` - a JSON-encoded string that can be loaded using Python's `json.load()` function.
@@ -24,13 +39,13 @@ The arguments to the `loads` functions are expected to be:
 
 These functions return a PyangBind class instance with the data from `data` loaded into it.
 
-#### `load(filename, python_module, class_name)` and `load_ietf(filename, python_module, class_name)`
+#### `load(filename, python_module, class_name)` and `load_ietf(filename, python_module, class_name)` <a name="json-load"></a>
 
 The arguments to the `load` and `load_ietf` functions are identitical to those of the `loads` functions, other than the `filename` argument is a path to a file that can be loaded using `open(filename, 'r')`.
 
 These functions return a PyangBind class instance with the data from `filename` loaded.
 
-### Example Loading (Deserialisation)
+### Example Loading (Deserialisation) <a name="example-load"></a>
 
 With a simple module - such as the following:
 
@@ -62,7 +77,7 @@ And bindings generated using:
 $ pyang --plugindir $PYBINDPLUGIN -f pybind -o sbindings.py simple_serialise.yang
 ```
 
-#### Loading OpenConfig/PyangBind JSON-encoded Data
+#### Loading OpenConfig/PyangBind JSON-encoded Data <a name="example-load-oc"></a>
 
 An example instance of data for the above module encoded as PyangBind JSON looks like the following:
 
@@ -111,7 +126,7 @@ Both loading methods will return the same output:
                   u'entry-two': {   'the-key': u'entry-two'}}}
 ```
 
-#### Loading IETF JSON-encoded Data
+#### Loading IETF JSON-encoded Data <a name="example-load-ietf"></a>
 
 Loading IETF encoded data is almost identical, other than using the `loads_ietf` and `load_ietf` functions in place of `loads` and `load` respectively.
 
@@ -147,11 +162,11 @@ pp.pprint(loaded_ietf_obj_two.get(filter=True))
 
 Again, the data loaded is idential to that shown above.
 
-## Loading Data into an Existing Instance
+## Loading Data into an Existing Instance <a name="load-json-existing"></a>
 
-In a number of cases, it is desirable to load data from a serialised JSON input into an existing set of PyangBind classes - such as when accepting input from an external API. Doing this requires direct access of the `pyangbind.lib.serialise` classes, rather than the `pyangbind.lib.pybindJSON` helper functions. The relevant functions are those within `pybindJSONDecoder` - particularly `load_ietf_json` and `load_json`. 
+In a number of cases, it is desirable to load data from a serialised JSON input into an existing set of PyangBind classes - such as when accepting input from an external API. Doing this requires direct access of the `pyangbind.lib.serialise` classes, rather than the `pyangbind.lib.pybindJSON` helper functions. The relevant functions are those within `pybindJSONDecoder` - particularly `load_ietf_json` and `load_json`.
 
-In order to use these functions (which are generally directly-called by the corresponding `pyangbind.lib.pybindJSON` functions - then there is a requirement to specify an already existing object, and skip the class instantiation stage of the loading functions. 
+In order to use these functions (which are generally directly-called by the corresponding `pyangbind.lib.pybindJSON` functions - then there is a requirement to specify an already existing object, and skip the class instantiation stage of the loading functions.
 
 When calling the load functions, the following format is expected to load into an existing object:
 
@@ -168,7 +183,7 @@ Where:
   * `path_helper`, `extmethods` - are the corresponding XPathHelper and extension methods that are to be used if required. In the case that these do not differ from the parent, they will be inherited.
   * `overwrite` determines whether the existing instance's data should be overwritten by the loaded data.
 
-#### Example of Loading Existing Data
+#### Example of Loading to Existing Instances <a name="load-json-existing-example"></a>
 
 Using the same module as above, with the loaded instance in question (defining `/a-list[the-key='entry-one']` and `/a-list[the-key='entry-two']` then data can be loaded using the following `load_json` call:
 
@@ -185,7 +200,7 @@ pp.pprint(existing_instance.a_list.keys())
 # [u'entry-two', u'entry-three', u'entry-one']
 ```
 
-## Serialising Data into JSON
+## Serialising Data into JSON <a name="serialising-json"></a>
 
 In order to serialise a PyangBind class instance into JSON, the `dump`, `dumps` functions defined in `pyangbind.lib.pybindJSON` are used. These functions take a `mode` keyword argument which determines whether they dump IETF-specified JSON or PyangBind JSON. 
 
@@ -206,7 +221,7 @@ In order to serialise a PyangBind class instance into JSON, the `dump`, `dumps` 
  * The `obj`, `indent`, `filter`, `skip_subtrees` and `mode` arguments of dumps are as per `dump`.
  * `select` - when provided is expected to be a dictionary of the form `{ "element_name": value }`. When this is specified only elements where `obj.element_name == value` are output. This is useful when using query parameters to select subsets of an object, or list.
 
-### Example Serialisation
+### Example Serialisation <a name="example-serialisation"></a>
 
 In order to serialise an instance of the `simple_serialise` module used above - the following call is used:
 
@@ -250,7 +265,7 @@ This outputs only the `entry-one` output of the list being shown:
 ]
 ```
 
-## Example Code
+## Example Code <a name="example-code"></a>
 
 The example used throughout this document is included under `docs/example/simple-serialise`.
 

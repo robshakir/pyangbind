@@ -108,6 +108,6 @@ When the `--use-extmethods` command-line option is specified, PyangBind will pro
 
 See the [Extension Methods](extmethods.md) documentation for detail of this functionality.
 
-## YANG Module Arguments
+## YANG Module Arguments <a name="yangmods"></a>
 
 As per Pyang - when using the PyangBind plugin, the YANG modules to be compiled are specified on the command line, along with `-p <path>` to specify where Pyang should look for other modules that are included. However, unlike Pyang, PyangBind needs to be able to resolve all base typedefs - in some cases this may involve specifying additional modules to be compiled if they included `identity` or `typedef` statements. In the case that a definition cannot be resolved, PyangBind will not generate bindings and will return a list of the known definitions at the time of the error. The current error language is not particularly user friendly - if PyangBind is unable to resolve a type definition or identity statement, please open a bug with the YANG modules being used such that this can be examined.

@@ -6,6 +6,8 @@ Some of these methods are generically useful when handling the classes, as well 
 
 In general, methods are defined as `_<methodname>` such that clashes with the elements within YANG containers can be avoided - although for historical reasons, in some cases the `_` is omitted.
 
+## Contents
+
  * [YANGDynClass Methods](#ydcmethods) - generic to all PyangBind wrapped objects other than those corresponding to YANG modules.
  * [YANG Container Methods](#containermethods) - methods defined for PyangBind objects corresponding to YANG `container` items.
  * [YANG List Methods](#listmethods) - methods defined for PyangBind objects corresponding to YANG `list` items.
@@ -107,7 +109,7 @@ This may be used as an alternative to serialising/deserialising instances especi
 
 PyangBind provides two special methods for YANG `list` objects:
 
-# `add(<keyspec>)`
+### `add(<keyspec>)`
 
 Adds a new entry to the list. In the case that the list is a keyed list - then the value returned is a reference to the newly created list entry. In the case that the list is not keyed, the value returned is the key value (a UUID) that has been defined internally by PyangBind.
 
@@ -116,7 +118,7 @@ The key specification can be of three forms:
   * A space-separated string representing multiple keys. In this case, the key ordering is as specified in the `key` leaf in the YANG module, and the string is split at each space. For example, a list two with a key specification of `key "srcip index"` supplies with `.add("192.0.2.1 1")` would set `srcip=192.0.2.1` and `index=1`. The key values will cast the split string into the relevant type for storage in the corresponding list entry.
   * A set of keyword arguments for each key. For example, if the same list as above were called with `.add(index=1, srcip="192.0.2.1")` then the keyword arguments for each key would be extracted. In this case, order does not matter.
 
-# `delete(keyspec)`
+### `delete(<keyspec>)`
 
 Removes the key value specified by `keyspec` from the list. The logic for the format of `keyspec` is the same as `add`.
 

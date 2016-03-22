@@ -5,6 +5,7 @@ PyangBind is designed both as a means to generate data instances for YANG module
 The extension methods (`extmethods`) functionality provides a means to tie arbitrary methods to a particular path in the tree.
 
 ## Contents
+
  * [Initialisation of classes with `extmethods`](#initialisation)
  * [Example calls with `extmethods`](#example-calls)
 
