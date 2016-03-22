@@ -1,4 +1,4 @@
-![#PyangBind](http://rob.sh/img/pyangbind.png)
+![#PyangBind](http://rob.sh/img/pyblogo.png)
 
 **PyangBind** is a plugin for [Pyang](https://github.com/mbj4668/pyang) that generates a Python class hierarchy from a YANG data model. The resulting classes can be directly interacted with in Python. Particularly, **PyangBind** will allow you to:
 

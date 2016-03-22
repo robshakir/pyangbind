@@ -1,3 +1,5 @@
+![#PyangBind](http://rob.sh/img/pyblogo.png)
+
 # PyangBind Documentation
 
 If you haven't already - it's best to start with the README.md file in the main repository. This provides a quick-start guide to PyangBind, including a walk-through of how to use PyangBind to manipulate an OpenConfig model. Reading this will give some context around where you might want to start reading in this documentation.
