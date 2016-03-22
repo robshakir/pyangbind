@@ -167,6 +167,7 @@ INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
 YANG_BUILTIN_TYPES = class_map.keys() + \
                       ["container", "list", "rpc", "leafref"]
 
+
 # Base machinery to support operation as a plugin to pyang.
 def pyang_plugin_init():
     plugin.register_plugin(PyangBindClass())
@@ -1055,9 +1056,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
           'defined-type': "%s",
           'generated-type': \"\"\"%s(%s)\"\"\",
         })\n\n""" % (i["name"], i["origtype"],
-                  "%s:%s" % (i["defining_module"], i["origtype"]) if not ":"
-                  in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
-                  else i["origtype"], c_str["type"], c_str["arg"]))
+                  "%s:%s" % (i["defining_module"], i["origtype"]) if ":"
+                  not in i["origtype"] and not i["origtype"] in
+                  YANG_BUILTIN_TYPES else i["origtype"], c_str["type"],
+                  c_str["arg"]))
       nfd.write("    self.__%s = t\n" % (i["name"]))
       nfd.write("    if hasattr(self, '_set'):\n")
       nfd.write("      self._set()\n")

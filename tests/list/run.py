@@ -192,7 +192,6 @@ def main():
         "%s != 'value one'" % \
           test_instance.list_container.list_eight["value one value two"].val
 
-
   test_instance.list_container.list_eight.add(val="one", additional="ten")
   test_instance.list_container.list_eight.add(val="two", additional="twenty")
 
@@ -239,7 +238,6 @@ def main():
       == -42, "Value set with _v is not correct: %d != -42" % \
         test_instance.list_container.list_eight["three forty-two"].numeric
 
-
   leight_two = test_instance.list_container.list_eight._contained_class()
   leight_two.val = "four"
   leight_two.additional = "forty-four"
@@ -254,7 +252,7 @@ def main():
   assert passed is True, "Could not retrieve element with value set by " + \
       "setitem"
 
-  assert test_instance.list_container.list_eight._item(val="four", \
+  assert test_instance.list_container.list_eight._item(val="four",
             additional="forty-four").numeric == 44, \
               "Item value set by setitem using named getitem not valid"
 

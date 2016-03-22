@@ -73,7 +73,7 @@ def main():
   js.c1.l1[1].typedef_one = "test"
   js.c1.l1[1].typedef_two = 8
   js.c1.l1[1].one_leaf = "hi"
-  for i in range(1,5):
+  for i in range(1, 5):
     js.c1.l1[1].ll.append(unicode(i))
   js.c1.l1[1].next_hop.append("DROP")
   js.c1.l1[1].next_hop.append("192.0.2.1")

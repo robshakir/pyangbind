@@ -45,23 +45,28 @@ print(pybindJSON.dumps(oclr))
 # Dump the static routes instance as JSON in IETF format
 print(pybindJSON.dumps(oclr.local_routes, mode="ietf"))
 
-# Load the "json/oc-lr.json" file into a new instance of "openconfig_local_routing"
-# We import the module here, such that a new instance of the class can be created
-# by the deserialisation code
+# Load the "json/oc-lr.json" file into a new instance of
+# "openconfig_local_routing". We import the module here, such that a new
+# instance of the class can be created by the deserialisation code
 import binding
-new_oclr = pybindJSON.load(os.path.join("json", "oc-lr.json"), binding, "openconfig_local_routing")
+new_oclr = pybindJSON.load(os.path.join("json", "oc-lr.json"), binding,
+                              "openconfig_local_routing")
 
 # Manipulate the data loaded
-print("Current tag: %d" % new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
-new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag += 1
-print("New tag: %d" % new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
+print("Current tag: %d" % 
+  new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
+new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag \
+                                                                          += 1
+print("New tag: %d" % 
+  new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
 
 # Load JSON into an existing class structure
 from pyangbind.lib.serialise import pybindJSONDecoder
 import json
 
 ietf_json = json.load(open(os.path.join("json", "oc-lr_ietf.json"), 'r'))
-pybindJSONDecoder.load_ietf_json(ietf_json, None, None, obj=new_oclr.local_routes)
+pybindJSONDecoder.load_ietf_json(ietf_json, None, None,
+                                        obj=new_oclr.local_routes)
 
 # Iterate through the classes - both the 192.0.2.1/32 prefix and 192.0.2.2/32
 # prefix are now in the objects

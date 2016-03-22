@@ -52,6 +52,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
   return pybindJSONDecoder.load_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
+
 def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
                 extmethods=None, overwrite=False):
   # Same as above, to allow for load_ietf to work the same way
@@ -59,6 +60,7 @@ def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
     d = json.loads(d)
   return pybindJSONDecoder.load_ietf_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
+
 
 def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
              overwrite=False):
@@ -69,6 +71,7 @@ def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
   return loads(f, parent_pymod, yang_module, path_helper=path_helper,
                 extmethods=extmethods, overwrite=overwrite)
 
+
 def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
               extmethods=None, overwrite=False):
   try:
@@ -78,13 +81,14 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
   return loads_ietf(f, parent_pymod, yang_module, path_helper,
             extmethods=extmethods, overwrite=overwrite)
 
+
 def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
             mode="default"):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
     unresolved_dict = {}
-    for k,v in dictionary.iteritems():
+    for k, v in dictionary.iteritems():
       if ":" in k:
         k = k.split(":")[1]
       unresolved_dict[k] = v
@@ -140,12 +144,11 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
         key_del.append(t)
     if mode == 'default' or isinstance(tree, dict):
       for k in key_del:
-        if mode =='default':
+        if mode == 'default':
           del tree[k]
     else:
       for i in key_del:
         tree.remove(i)
-
 
   if mode == "ietf":
     cls = pybindIETFJSONEncoder

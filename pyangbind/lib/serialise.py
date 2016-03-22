@@ -83,7 +83,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return [self.default(i, mode=mode) for i in obj]
     # Expand dictionaries
     elif isinstance(obj, dict):
-      return {k: self.default(v, mode=mode) for k,v in obj.iteritems()}
+      return {k: self.default(v, mode=mode) for k, v in obj.iteritems()}
 
     if pybc is not None:
       # Special cases where the wrapper has an underlying class
@@ -94,7 +94,8 @@ class pybindJSONEncoder(json.JSONEncoder):
 
     # Map based on YANG type
     if orig_yangt in ["leafref"]:
-      return self.default(obj._get()) if hasattr(obj, "_get") else unicode(obj)
+      return self.default(obj._get()) if hasattr(obj, "_get") \
+                                                  else unicode(obj)
     elif orig_yangt in ["int64", "uint64"]:
       return unicode(obj) if mode == "ietf" else int(obj)
     elif orig_yangt in ["identityref"]:
@@ -147,10 +148,12 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif type(obj) in [int]:
       return int(obj)
 
-    raise AttributeError("Unmapped type: %s, %s, %s, %s" % (elem_name, orig_yangt, pybc, pyc))
+    raise AttributeError("Unmapped type: %s, %s, %s, %s" %
+                                  (elem_name, orig_yangt, pybc, pyc))
 
   def map_pyangbind_type(self, map_val, original_yang_type, obj, mode):
-    if map_val in ["pyangbind.lib.yangtypes.RestrictedClass", "RestrictedClassType"]:
+    if map_val in ["pyangbind.lib.yangtypes.RestrictedClass",
+                                                "RestrictedClassType"]:
       map_val = getattr(obj, "_restricted_class_base")[0]
 
     if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
@@ -179,6 +182,7 @@ class pybindJSONEncoder(json.JSONEncoder):
           return False
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
+
 
 class pybindJSONDecoder(object):
   @staticmethod
@@ -409,7 +413,8 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
     """
     generated_by = getattr(obj, "_pybind_generated_by", None)
     if generated_by == "YANGListType":
-      return [pybindIETFJSONEncoder.generate_element(i) for i in obj.itervalues()]
+      return [pybindIETFJSONEncoder.generate_element(i) for i in
+                                                            obj.itervalues()]
     d = {}
     for element_name in obj._pyangbind_elements:
       element = getattr(obj, element_name, None)

@@ -43,7 +43,7 @@ existing_instance.a_list.add("entry-one")
 existing_instance.a_list.add("entry-two")
 
 fn = os.path.join("json", "simple-instance-additional.json")
-data_to_load = json.load(open(fn,'r'))
+data_to_load = json.load(open(fn, 'r'))
 pybindJSONDecoder.load_json(data_to_load, None, None, obj=existing_instance)
 
 pp.pprint(existing_instance.a_list.keys())
