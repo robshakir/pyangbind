@@ -73,126 +73,115 @@ class pybindJSONEncoder(json.JSONEncoder):
   def encode(self, obj):
     return json.JSONEncoder.encode(self, self._preprocess_element(obj))
 
-  def default(self, obj, mode="default"):
-
-    original_yang_type = getattr(obj, "_yang_type", None)
+  def default(self, obj, mode='default'):
+    pybc = getattr(obj, "_pybind_generated_by", None)
     elem_name = getattr(obj, "_yang_name", None)
+    orig_yangt = getattr(obj, "_yang_type", None)
 
-    if original_yang_type is None:
-      # check for specific elements such as dictionaries and lists
-      if isinstance(obj, list):
-        nlist = []
-        for elem in obj:
-          nlist.append(self.default(elem, mode=mode))
-        return nlist
+    # Expand lists
+    if isinstance(obj, list):
+      return [self.default(i, mode=mode) for i in obj]
+    # Expand dictionaries
+    elif isinstance(obj, dict):
+      return {k: self.default(v, mode=mode) for k, v in obj.iteritems()}
 
-      if isinstance(obj, dict):
-        ndict = {}
-        for k, v in obj.iteritems():
-          ndict[k] = self.default(v, mode=mode)
-        return ndict
+    if pybc is not None:
+      # Special cases where the wrapper has an underlying class
+      if pybc == "RestrictedClassType":
+        pybc = getattr(obj, "_restricted_class_base")[0]
+      elif pybc == "TypedListType":
+        return [self.default(i) for i in obj]
 
-      if type(obj) in NUMPY_INTEGER_TYPES:
-        if type(obj) in [np.uint64, np.int64] and mode == "ietf":
-          return unicode(obj)
-        else:
-          return int(obj)
-
-      if type(obj) in [str, unicode]:
+    # Map based on YANG type
+    if orig_yangt in ["leafref"]:
+      return self.default(obj._get()) if hasattr(obj, "_get") \
+                                                  else unicode(obj)
+    elif orig_yangt in ["int64", "uint64"]:
+      return unicode(obj) if mode == "ietf" else int(obj)
+    elif orig_yangt in ["identityref"]:
+      if mode == "ietf":
+        try:
+          emod = obj._enumeration_dict[obj]["@module"]
+          if emod != obj._defining_module:
+            return "%s:%s" % (obj._enumeration_dict[obj]["@module"], obj)
+        except KeyError:
+          pass
         return unicode(obj)
+    elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
+      return int(obj)
+    elif orig_yangt in ["string", "enumeration"]:
+      return unicode(obj)
+    elif orig_yangt in ["binary"]:
+      return obj.to01()
+    elif orig_yangt in ["decimal64"]:
+      return unicode(obj) if mode == "ietf" else float(obj)
+    elif orig_yangt in ["bool"]:
+      return True if obj else False
+    elif orig_yangt in ["empty"]:
+      if obj:
+        return [None] if mode == "ietf" else True
+      return False
 
-      if type(obj) in [int]:
-        return int(obj)
+    # The value class is actually a pyangbind class, so map it
+    pyc = getattr(obj, "_pybind_base_class", None) if pybc is None else pybc
+    if pyc is not None:
+      return self.map_pyangbind_type(pyc, orig_yangt, obj, mode)
 
-    else:
-      if original_yang_type == "leafref":
-        if hasattr(obj, "_get"):
-          return self.default(obj._get(), mode=mode)
+    # We are left with a native type
+    if isinstance(obj, list):
+      nlist = []
+      for elem in obj:
+        nlist.append(self.default(elem, mode=mode))
+      return nlist
+    elif isinstance(obj, dict):
+      ndict = {}
+      for k, v in obj.iteritems():
+        ndict[k] = self.default(v, mode=mode)
+      return ndict
+    elif type(obj) in NUMPY_INTEGER_TYPES:
+      if type(obj) in [np.uint64, np.int64] and mode == "ietf":
         return unicode(obj)
-
-      if original_yang_type in ["int64", "uint64"]:
-        if mode == "ietf":
-          return unicode(obj)
+      else:
         return int(obj)
+    elif type(obj) in [str, unicode]:
+      return unicode(obj)
+    elif type(obj) in [int]:
+      return int(obj)
 
-      if original_yang_type in ["identityref"]:
-        if mode == "ietf":
-          try:
-            emon = obj._enumeration_dict[obj]["@module"]
-            if emon != obj._defining_module:
-               return "%s:%s" % (obj._enumeration_dict[obj]["@module"], obj)
-          except KeyError:
-            pass
+    raise AttributeError("Unmapped type: %s, %s, %s, %s" %
+                                  (elem_name, orig_yangt, pybc, pyc))
 
-      if original_yang_type in ["int8", "int16", "int32", "uint8",
-                                "uint16", "uint32"]:
-        return int(obj)
+  def map_pyangbind_type(self, map_val, original_yang_type, obj, mode):
+    if map_val in ["pyangbind.lib.yangtypes.RestrictedClass",
+                                                "RestrictedClassType"]:
+      map_val = getattr(obj, "_restricted_class_base")[0]
 
-      if original_yang_type == "string":
-        return unicode(obj)
-
-      if original_yang_type == "binary":
-        return obj.to01()
-
-      if original_yang_type == "decimal64":
-        if mode == "ietf":
-          return unicode(obj)
-        return float(obj)
-
-      if original_yang_type == "bool":
+    if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
+            "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
+            "numpy.int64"]:
+      if mode == "ietf":
+        if map_val in ["numpy.int64", "numpy.uint64"]:
+          return str(obj)
+      return int(obj)
+    elif map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
+      return self.default(obj._get(), mode=mode)
+    elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
+      return float(obj)
+    elif map_val in ["bitarray.bitarray"]:
+      return obj.to01()
+    elif map_val in ["unicode"]:
+      return unicode(obj)
+    elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
+      if original_yang_type == "empty" and mode == "ietf":
         if obj:
-          return True
-        return False
-
-      if original_yang_type == "empty":
-        if obj and mode == "ietf":
           return [None]
-        elif obj:
-          return True
-        return False
-
-      if original_yang_type == "leaf-list":
-        return [self.default(i, mode=mode) for i in obj]
-
-      # Now we hit derived types, and need to use additional information
-      map_val = getattr(obj, "_pybind_base_class", None)
-
-      if map_val in ["pyangbind.lib.yangtypes.RestrictedClass"]:
-        map_val = getattr(obj, "_restricted_class_base")[0]
-
-      if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
-              "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
-              "numpy.int64"]:
-        if mode == "ietf":
-          if map_val in ["numpy.int64", "numpy.uint64"]:
-            return str(obj)
-        return int(obj)
-      elif map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
-        return self.default(obj._get(), mode=mode)
-      elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
-        return float(obj)
-      elif map_val in ["bitarray.bitarray"]:
-        return obj.to01()
-      elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
+      else:
         if obj:
           return True
         else:
           return False
-      elif map_val in ["unicode", unicode]:
-        return unicode(obj)
-      elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
-        keys = obj._list
-        for i in obj._list:
-          for t in obj._allowed_type:
-            try:
-              tmp = t(i)
-              break
-            except ValueError:
-              tmp = None
-
+    elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
-
-      raise AttributeError("Unmapped type: %s" % original_yang_type)
 
 
 class pybindJSONDecoder(object):
@@ -422,6 +411,10 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
 
       The implementation is based on draft-ietf-netmod-yang-json-07.
     """
+    generated_by = getattr(obj, "_pybind_generated_by", None)
+    if generated_by == "YANGListType":
+      return [pybindIETFJSONEncoder.generate_element(i) for i in
+                                                            obj.itervalues()]
     d = {}
     for element_name in obj._pyangbind_elements:
       element = getattr(obj, element_name, None)
@@ -437,10 +430,14 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
       if generated_by == "container":
         d[yname] = pybindIETFJSONEncoder.generate_element(element,
                       parent_namespace=element._namespace, flt=flt)
+        if not len(d[yname]):
+          del d[yname]
       elif generated_by == "YANGListType":
         d[yname] = [pybindIETFJSONEncoder.generate_element(i,
                       parent_namespace=element._namespace, flt=flt)
                         for i in element._members.itervalues()]
+        if not len(d[yname]):
+          del d[yname]
       else:
         if flt and element._changed():
           d[yname] = element

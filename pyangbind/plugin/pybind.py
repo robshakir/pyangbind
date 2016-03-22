@@ -163,6 +163,10 @@ class_map = {
 INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
 
+# The types that are built-in to YANG
+YANG_BUILTIN_TYPES = class_map.keys() + \
+                      ["container", "list", "rpc", "leafref"]
+
 
 # Base machinery to support operation as a plugin to pyang.
 def pyang_plugin_init():
@@ -980,6 +984,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
                                   classes[c]["type"], classes[c]["arg"]))
     # Don't accept arguments to a container/list/submodule class
     nfd.write("""
+    load = kwargs.pop("load", None)
     if args:
       if len(args) > 1:
         raise TypeError("cannot create a YANG container with >1 argument")
@@ -992,7 +997,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         raise ValueError("Supplied object did not have the correct attributes")
       for e in self._pyangbind_elements:
         setmethod = getattr(self, "_set_%s" % e)
-        setmethod(getattr(args[0], e))\n""")
+        if load is None:
+          setmethod(getattr(args[0], e))
+        else:
+          setmethod(getattr(args[0], e), load=load)\n""")
 
     # A generic method to provide a path() method on each container, that gives
     # a path in the form of a list that describes the nodes in the hierarchy.
@@ -1042,9 +1050,17 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))
       nfd.write("""
-    except (TypeError, ValueError):
-      raise ValueError(\"\"\"%s must be of a type compatible with %s\"\"\")
-    self.__%s = t\n""" % (i["name"], c_str["arg"], i["name"]))
+    except (TypeError, ValueError):\n""")
+      nfd.write("""      raise ValueError({
+          'error-string': \"\"\"%s must be of a type compatible with %s\"\"\",
+          'defined-type': "%s",
+          'generated-type': \"\"\"%s(%s)\"\"\",
+        })\n\n""" % (i["name"], i["origtype"],
+                  "%s:%s" % (i["defining_module"], i["origtype"]) if ":"
+                  not in i["origtype"] and not i["origtype"] in
+                  YANG_BUILTIN_TYPES else i["origtype"], c_str["type"],
+                  c_str["arg"]))
+      nfd.write("    self.__%s = t\n" % (i["name"]))
       nfd.write("    if hasattr(self, '_set'):\n")
       nfd.write("      self._set()\n")
 

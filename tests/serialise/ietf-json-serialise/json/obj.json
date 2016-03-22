@@ -67,7 +67,9 @@
                 "uint64": "1", 
                 "remote-identityref": "remote:stilton", 
                 "int64": "1", 
-                "restricted-string": "aardvark"
+                "restricted-string": "aardvark",
+                "ll": ["1", "2", "3", "4"],
+                "next-hop": ["DROP", "192.0.2.1", "TEST"]
             }
         ]
     },

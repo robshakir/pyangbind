@@ -1,0 +1,13 @@
+{
+    "a-container": {
+        "a-value": 8
+    },
+    "a-list": {
+        "entry-one": {
+            "the-key": "entry-one"
+        },
+        "entry-two": {
+            "the-key": "entry-two"
+        }
+    }
+}

@@ -133,6 +133,10 @@ module list {
             leaf additional {
                 type string;
             }
+
+            leaf numeric {
+                type int8;
+            }
         }
     }
 }

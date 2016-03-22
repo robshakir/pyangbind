@@ -517,14 +517,22 @@ def YANGListType(*args, **kwargs):
         tmp = YANGDynClass(base=self._contained_class, parent=parent,
                             yang_name=yang_name, is_container=is_container,
                             path_helper=False)
+        valid = False
         if not tmp.__slots__ == v.__slots__:
-          return False
+          valid = True
+        elif self._contained_class.__slots__ == v.__slots__:
+          valid = True
+        if valid is False:
+          return valid
       except:
         return False
       return True
 
     def iteritems(self):
       return self._members.iteritems()
+
+    def itervalues(self):
+      return self._members.itervalues()
 
     def _key_to_native_key_type(self, k):
       if self._keyval is False:
@@ -548,11 +556,11 @@ def YANGListType(*args, **kwargs):
       return self._members[k]
 
     def __setitem__(self, k, v):
-      self.__set(k=k, v=v)
+      self.__set(_k=k, _v=v)
 
     def __set(self, *args, **kwargs):
-      k = kwargs.pop("k", None)
-      v = kwargs.pop("v", None)
+      k = kwargs.pop("_k", None)
+      v = kwargs.pop("_v", None)
       named_set = kwargs.pop("_named_set", False)
 
       if k is None and self._keyval and not named_set:
@@ -564,9 +572,12 @@ def YANGListType(*args, **kwargs):
         k = str(uuid.uuid1())
 
       update = False
-      if v is not None and not self.__check__(v):
-        raise ValueError("value must be set to an instance of %s" %
-          (self._contained_class))
+      if v is not None:
+        if not self.__check__(v):
+          raise ValueError("value must be set to an instance of %s" %
+            (self._contained_class))
+        else:
+          update = True
 
       if k in self._members:
         update = True
@@ -626,7 +637,8 @@ def YANGListType(*args, **kwargs):
                                 path_helper=path_helper,
                                 register_path=(self._parent._path() +
                                 [self._yang_name + path_keystring]),
-                                extmethods=self._parent._extmethods)
+                                extmethods=self._parent._extmethods,
+                                load=True)
 
           if keydict is not None:
             for kn in keydict:
@@ -654,15 +666,11 @@ def YANGListType(*args, **kwargs):
     def keys(self):
       return self._members.keys()
 
-    def add(self, *args, **kwargs):
-      if len(args) and len(kwargs):
-        raise AttributeError("Cannot add an entry to a list based on both " +
-                " keywords and string args")
-
+    def _generate_key(self, *args, **kwargs):
       keyargs = None
       if len(args):
         k = args[0]
-      elif len(kwargs.keys()):
+      elif len(kwargs):
         keyargs = {}
         k = ""
         for kn in self._keyval.split(" "):
@@ -672,28 +680,41 @@ def YANGListType(*args, **kwargs):
             raise AttributeError("Keyword list add function must have all " +
                 "keys specified - cannot find %s" % m)
           k += "%s " % kwargs[kn]
-        # remove the last space from the keyname
         k = k[:-1]
       else:
         k = None
+      return (k, keyargs)
+
+    def add(self, *args, **kwargs):
+      if len(args) and len(kwargs):
+        raise AttributeError("Cannot add an entry to a list based on both " +
+                " keywords and string args")
+
+      value = kwargs.pop("_v", None)
+
+      (k, keyargs) = self._generate_key(*args, **kwargs)
 
       if k in self._members:
         raise KeyError("%s is already defined as a list entry" % k)
       if self._keyval and keyargs is None:
         if k is None:
           raise KeyError("a list with a key value must have a key specified")
-        self.__set(k=k)
+        self.__set(_k=k)
         return self._members[k]
       elif self._keyval and keyargs is not None:
         keyargs['_python_key'] = k
         keyargs['_named_set'] = True
+        if value is not None:
+          keyargs['_v'] = value
         self.__set(**keyargs)
         return self._members[k]
       else:
         k = self.__set()
         return k
 
-    def delete(self, k):
+    def delete(self, *args, **kwargs):
+      (k, discard) = self._generate_key(*args, **kwargs)
+
       if self._path_helper:
         current_item = self._members[k]
         if " " in self._keyval:
@@ -721,12 +742,16 @@ def YANGListType(*args, **kwargs):
     def _item(self, *args, **kwargs):
       keystr = ""
       if " " in self._keyval:
-        for kn in self._keyval.split(" "):
-          try:
-            keystr += "%s " % kwargs[kn]
-          except KeyError:
-            raise KeyError("Must specify all keys to retrieve a list entry")
-        keystr = keystr[:-1]
+        keyparts = self._keyval.split(" ")
+      else:
+        keyparts = [self._keyval]
+      for kn in keyparts:
+        try:
+          keystr += "%s " % kwargs[kn]
+        except KeyError:
+          raise KeyError("Must specify all keys to retrieve a list entry")
+      keystr = keystr[:-1]
+
       return self._members[keystr]
 
     def get(self, filter=False):
@@ -811,6 +836,7 @@ def YANGDynClass(*args, **kwargs):
   yang_type = kwargs.pop("yang_type", None)
   namespace = kwargs.pop("namespace", None)
   defining_module = kwargs.pop("defining_module", None)
+  load = kwargs.pop("load", None)
 
   if not base_type:
     raise TypeError("must have a base type")
@@ -925,6 +951,8 @@ def YANGDynClass(*args, **kwargs):
 
       if self._is_container == 'list' or self._is_container == 'container':
         kwargs['path_helper'] = self._path_helper
+        if load is not None:
+          kwargs['load'] = load
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
