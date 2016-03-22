@@ -1051,7 +1051,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       nfd.write("""
     except (TypeError, ValueError):\n""")
       nfd.write("""      raise ValueError({
-          'error_string': \"\"\"%s must be of a type compatible with %s\"\"\",
+          'error-string': \"\"\"%s must be of a type compatible with %s\"\"\",
           'defined-type': "%s",
           'generated-type': \"\"\"%s(%s)\"\"\",
         })\n\n""" % (i["name"], i["origtype"],
