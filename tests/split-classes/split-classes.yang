@@ -27,4 +27,30 @@ module split-classes {
             }
         }
     }
+
+    container choices {
+        choice choice-one {
+            case case-one {
+                container case-one-container {
+                    list user {
+                        key "username";
+                        leaf username {
+                            type string;
+                        }
+                    }
+                }
+            }
+
+            case case-two {
+                container case-two-container {
+                    list user {
+                        key "username";
+                        leaf username {
+                            type string;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

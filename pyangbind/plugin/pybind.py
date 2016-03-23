@@ -704,13 +704,19 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     import_req = []
 
   for ch in i_children:
+    children_tmp = getattr(ch, "i_children", None)
+    if children_tmp is not None:
+      children_tmp = [i.arg for i in children_tmp]
     if ch.keyword == "choice":
       for choice_ch in ch.i_children:
         # these are case statements
         for case_ch in choice_ch.i_children:
           elements += get_element(ctx, fd, case_ch, module, parent,
-            path + "/" + ch.arg, parent_cfg=parent_cfg,
+            path + "/" + case_ch.arg, parent_cfg=parent_cfg,
             choice=(ch.arg, choice_ch.arg), register_paths=register_paths)
+          if ctx.opts.split_class_dir:
+            if hasattr(case_ch, "i_children") and len(case_ch.i_children):
+              import_req.append(case_ch.arg)
     else:
       elements += get_element(ctx, fd, ch, module, parent, path + "/" + ch.arg,
         parent_cfg=parent_cfg, choice=choice, register_paths=register_paths)

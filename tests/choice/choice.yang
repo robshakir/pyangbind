@@ -22,6 +22,15 @@ module choice {
                     leaf case-one-leaf {
                         type int8;
                     }
+
+                    list user {
+                        key "username";
+
+                        leaf username {
+                            type string;
+                        }
+                    }
+
                 }
             }
 
@@ -29,6 +38,14 @@ module choice {
                 container case-two-container {
                     leaf case-two-leaf {
                         type int8;
+                    }
+
+                    list user {
+                        key "username";
+
+                        leaf username {
+                            type string;
+                        }
                     }
                 }
             }

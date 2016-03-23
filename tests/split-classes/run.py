@@ -64,6 +64,19 @@ def main():
   assert passed is True, "Hiearchy of same named containers " + \
       "resulted in an invalid file"
 
+  s.choices.case_one_container.user.add('first')
+  assert s.choices.case_one_container.user.keys() == ['first'], \
+    "Could not add an entry to the case one container correctly " + \
+      "%s != ['first']" % s.choices.case_one_container.user.keys()
+
+  s.choices.case_two_container.user.add('second')
+  assert s.choices.case_one_container.user.keys() == [], \
+    "Setting case two leaf did not clear case-one branch " + \
+      "%s != ['']" % s.choices.case_one_container.user.keys()
+  assert s.choices.case_two_container.user.keys() == ['second'], \
+    "Did not correctly add to the case two container " + \
+      "%s != ['second']" % s.choices.case_two_container.user.keys()
+
   if not keepfiles:
     os.system("/bin/rm -rf %s/bindings" % this_dir)
 
