@@ -4,6 +4,8 @@ from os import path
 
 thisdir = path.abspath(path.dirname(__file__))
 
+import pyangbind
+
 with open(path.join(thisdir, "README.rst"), encoding='utf-8') as readme:
   long_description = readme.read()
 
@@ -12,7 +14,7 @@ setup(
 
     # PyangBind uses the same versioning approach as OpenConfig - see
     # http://www.openconfig.net/file-cabinet/Semantic_Versioning_for_OpenConfig.pdf?attredirects=0&d=1
-    version='0.3.2',
+    version=pyangbind.__version__,
 
     description="PyangBind is a plugin for pyang which converts YANG data" + \
                 "models into a Python class hierarchy, such that Python " +  \

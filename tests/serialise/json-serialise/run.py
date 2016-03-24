@@ -6,6 +6,7 @@ import getopt
 import json
 from pyangbind.lib.serialise import pybindJSONEncoder
 from pyangbind.lib.pybindJSON import dumps
+from pyangbind.lib.xpathhelper import YANGPathHelper
 
 TESTNAME = "json-serialise"
 
@@ -39,6 +40,7 @@ def main():
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
+  cmd += " --use-xpathhelper"
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
@@ -87,6 +89,13 @@ def main():
                           "expected-output.json"), 'r'))
 
   assert pybind_json == external_json, "JSON did not match the expected output"
+
+  yph = YANGPathHelper()
+  new_obj = json_serialise(path_helper=yph)
+  new_obj.two.string_test = "twenty-two"
+  assert json.loads(dumps(yph.get("/two")[0])) == \
+    json.load(open(os.path.join(this_dir, "json", "container.json"), 'r')), \
+      "Invalid output returned when serialising a container"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

@@ -121,6 +121,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       if obj:
         return [None] if mode == "ietf" else True
       return False
+    elif orig_yangt in ["container"]:
+      return self._preprocess_element(obj.get(), mode=mode)
 
     # The value class is actually a pyangbind class, so map it
     pyc = getattr(obj, "_pybind_base_class", None) if pybc is None else pybc

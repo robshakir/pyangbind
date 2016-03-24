@@ -195,4 +195,10 @@ module json-serialise {
       }
     }
   }
+
+  container two {
+    leaf string-test {
+      type string;
+    }
+  }
 }
