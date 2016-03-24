@@ -122,4 +122,11 @@ The key specification can be of three forms:
 
 Removes the key value specified by `keyspec` from the list. The logic for the format of `keyspec` is the same as `add`.
 
+### `_new_item()`
+
+In some cases it is preferable to create a valid object outside of the context of it being added to the list (for example, in cases where there is some action performed around the `add()` call by the program consuming PyangBind's classes). To this end, the `_new_item()` method (called as `yang_list._new_item())` returns an empty instance of a member of the list, which can be populated.
+
+### `append(object)`
+
+Where an item has been created without being added to the list, it can be added using the `append()` function. The object supplied as the `obj` argument is used to extract the list key which is to be used for the item. As per a standard Python `list` item's `append()` method, there is no return from this function.
 
