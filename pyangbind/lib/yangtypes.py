@@ -685,6 +685,29 @@ def YANGListType(*args, **kwargs):
         k = None
       return (k, keyargs)
 
+    def _extract_key(self, obj):
+      kp = self._keyval.split(" ")
+      if len(kp) > 1:
+        ks = unicode()
+        for k in kp:
+          kv = getattr(obj, "_get_%s" % safe_name(k), None)
+          if kv is None:
+            raise KeyError("Invalid key attribute specified for object")
+          ks += "%s " % unicode(kv())
+        return ks.rstrip(" ")
+      else:
+        kv = getattr(obj, "_get_%s" % safe_name(self._keyval), None)
+        if kv is None:
+          raise KeyError("Invalid key attribute specified for object: %s"
+                              % self._keyval)
+        return kv()
+
+    def append(self, obj):
+      self.__set(_k=self._extract_key(obj), _v=obj)
+
+    def _new_item(self):
+      return self._contained_class()
+
     def add(self, *args, **kwargs):
       if len(args) and len(kwargs):
         raise AttributeError("Cannot add an entry to a list based on both " +

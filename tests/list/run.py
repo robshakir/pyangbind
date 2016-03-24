@@ -15,10 +15,10 @@ def main():
     print str(e)
     sys.exit(127)
 
-  k = False
+  keepfiles = False
   for o, a in opts:
     if o in ["-k", "--keepfiles"]:
-      k = True
+      keepfiles = True
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
                 os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
@@ -93,7 +93,8 @@ def main():
         'list-six': {}, 'list-five': {},
         'list-two': {}, 'list-three': {}, 'list-four': {},
         'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
-    2: {'keyval': 2, 'another-value': 'defaultValue'}}}}, \
+        2: {'keyval': 2, 'another-value': 'defaultValue'}}},
+        'list-nine': {}, 'list-ten': {}}, \
     "incorrect get() output returned: %s" % test_instance.get()
   del test_instance.list_container.list_element[2]
 
@@ -265,7 +266,51 @@ def main():
   assert passed is True, "Set the key inside an instantiated list without " +\
     "this being a load operation, error"
 
-  if not k:
+
+  keys = []
+  for v in [(13, "thirteen"), (u"fourteen", "14")]:
+    item = test_instance.list_nine._new_item()
+    item.kv = v[0]
+    item.lv = v[1]
+    test_instance.list_nine.append(item)
+    keys.append(v[0])
+    assert test_instance.list_nine[v[0]].lv == v[1], "When appending to " + \
+      "list, value was not set correctly: %s != %s" % \
+        (test_instance.list_nine[v[0]].lv, v[1])
+
+  passed = True
+  for k in keys:
+    if not k in test_instance.list_nine.keys():
+      passed = False
+
+  assert passed is True, "List keys using " + \
+    "_new_item() and append() were not correct: %s != [13, 'fourteen']" % \
+      (test_instance.list_nine.keys())
+
+  keys = []
+  for v in [(12, 13, "THIRTEEN"), (13, 14, "FOURTEEN")]:
+    item = test_instance.list_ten._new_item()
+    item.kv = v[0]
+    item.kvtwo = v[1]
+    item.lv = v[2]
+    key = "%s %s" % (v[0], v[1])
+    keys.append(key)
+    test_instance.list_ten.append(item)
+
+    assert test_instance.list_ten[key].lv == v[2], "When appending to " + \
+      "list, value was not set correctly: %s != %s" % \
+        (test_instance.list_ten[key].lv, v[2])
+
+  passed = True
+  for k in keys:
+    if not k in test_instance.list_ten.keys():
+      passed = False
+
+  assert passed is True, "List keys using new item, append and a compound" + \
+    " key was not valid: %s != ['13 thirteen', '14 fourteen']" % \
+      test_instance.list_ten.keys()
+
+  if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
 

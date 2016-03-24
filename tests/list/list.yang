@@ -139,4 +139,37 @@ module list {
             }
         }
     }
+
+    list list-nine {
+        key kv;
+
+        leaf kv {
+            type union {
+                type int8;
+                type string;
+            }
+        }
+
+        leaf lv {
+            type string;
+        }
+    }
+
+    list list-ten {
+        key "kv kvtwo";
+
+        leaf kv {
+            type int8;
+        }
+
+        leaf kvtwo {
+            type int16;
+        }
+
+        leaf lv {
+            type string;
+        }
+    }
+
+
 }
