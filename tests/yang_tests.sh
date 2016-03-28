@@ -19,7 +19,7 @@ echo "RUNNING BASE"
 $PYPATH $PYANGPATH --plugindir $PYANGBINDPATH/pyangbind/plugin -f pybind $TESTDIR/base-test.yang -o /tmp/chkplugin.pyang >/dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
-    exit
+    exit 127
 fi
 rm /tmp/chkplugin.pyang
 
@@ -43,6 +43,7 @@ if [ $# -eq 0 ]; then
         echo "RESULT: all tests passed"
     else
         echo "RESULT: $FAIL tests failed"
+        exit 127
     fi
 else
     for i in "$@"; do
@@ -55,6 +56,7 @@ else
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";
+                exit 127
             fi
         fi
     done

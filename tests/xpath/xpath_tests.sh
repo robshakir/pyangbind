@@ -16,7 +16,7 @@ echo "RUNNING BASE"
 $PYPATH $TESTDIR/00_pathhelper_base.py >/dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN PLUGIN"
-    exit
+    exit 127
 fi
 
 if [ $# -eq 0 ]; then
@@ -37,6 +37,7 @@ if [ $# -eq 0 ]; then
         echo "RESULT: all tests passed"
     else
         echo "RESULT: $FAIL tests failed"
+        exit 127
     fi
 else
     for i in "$@"; do
@@ -48,6 +49,7 @@ else
         fi
         if [ $? -ne 0 ]; then
             echo "TEST FAILED $i";
+            echo 127
         fi
     done
 fi

@@ -31,15 +31,23 @@ $TESTDIR/pyvirtualenv/bin/pip install -r $TESTDIR/../requirements.DEVELOPER.txt
 $TESTDIR/pyvirtualenv/bin/pip install $TESTDIR/../dist/*.whl > /dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN INSTALL"
-    exit
+    exit 127
 fi
 
 export PATH_TO_PYBIND_TEST_PYTHON="$TESTDIR/pyvirtualenv/bin/python"
+FAIL=0
 
-$TESTDIR/yang_tests.sh
-$TESTDIR/xpath/xpath_tests.sh
-$TESTDIR/serialise/serialise_tests.sh
+for TEST in $TESTDIR/yang_tests.sh $TESTDIR/xpath/xpath_tests.sh $TESTDIR/serialise/serialise_tests.sh; do
+  $TEST
+  if [ $? -ne 0 ]; then
+    FAIL=1
+  fi
+done
 
 if [ "$DELENV" == "true" ]; then
     rm -rf $TESTDIR/pyvirtualenv $TESTDIR/../dist $TESTDIR/../build $TESTDIR/../pyangbind.egg-info
+fi
+
+if [ $FAIL -ne 0 ]; then
+  exit 127
 fi

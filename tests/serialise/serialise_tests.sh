@@ -35,6 +35,7 @@ if [ $# -eq 0 ]; then
         echo "RESULT: all tests passed"
     else
         echo "RESULT: $FAIL tests failed"
+        exit 127
     fi
 else
     for i in "$@"; do
@@ -49,6 +50,7 @@ else
             fi
             if [ $? -ne 0 ]; then
                 echo "TEST FAILED $i";
+                exit 127
             fi
         fi
     done
