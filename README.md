@@ -8,9 +8,6 @@
 
 Development of **PyangBind** has been motivated by consuming the  [OpenConfig](http://www.openconfig.net/) data models; and is intended to be well-tested against these models. The Python classes generated, and serialisation methods are intended to provide network operators with a starting point for loading data instances from network elements, manipulating them, and sending them to a network device. **PyangBind** classes also have functionality which allows additional methods to be associated with the classes, such that it can be used for the foundation of a NMS.
 
-**Current `master` status**
-[![Build Status](https://travis-ci.org/robshakir/pyangbind.svg?branch=master)](https://travis-ci.org/robshakir/pyangbind)
-
 ## Contents
 
 * [Getting Started](#getting-started)
@@ -23,6 +20,7 @@ Development of **PyangBind** has been motivated by consuming the  [OpenConfig](h
 * [Further Documentation](#documentation)
 * [Licensing](#licensing)
 * [Acknowledgements](#acks)
+* [Test Status](#tests)
 
 
 ## Getting Started <a name="getting-started"></a>
@@ -308,3 +306,7 @@ limitations under the License.
 * Ongoing development and support for this project is supported by [Jive Communications, Inc](www.jive.com).
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
 * Thanks to folks from Juniper Networks for their views on Python mapping, and examples that are included as part of the PyangBind unit tests.
+
+## Test Status
+
+[![Build Status](https://travis-ci.org/robshakir/pyangbind.svg?branch=master)](https://travis-ci.org/robshakir/pyangbind)
