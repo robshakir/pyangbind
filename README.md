@@ -307,6 +307,6 @@ limitations under the License.
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
 * Thanks to folks from Juniper Networks for their views on Python mapping, and examples that are included as part of the PyangBind unit tests.
 
-## Test Status
+## Test Status <a name="tests"></a>
 
 [![Build Status](https://travis-ci.org/robshakir/pyangbind.svg?branch=master)](https://travis-ci.org/robshakir/pyangbind)
