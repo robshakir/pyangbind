@@ -2,7 +2,7 @@ language:   python
 python:     
             - "2.7"
 install:    
-            - "./travis/install.sh"
+            - "./.travis/install.sh"
             - "./tests/run.sh"
 branches:
         only:
