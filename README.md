@@ -8,6 +8,9 @@
 
 Development of **PyangBind** has been motivated by consuming the  [OpenConfig](http://www.openconfig.net/) data models; and is intended to be well-tested against these models. The Python classes generated, and serialisation methods are intended to provide network operators with a starting point for loading data instances from network elements, manipulating them, and sending them to a network device. **PyangBind** classes also have functionality which allows additional methods to be associated with the classes, such that it can be used for the foundation of a NMS.
 
+**Current `master` status**
+[![Build Status](https://travis-ci.org/robshakir/pyangbind.svg?branch=master)](https://travis-ci.org/robshakir/pyangbind)
+
 ## Contents
 
 * [Getting Started](#getting-started)
