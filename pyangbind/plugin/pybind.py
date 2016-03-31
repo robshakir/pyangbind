@@ -939,6 +939,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         class_str["arg"] += ", namespace='%s'" % i["namespace"]
         class_str["arg"] += ", defining_module='%s'" % i["defining_module"]
         class_str["arg"] += ", yang_type='%s'" % i["origtype"]
+        class_str["arg"] += ", is_config=%s" % (i["config"] and parent_cfg)
         classes[i["name"]] = class_str
 
     # TODO: get and set methods currently have errors that are reported that
@@ -1098,7 +1099,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   nfd.write("\n")
 
   # Store a list of the choices that are included within this module such that
-  # we can enforce each brnahc.
+  # we can enforce each branch.
   if choices:
     nfd.write("  __choices__ = %s" % repr(choices))
   nfd.write("""\n  %s\n""" % elements_str)
