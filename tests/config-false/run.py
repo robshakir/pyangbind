@@ -125,6 +125,12 @@ def main():
         % (structure_dict["container"]["subtwo"]["subsubtwo"]["c_leaf"],
               passed)
 
+  assert not test_instance.container.subtwo.b_leaf._is_config, \
+      "b_leaf reports it is config erroneously"
+
+  assert not test_instance.container.subtwo.subsubtwo.c_leaf._is_config, \
+      "c_leaf reports it is configurable erroneously"
+
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

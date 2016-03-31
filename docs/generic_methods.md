@@ -78,7 +78,11 @@ This is generally useful in the cases where one has a `leafref` value that refer
 
 ### `_is_keyval`
 
-Returns `True` if this value is the key of a list.
+Set to `True` if this value is the key of a list.
+
+### `_is_config`
+
+Set to True if the node is configurable within the YANG schema - reflecting the YANG `config` statement.
 
 ## YANG Container (`PybindBase`) defined Methods <a name="containermethods"></a>
 

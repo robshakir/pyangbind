@@ -26,8 +26,8 @@ fi
 source $TESTDIR/pyvirtualenv/bin/activate
 
 echo "INSTALLING MODULE..."
-$TESTDIR/pyvirtualenv/bin/pip install -r $TESTDIR/../requirements.txt
-$TESTDIR/pyvirtualenv/bin/pip install -r $TESTDIR/../requirements.DEVELOPER.txt
+$TESTDIR/pyvirtualenv/bin/pip install -r $TESTDIR/../requirements.txt > /dev/null
+$TESTDIR/pyvirtualenv/bin/pip install -r $TESTDIR/../requirements.DEVELOPER.txt > /dev/null
 $TESTDIR/pyvirtualenv/bin/pip install $TESTDIR/../dist/*.whl > /dev/null
 if [ $? -ne 0 ]; then
     echo "RESULT: CANNOT RUN TESTS, BROKEN INSTALL"
