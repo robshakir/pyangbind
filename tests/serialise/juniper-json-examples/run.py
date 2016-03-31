@@ -49,6 +49,7 @@ def main():
                   (OC + "policy/openconfig-policy-types.yang", "openconfig"),
                   (OC + "openconfig-extensions.yang", "include"),
                   (OC + "openconfig-types.yang", "include"),
+                  (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
                   (RFC + "ietf-inet-types.yang", "include"),
                   (RFC + "ietf-yang-types.yang", "include"),
                 ]
