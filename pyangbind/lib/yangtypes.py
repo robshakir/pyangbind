@@ -842,6 +842,8 @@ def YANGDynClass(*args, **kwargs):
                                 the path.
       - extensions:  The list of extensions that should be stored
                      with the type.
+      - is_config:   Whether this is a configuration (editable)
+                     node.
   """
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
@@ -860,6 +862,7 @@ def YANGDynClass(*args, **kwargs):
   namespace = kwargs.pop("namespace", None)
   defining_module = kwargs.pop("defining_module", None)
   load = kwargs.pop("load", None)
+  is_config = kwargs.pop("is_config", True)
 
   if not base_type:
     raise TypeError("must have a base type")
@@ -892,7 +895,7 @@ def YANGDynClass(*args, **kwargs):
                  '_is_leaf', '_is_container', '_extensionsd',
                  '_pybind_base_class', '_extmethods', '_is_keyval',
                  '_register_paths', '_namespace', '_yang_type',
-                 '_defining_module', '_metadata']
+                 '_defining_module', '_metadata', '_is_config']
 
   if extmethods:
     rpath = None
@@ -929,6 +932,7 @@ def YANGDynClass(*args, **kwargs):
       self._base_type = base_type
       self._is_leaf = is_leaf
       self._is_container = is_container
+      self._is_config = is_config
       self._extensionsd = extensions
       self._extmethods = extmethods
       self._is_keyval = is_keyval

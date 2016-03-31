@@ -74,6 +74,9 @@ def main():
                   assert hasattr(e, l), "fourth level %s does not exist" % l
 
   # tests
+  assert test_instance.container._is_config, \
+      "container reports that it is configurable"
+
   passed = True
   try:
     test_instance.container.subone.a_leaf = 1
@@ -84,6 +87,9 @@ def main():
       "setting a_leaf did not result in expected outcome (%s != %s)" \
         % (structure_dict["container"]["subone"]["a_leaf"], passed)
 
+  assert test_instance.container.subone.a_leaf._is_config, \
+      "a_leaf does not report that it is configurable"
+
   passed = True
   try:
     test_instance.container.subone.d_leaf = 1
@@ -93,6 +99,9 @@ def main():
   assert passed == structure_dict["container"]["subone"]["d_leaf"], \
       "setting d_leaf did not result in expected outcome (%s != %s)" \
         % (structure_dict["container"]["subone"]["d_leaf"], passed)
+
+  assert not test_instance.container.subone.d_leaf._is_config, \
+      "d_leaf reports that it is configurable"
 
   passed = True
   try:
