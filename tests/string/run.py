@@ -61,6 +61,11 @@ def main():
         "string_leaf erroneously set to changed (value: %s)" % \
           test_instance.string_container.string_leaf._changed()
 
+  test_instance.string_container.string_leaf = 1
+  assert test_instance.string_container.string_leaf == "1", \
+        "string_leaf not set correctly (value: %s) with cast" % \
+          test_instance.string_container.string_leaf
+
   test_instance.string_container.string_leaf = "TestValue"
   assert test_instance.string_container.string_leaf == "TestValue", \
         "string_leaf not set correctly (value: %s)" % \

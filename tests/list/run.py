@@ -41,8 +41,6 @@ def main():
 
   from bindings import list_ as l
 
-  import numpy
-
   test_instance = l()
 
   assert hasattr(test_instance, "list_container"), \

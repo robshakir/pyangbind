@@ -23,10 +23,9 @@ serialise:
 """
 
 import json
-import numpy as np
 from collections import OrderedDict
 from decimal import Decimal
-from pyangbind.lib.yangtypes import safe_name, NUMPY_INTEGER_TYPES
+from pyangbind.lib.yangtypes import safe_name
 from types import ModuleType
 import copy
 
@@ -109,6 +108,11 @@ class pybindJSONEncoder(json.JSONEncoder):
         return unicode(obj)
     elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
       return int(obj)
+    elif orig_yangt in ["int64" "uint64"]:
+      if mode == "ietf":
+        return unicode(obj)
+      else:
+        return int(obj)
     elif orig_yangt in ["string", "enumeration"]:
       return unicode(obj)
     elif orig_yangt in ["binary"]:
@@ -127,7 +131,9 @@ class pybindJSONEncoder(json.JSONEncoder):
     # The value class is actually a pyangbind class, so map it
     pyc = getattr(obj, "_pybind_base_class", None) if pybc is None else pybc
     if pyc is not None:
-      return self.map_pyangbind_type(pyc, orig_yangt, obj, mode)
+      val = self.map_pyangbind_type(pyc, orig_yangt, obj, mode)
+      if val is not None:
+        return val
 
     # We are left with a native type
     if isinstance(obj, list):
@@ -140,14 +146,9 @@ class pybindJSONEncoder(json.JSONEncoder):
       for k, v in obj.iteritems():
         ndict[k] = self.default(v, mode=mode)
       return ndict
-    elif type(obj) in NUMPY_INTEGER_TYPES:
-      if type(obj) in [np.uint64, np.int64] and mode == "ietf":
-        return unicode(obj)
-      else:
-        return int(obj)
     elif type(obj) in [str, unicode]:
       return unicode(obj)
-    elif type(obj) in [int]:
+    elif type(obj) in [int, long]:
       return int(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s" %
@@ -158,14 +159,9 @@ class pybindJSONEncoder(json.JSONEncoder):
                                                 "RestrictedClassType"]:
       map_val = getattr(obj, "_restricted_class_base")[0]
 
-    if map_val in ["numpy.uint8", "numpy.uint16", "numpy.uint32",
-            "numpy.uint64", "numpy.int8", "numpy.int16", "numpy.int32",
-            "numpy.int64"]:
-      if mode == "ietf":
-        if map_val in ["numpy.int64", "numpy.uint64"]:
-          return str(obj)
-      return int(obj)
-    elif map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
+    print "\n\n\n\n"
+
+    if map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
       return self.default(obj._get(), mode=mode)
     elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
       return float(obj)
@@ -184,6 +180,16 @@ class pybindJSONEncoder(json.JSONEncoder):
           return False
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
+    elif map_val in ["int"]:
+      # TODO: check what happens with uint64 and int64 and
+      # mode IETF here
+      return int(obj)
+    elif map_val in ["long"]:
+      if mode == "ietf":
+        return unicode(obj)
+      return int(obj)
+
+
 
 
 class pybindJSONDecoder(object):
