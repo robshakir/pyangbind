@@ -83,7 +83,7 @@ def main():
     "union with a default that skipped a type did not have " + \
         "the correct value (%s)" % u.container.u3._default
 
-  assert type(u.container.u4._default) == int, \
+  assert hasattr(u.container.u4._default, "_restricted_int_size"), \
     "union with integer default did not have integer type default (%s)" % \
       type(u.container.u4._default)
 

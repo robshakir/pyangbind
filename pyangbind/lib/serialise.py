@@ -148,7 +148,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return ndict
     elif type(obj) in [str, unicode]:
       return unicode(obj)
-    elif type(obj) in [int]:
+    elif type(obj) in [int, long]:
       return int(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s" %
@@ -183,6 +183,10 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["int"]:
       # TODO: check what happens with uint64 and int64 and
       # mode IETF here
+      return int(obj)
+    elif map_val in ["long"]:
+      if mode == "ietf":
+        return unicode(obj)
       return int(obj)
 
 

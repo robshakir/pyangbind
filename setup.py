@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
+from pip.req import parse_requirements
 from codecs import open
 from os import path
 
 thisdir = path.abspath(path.dirname(__file__))
+pip_reqs = parse_requirements(path.join(thisdir, "requirements.txt"), session=False)
+inst_reqs = [str(ir.req) for ir in pip_reqs]
 
 import pyangbind
 
@@ -40,5 +43,5 @@ setup(
     include_package_data=True,
     keywords="yang pyang",
     packages=find_packages(exclude=['lib']),
-    install_requires=['numpy', 'pyang', 'bitarray', 'lxml'],
+    install_requires=inst_reqs,
 )

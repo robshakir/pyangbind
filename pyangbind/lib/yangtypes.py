@@ -125,7 +125,7 @@ def RestrictedClassType(*args, **kwargs):
   restriction_type = kwargs.pop("restriction_type", None)
   restriction_arg = kwargs.pop("restriction_arg", None)
   restriction_dict = kwargs.pop("restriction_dict", None)
-  int_len = kwargs.pop("int_len", None)
+  int_size = kwargs.pop("int_size", None)
 
   # this gives deserialisers some hints as to how to encode/decode this value
   # it must be a list since a restricted class can encapsulate a restricted
@@ -144,11 +144,11 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
-    __slots__ = ('_restricted_class_base')
+    #__slots__ = ('_restricted_class_base')
     _pybind_generated_by = "RestrictedClassType"
 
     _restricted_class_base = restricted_class_hint
-    _restricted_int_len = int_len
+    _restricted_int_size = int_size
 
     def __init__(self, *args, **kwargs):
       """
@@ -213,8 +213,9 @@ def RestrictedClassType(*args, **kwargs):
           if all_none:
             raise AttributeError("Cannot specify a range that is all max " +
                                   "and min")
-
+        print low_high_tuples
         def range_check(value):
+          print "value was %s in range check" % (value)
           if length and isinstance(value, bitarray):
             value = value.length()
           elif length:
@@ -307,10 +308,12 @@ def RestrictedClassType(*args, **kwargs):
 
       if val is not False:
         for test in self._restriction_tests:
+          print "checking %s" % test
           passed = False
           if test(val) is not False:
             passed = True
             break
+          print"      result %s" % passed
         if not passed:
           raise ValueError("%s does not match a restricted type" % val)
 
@@ -907,7 +910,15 @@ def YANGDynClass(*args, **kwargs):
         clsslots.append("_" + method)
 
   class YANGBaseClass(base_type):
-    __slots__ = tuple(clsslots)
+    # we only create slots for things that are restricted
+    # in adding attributes to them - this means containing
+    # data nodes. This means that we can allow
+    # leaf._someattr to be used by consuming code - it
+    # also fixes an issue whereby we could set __slots__
+    # and try and inherit a variable-length inbuilt such
+    # as long, which is not allowed.
+    if yang_type in ["container", "list"]:
+      __slots__ = tuple(clsslots)
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
