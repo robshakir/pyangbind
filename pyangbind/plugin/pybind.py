@@ -1003,6 +1003,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       if not all_attr:
         raise ValueError("Supplied object did not have the correct attributes")
       for e in self._pyangbind_elements:
+        nobj = getattr(args[0], e)
+        if nobj._changed() is False:
+          continue
         setmethod = getattr(self, "_set_%s" % e)
         if load is None:
           setmethod(getattr(args[0], e))

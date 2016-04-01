@@ -94,7 +94,7 @@ def main():
         'list-two': {}, 'list-three': {}, 'list-four': {},
         'list-element': {1: {'keyval': 1, 'another-value': 'defaultValue'},
         2: {'keyval': 2, 'another-value': 'defaultValue'}}},
-        'list-nine': {}, 'list-ten': {}}, \
+        'list-nine': {}, 'list-ten': {}, 'list-eleven': {}}, \
     "incorrect get() output returned: %s" % test_instance.get()
   del test_instance.list_container.list_element[2]
 
@@ -309,6 +309,30 @@ def main():
   assert passed is True, "List keys using new item, append and a compound" + \
     " key was not valid: %s != ['13 thirteen', '14 fourteen']" % \
       test_instance.list_ten.keys()
+
+  for i in [(1, "ONE", True), (2, "TWO", True), (42, None, True)]:
+    item = test_instance.list_eleven._new_item()
+    item.kv = i[0]
+    if i[1] is not None:
+      item.number = i[1]
+    # negative test, check a bug whereby unchanged elements of the
+    # list would try to be set which resulted in ValueError being
+    # thrown.
+    passed = True
+    try:
+      test_instance.list_eleven.append(item)
+    except ValueError:
+      passed = False
+
+    assert passed is True, "Value error was raised when appending item " + \
+      "%s to the list at %s" % (item.get(filter=True), i[0])
+
+    if i[1] is not None:
+      assert test_instance.list_eleven[i[0]].number == i[1], \
+        "identity for item %s was not set correctly (%s != %s)" % \
+          (i[0], i[1], test_instance.list_eleven[i[0]].number)
+
+
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)

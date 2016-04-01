@@ -171,5 +171,33 @@ module list {
         }
     }
 
+    identity NATURAL_NUMBERS;
+
+    identity ONE {
+        base NATURAL_NUMBERS;
+    }
+
+    identity TWO {
+        base NATURAL_NUMBERS;
+    }
+
+    identity THREE {
+        base NATURAL_NUMBERS;
+    }
+
+    list list-eleven {
+        key "kv";
+
+        leaf kv {
+            type int32;
+        }
+
+        leaf number {
+            type identityref {
+                base NATURAL_NUMBERS;
+            }
+        }
+    }
+
 
 }
