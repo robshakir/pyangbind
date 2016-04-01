@@ -94,11 +94,11 @@ def main():
     "get did not correctly return the dictionary"
 
   try:
-    leaflist_instance.container.leaflist = ["one", "two"]
+    leaflist_instance.container.leaflist = ["itemOne", "itemTwo"]
   except ValueError:
     pass
 
-  assert leaflist_instance.container.leaflist == ["one", "two"], \
+  assert leaflist_instance.container.leaflist == ["itemOne", "itemTwo"], \
     "leaflist assignment did not function correctly"
 
   passed = False

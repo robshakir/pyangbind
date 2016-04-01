@@ -28,6 +28,10 @@ module ietf-json-serialise {
     base id-base;
   }
 
+  typedef derived64 {
+    type uint64;
+  }
+
   typedef definedtype {
     type string;
   }
@@ -188,6 +192,10 @@ module ietf-json-serialise {
           type nhopenum;
           type string;
         }
+      }
+
+      leaf uint64type {
+        type derived64;
       }
     }
 

@@ -46,7 +46,9 @@ module union {
     typedef union-a {
         type union {
             type int8;
-            type string;
+            type string {
+                pattern "h.*";
+            }
         }
     }
 

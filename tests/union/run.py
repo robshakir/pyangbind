@@ -40,7 +40,6 @@ def main():
   os.system(cmd)
 
   from bindings import union
-  import numpy
 
   u = union()
 
@@ -84,7 +83,7 @@ def main():
     "union with a default that skipped a type did not have " + \
         "the correct value (%s)" % u.container.u3._default
 
-  assert type(u.container.u4._default) == numpy.int8, \
+  assert type(u.container.u4._default) == int, \
     "union with integer default did not have integer type default (%s)" % \
       type(u.container.u4._default)
 
@@ -117,6 +116,8 @@ def main():
     assert passed == i[1], \
       "leaf-list of union of unions did not correctly validate value " + \
         "(%s -> %s != %s)" % (i[0], passed, i[1])
+
+    print u.container.u9
 
   # 10-20, 30-40 or starting with a and b
   for i in [(15, True), (35, True), ("aardvark", True), ("bear", True),

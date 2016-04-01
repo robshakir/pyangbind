@@ -22,12 +22,12 @@ import optparse
 import sys
 import re
 import string
-import numpy as np
 import decimal
 import copy
 import os
 from bitarray import bitarray
-from pyangbind.lib.yangtypes import safe_name, YANGBool
+from pyangbind.lib.yangtypes import safe_name, YANGBool, \
+                                  RestrictedClassType
 
 from pyang import plugin
 from pyang import statements
@@ -99,25 +99,46 @@ class_map = {
         "quote_arg": True,
         "pytype": bitarray
     },
+    # 'uint8': {
+    #     "native_type": "np.uint8",
+    #     "base_type": True,
+    #     "pytype": np.uint8
+    # },
     'uint8': {
-        "native_type": "np.uint8",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.uint8
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..255']})
     },
     'uint16': {
-        "native_type": "np.uint16",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.uint16
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..65535']}, int_len=16)
     },
     'uint32': {
-        "native_type": "np.uint32",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.uint32
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..4294967295']}, int_len=32)
     },
     'uint64': {
-        "native_type": "np.uint64",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.uint64},
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..18446744073709551615']}, int_len=64)
+    },
+    # 'uint16': {
+    #     "native_type": "np.uint16",
+    #     "base_type": True,
+    #     "pytype": np.uint16
+    # },
+    # 'uint32': {
+    #     "native_type": "np.uint32",
+    #     "base_type": True,
+    #     "pytype": np.uint32
+    # },
+    # 'uint64': {
+    #     "native_type": "np.uint64",
+    #     "base_type": True,
+    #     "pytype": np.uint64
+    # },
     'string': {
         "native_type": "unicode",
         "base_type": True,
@@ -137,24 +158,24 @@ class_map = {
         "pytype": YANGBool
     },
     'int8': {
-        "native_type": "np.int8",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.int8
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-127..127']}, int_len=8)
     },
     'int16': {
-        "native_type": "np.int16",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.int16
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-32767..32767']}, int_len=16)
     },
     'int32': {
-        "native_type": "np.int32",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.int32
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-2147483647..2147483647']}, int_len=32)
     },
     'int64': {
-        "native_type": "np.int64",
+        "native_type": "int",
         "base_type": True,
-        "pytype": np.int64
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-9223372036854775807..9223372036854775807']}, int_len=64)
     },
 }
 
@@ -275,7 +296,6 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
   ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
   ctx.pybind_common_hdr += """from decimal import Decimal\n"""
-  ctx.pybind_common_hdr += """import numpy as np\n"""
   ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
 
   if not ctx.opts.split_class_dir:
@@ -1230,7 +1250,7 @@ def build_elemtype(ctx, et, prefix=False):
                     "referenced_path": path_stmt.arg,
                     "parent_type": "string",
                     "base_type": False,
-                    "require_instance": require_instance}
+                    "require_instance": require_instance,}
         cls = "leafref"
       else:
         elemtype = {
@@ -1282,6 +1302,7 @@ def build_elemtype(ctx, et, prefix=False):
       # this is used to propagate the fact that in some cases the
       # native type needs to be dynamically built (e.g., leafref)
       cls = elemtype["class_override"]
+
   return (cls, elemtype)
 
 
@@ -1298,7 +1319,7 @@ def find_absolute_default_type(default_type, default_value, elemname):
       tmp = test_type["pytype"](default_value)
       default_type = test_type
       break
-    except ValueError:
+    except (ValueError, TypeError):
       pass
   return find_absolute_default_type(default_type, default_value, elemname)
 
@@ -1437,6 +1458,8 @@ def get_element(ctx, fd, element, module, parent, path,
     tmp_class_map = copy.deepcopy(class_map)
     tmp_class_map["enumeration"] = {"parent_type": "string"}
 
+
+
     if not default_type:
       if isinstance(elemtype, list):
         # this type has multiple parents
@@ -1503,6 +1526,8 @@ def get_element(ctx, fd, element, module, parent, path,
         default_type = tmp_class_map[checked.pop()]
         if not default_type["base_type"]:
           raise TypeError("default type was not a base type")
+
+    # TODO: should this be more indented
 
     # Set the default type based on what was determined above about the
     # correct value to set.
@@ -1571,6 +1596,7 @@ def get_element(ctx, fd, element, module, parent, path,
         "namespace": namespace,
         "defining_module": defining_module
     }
+
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]
       elemdict["require_instance"] = elemtype["require_instance"]

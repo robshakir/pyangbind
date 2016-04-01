@@ -1,6 +1,6 @@
 #!/bin/bash
 # set to true or false
-DEL=true
+DEL=false
 FAIL=0
 
 TESTDIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
