@@ -542,7 +542,7 @@ def YANGListType(*args, **kwargs):
         raise AttributeError("Multiple key, string type should be used")
       else:
         member = self._members[k]
-        getfn = getattr(member, "_get_%s" % keyval)
+        getfn = getattr(member, "_get_%s" % self._keyval)
         return getfn()
 
     def __iter__(self):
