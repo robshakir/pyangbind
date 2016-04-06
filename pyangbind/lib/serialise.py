@@ -288,7 +288,7 @@ class pybindJSONDecoder(object):
         else:
           # use the set method
           pass
-      elif pybind_attr in ["RestrictedClassType", "ReferencePathType"]:
+      elif pybind_attr in ["RestrictedClassType", "ReferencePathType", "RestrictedPrecisionDecimal"]:
         # normal but valid types - which use the std set method
         pass
       elif pybind_attr is None:
