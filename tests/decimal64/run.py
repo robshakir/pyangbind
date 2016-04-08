@@ -39,6 +39,7 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
+  import bindings
   from bindings import decimal_ as d
   from decimal import Decimal
 
@@ -73,6 +74,17 @@ def main():
     assert passed == i[1], \
         "decimal64 leaf with range was not correctly set (%f -> %s != %s)" \
             % (i[0], passed, i[1])
+
+  testdata = '''
+{
+    "container": {
+        "d1": 12.34
+    }
+}
+'''
+  import pyangbind.lib.pybindJSON as pbj
+  doc = pbj.loads(testdata, bindings, 'decimal')
+  print pbj.dumps(doc)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

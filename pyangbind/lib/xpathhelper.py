@@ -286,6 +286,9 @@ class YANGPathHelper(PybindXpathHelper):
   def get_unique(self, object_path, caller=False,
                   exception_to_raise=YANGPathHelperException):
     obj = self.get(object_path, caller=caller)
+    if len(obj) == 0:
+      raise exception_to_raise("Supplied path for %s found no results!"
+                                  % object_path)
     if len(obj) != 1:
       raise exception_to_raise("Supplied path for %s was not unique!"
                                   % object_path)
