@@ -213,9 +213,8 @@ def RestrictedClassType(*args, **kwargs):
           if all_none:
             raise AttributeError("Cannot specify a range that is all max " +
                                   "and min")
-        print low_high_tuples
+
         def range_check(value):
-          print "value was %s in range check" % (value)
           if length and isinstance(value, bitarray):
             value = value.length()
           elif length:
@@ -308,12 +307,10 @@ def RestrictedClassType(*args, **kwargs):
 
       if val is not False:
         for test in self._restriction_tests:
-          print "checking %s" % test
           passed = False
           if test(val) is not False:
             passed = True
             break
-          print"      result %s" % passed
         if not passed:
           raise ValueError("%s does not match a restricted type" % val)
 
