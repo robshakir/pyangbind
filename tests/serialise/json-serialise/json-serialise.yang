@@ -132,6 +132,12 @@ module json-serialise {
         type boolean;
       }
 
+      leaf decleaf {
+        type decimal64 {
+          fraction-digits 4;
+        }
+      }
+
       leaf enumeration {
         type enumeration {
           enum one;

@@ -7,6 +7,7 @@ import json
 from pyangbind.lib.serialise import pybindJSONEncoder
 from pyangbind.lib.pybindJSON import dumps
 from pyangbind.lib.xpathhelper import YANGPathHelper
+from decimal import Decimal
 
 TESTNAME = "json-serialise"
 
@@ -80,6 +81,8 @@ def main():
   js.c1.l1[1].next_hop.append("DROP")
   js.c1.l1[1].next_hop.append("192.0.2.1")
   js.c1.l1[1].next_hop.append("fish")
+
+  js.c1.l1[1].decleaf = Decimal("42.4422")
 
   for i in range(1, 10):
     js.c1.l2.add(i)

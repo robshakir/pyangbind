@@ -913,7 +913,7 @@ def YANGDynClass(*args, **kwargs):
     # also fixes an issue whereby we could set __slots__
     # and try and inherit a variable-length inbuilt such
     # as long, which is not allowed.
-    if yang_type in ["container", "list"]:
+    if yang_type in ["container", "list"] or is_container == "container":
       __slots__ = tuple(clsslots)
 
     _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",

@@ -330,7 +330,14 @@ def main():
         "identity for item %s was not set correctly (%s != %s)" % \
           (i[0], i[1], test_instance.list_eleven[i[0]].number)
 
+  passed = False
+  try:
+    test_instance.list_eleven[1].nonexistent = False
+  except AttributeError:
+    passed = True
 
+  assert passed is True, "Incorrectly could set a nonexistent item within" + \
+    "a list"
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)

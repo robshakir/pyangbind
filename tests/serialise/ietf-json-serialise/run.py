@@ -6,6 +6,7 @@ import getopt
 import json
 from pyangbind.lib.serialise import pybindJSONEncoder, pybindIETFJSONEncoder
 from pyangbind.lib.pybindJSON import dumps
+from decimal import Decimal
 
 TESTNAME = "ietf-json-serialise"
 
@@ -86,6 +87,8 @@ def main():
 
   js.augtarget.augleaf = "teststring"
 
+  js.c1.l1[1].decleaf = Decimal('42.4422')
+
   for i in range(1, 10):
     js.c1.l2.add(i)
 
@@ -95,9 +98,9 @@ def main():
   external_json = json.load(
                       open(os.path.join(this_dir, "json", "obj.json"), 'r'))
 
-  from pprint import PrettyPrinter
-  pp = PrettyPrinter(indent=4)
-  pp.pprint(pybind_json)
+  #from pprint import PrettyPrinter
+  #pp = PrettyPrinter(indent=4)
+  #pp.pprint(pybind_json)
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 
