@@ -139,6 +139,12 @@ module json-deserialise {
         }
       }
 
+      leaf decimal {
+        type decimal64 {
+          fraction-digits 2;
+        }
+      }
+
       leaf identityref {
         type identityref {
           base id-base;

@@ -12,6 +12,18 @@ module uint {
         reference "fooled-you";
     }
 
+
+    container issue-fixes {
+      leaf region-id {
+        // match attribute mode=type: name=regionId type=long
+        type uint32 {
+          // match constraint type=range: # values=1
+          range "0..4294967295";
+        }
+        default "0";
+      } // leaf region-id
+    }
+
     container uint-container {
         description
             "A container";

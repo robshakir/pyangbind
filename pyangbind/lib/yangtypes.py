@@ -382,7 +382,6 @@ def TypedListType(*args, **kwargs):
             attr = getattr(i, "_pybind_generated_by")
             if attr == "RestrictedClassType":
               tmp = i(v)
-              print i(v)
               passed = True
               break
             elif attr == "ReferencePathType":

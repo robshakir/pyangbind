@@ -125,6 +125,12 @@ module ietf-json-deserialise {
         type int32;
       }
 
+      leaf decimal {
+        type decimal64 {
+          fraction-digits 2;
+        }
+      }
+
       leaf int64 {
         type int64;
       }

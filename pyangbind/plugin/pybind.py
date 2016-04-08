@@ -99,11 +99,6 @@ class_map = {
         "quote_arg": True,
         "pytype": bitarray
     },
-    # 'uint8': {
-    #     "native_type": "np.uint8",
-    #     "base_type": True,
-    #     "pytype": np.uint8
-    # },
     'uint8': {
         "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['0..255']}, int_size=8)",
         "base_type": True,
@@ -124,21 +119,6 @@ class_map = {
         "base_type": True,
         "pytype": RestrictedClassType(base_type=long, restriction_dict={'range': ['0..18446744073709551615']}, int_size=64)
     },
-    # 'uint16': {
-    #     "native_type": "np.uint16",
-    #     "base_type": True,
-    #     "pytype": np.uint16
-    # },
-    # 'uint32': {
-    #     "native_type": "np.uint32",
-    #     "base_type": True,
-    #     "pytype": np.uint32
-    # },
-    # 'uint64': {
-    #     "native_type": "np.uint64",
-    #     "base_type": True,
-    #     "pytype": np.uint64
-    # },
     'string': {
         "native_type": "unicode",
         "base_type": True,

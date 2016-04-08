@@ -159,8 +159,6 @@ class pybindJSONEncoder(json.JSONEncoder):
                                                 "RestrictedClassType"]:
       map_val = getattr(obj, "_restricted_class_base")[0]
 
-    print "\n\n\n\n"
-
     if map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
       return self.default(obj._get(), mode=mode)
     elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
@@ -393,6 +391,9 @@ class pybindJSONDecoder(object):
 
       if std_method_set:
         get_method = getattr(obj, "_get_%s" % safe_name(ykey), None)
+        if get_method is None:
+          raise AttributeError("JSON object contained a key that" +
+                              "did not exist (%s)" % (ykey))
         chk = get_method()
         if chk._is_keyval is True:
           pass

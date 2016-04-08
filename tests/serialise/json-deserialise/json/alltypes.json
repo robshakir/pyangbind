@@ -23,6 +23,7 @@
                     16, 
                     "chicken"
                 ], 
+                "decimal": 42.42,
                 "uint32": 1, 
                 "int32": 1, 
                 "int16": 1, 

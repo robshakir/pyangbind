@@ -139,6 +139,17 @@ def main():
   assert e is True, \
      "incorrectly allowed value outside of range for sixtyfourrestricted (799)"
 
+  for v in  [(0, True), (10, True), (2**32-1, True), (2**64, False),
+              (2**32, False)]:
+    val_set = False
+    try:
+      u.issue_fixes.region_id = v[0]
+      val_set = True
+    except ValueError:
+      pass
+    assert v[1] is val_set, "Value of region_id incorrectly set %s (%s != %s" \
+      % (v[0], val_set, v[1])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

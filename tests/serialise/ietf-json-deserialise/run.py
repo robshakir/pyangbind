@@ -8,6 +8,7 @@ from pyangbind.lib.serialise import pybindJSONDecoder
 from pyangbind.lib.pybindJSON import dumps
 from bitarray import bitarray
 from collections import OrderedDict
+from decimal import Decimal
 
 TESTNAME = "ietf-json-deserialise"
 
@@ -104,7 +105,8 @@ def main():
             "uint64": 1,
             "remote-identityref": "remote:stilton",
             "int64": 1,
-            "restricted-string": "aardvark"
+            "restricted-string": "aardvark",
+            "decimal": Decimal('16.32')
           }
       },
       "l2": OrderedDict(

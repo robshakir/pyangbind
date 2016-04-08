@@ -56,6 +56,7 @@
                 "empty": [
                     null
                 ], 
+                "decimal": 16.32,
                 "int32": 1, 
                 "int16": 1, 
                 "string": "bear", 

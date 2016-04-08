@@ -7,6 +7,7 @@ import json
 import pyangbind.lib.serialise as pbS
 import pyangbind.lib.pybindJSON as pbJ
 from bitarray import bitarray
+from decimal import *
 from pyangbind.lib.xpathhelper import YANGPathHelper
 
 TESTNAME = "json-deserialise"
@@ -74,6 +75,7 @@ def main():
             "Existing object load did not return the correct list"
   del expected_get
 
+
   all_items = pbJ.load(os.path.join(this_dir, "json", "alltypes.json"),
                 bindings, "json_deserialise", path_helper=y)
   expected_get = {
@@ -94,6 +96,7 @@ def main():
             'int32': 1,
             'int16': 1,
             'string': u'bear',
+            'decimal': Decimal('42.42'),
             'typedef-two': 8,
             'uint8': 1,
             'restricted-integer': 6,
@@ -110,6 +113,7 @@ def main():
         }
       }
     }
+
   assert all_items.get(filter=True) == expected_get, \
             "Load of object with all items not correct"
 
