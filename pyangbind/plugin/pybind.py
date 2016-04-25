@@ -1311,8 +1311,11 @@ def get_element(ctx, fd, element, module, parent, path,
   # dynamically generates a class.
 
   # Find element's namespace
-  namespace = element.i_orig_module.search_one("namespace").arg \
-                    if hasattr(element, "i_orig_module") else None
+  namespace = None
+  
+  if hasattr(element, "i_orig_module") and hasattr(element.i_orig_module.search_one("namespace"), "arg"):
+    namespace = element.i_orig_module.search_one("namespace").arg
+
   defining_module = element.i_orig_module.arg if \
                       hasattr(element, "i_orig_module") else None
 
