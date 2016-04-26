@@ -179,11 +179,10 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
     elif map_val in ["int"]:
-      # TODO: check what happens with uint64 and int64 and
-      # mode IETF here
       return int(obj)
     elif map_val in ["long"]:
-      if mode == "ietf":
+      int_size = getattr(obj, "_restricted_int_size", None)
+      if mode == "ietf" and int_size == 64:
         return unicode(obj)
       return int(obj)
 

@@ -110,9 +110,9 @@ class_map = {
         "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..65535']}, int_size=16)
     },
     'uint32': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['0..4294967295']}, int_size=32)",
+        "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['0..4294967295']}, int_size=32)",
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..4294967295']}, int_size=32)
+        "pytype": RestrictedClassType(base_type=long, restriction_dict={'range': ['0..4294967295']}, int_size=32)
     },
     'uint64': {
         "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['0..18446744073709551615']}, int_size=64)",
@@ -148,9 +148,9 @@ class_map = {
         "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-32767..32767']}, int_size=16)
     },
     'int32': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)",
+        "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)",
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)
+        "pytype": RestrictedClassType(base_type=long, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)
     },
     'int64': {
         "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['-9223372036854775807..9223372036854775807']}, int_size=64)",
