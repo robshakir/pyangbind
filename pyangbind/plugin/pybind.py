@@ -1310,11 +1310,21 @@ def get_element(ctx, fd, element, module, parent, path,
   # produces a dictionary that can then be mapped into the relevant code that
   # dynamically generates a class.
 
-  # Find element's namespace
-  namespace = element.i_orig_module.search_one("namespace").arg \
-                    if hasattr(element, "i_orig_module") else None
-  defining_module = element.i_orig_module.arg if \
-                      hasattr(element, "i_orig_module") else None
+  # Find element's namespace and defining module
+  # If the element has the "main_module" attribute then it is part of a
+  # submodule and hence we should check the namespace and defining module
+  # of this, rather than the submodule
+  if hasattr(element, "main_module"):
+    element_module = element.main_module()
+  elif hasattr(element, "i_orig_module"):
+    element_module = element.i_orig_module
+  else:
+    element_module = None
+
+  namespace = element_module.search_one("namespace").arg if \
+                element_module.search_one("namespace") is not None else \
+                  None
+  defining_module = element_module.arg
 
   this_object = []
   default = False

@@ -215,6 +215,13 @@ class pybindJSONDecoder(object):
         # in this case, we cannot check for an existing object
         obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
 
+    # Handle the case where we are supplied with a scalar value rather than
+    # a list
+    if not isinstance(d, dict) or isinstance(d, list):
+      set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
+      set_method(d)
+      return obj
+
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
       if child is None:
@@ -330,6 +337,13 @@ class pybindJSONDecoder(object):
       else:
         # in this case, we cannot check for an existing object
         obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+
+    # Handle the case where we are supplied with a scalar value rather than
+    # a list
+    if not isinstance(d, dict) or isinstance(d, list):
+      set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
+      set_method(d)
+      return obj
 
     for key in d:
       # Fix any namespace that was supplied in the JSON
@@ -453,6 +467,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         elif not flt:
           d[yname] = element
     return d
+
 
   def encode(self, obj):
     return json.JSONEncoder.encode(self,
