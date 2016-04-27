@@ -170,6 +170,28 @@ def main():
         "restricted range using max was not set correctly (%d -> %s != %s)" % \
             (i[0], passed, i[1])
 
+  for i in [(0, True), (10, True), (-128, True), (-300, False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_min = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+        "restricted range using min was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
+
+  for i in [(0, True), (10, True), (-128, True), (-300, False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_min_alias = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+        "restricted range using min alias was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
+
   for i in [(0, True), (13, False), (-20, False), (5, True), (16, True)]:
     passed = False
     try:
