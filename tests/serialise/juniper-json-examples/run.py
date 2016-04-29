@@ -77,7 +77,8 @@ def main():
           f.write(response.content)
           f.close()
           break
-      assert got is True, "Could not get file %s from GitHub" % (fn[0])
+      assert got is True, "Could not get file %s from GitHub (response: %s)" \
+                % (response.status_code, fn[0])
 
   files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
                         os.listdir(os.path.join(this_dir, "openconfig"))])
