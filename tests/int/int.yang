@@ -138,7 +138,7 @@ module int {
 
         leaf restricted-ueight-min-alias {
             type int8 {
-        //        range "min..max";
+                range "min..max";
             }
         }
 
