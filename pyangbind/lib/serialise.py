@@ -386,13 +386,23 @@ class pybindJSONDecoder(object):
               k = this_attr.add()
               nobj = this_attr[k]
             elif " " in this_attr._keyval:
+              keystr = u""
               kwargs = {}
               for pkv, ykv in zip(this_attr._keyval.split(" "),
                                       this_attr._yang_keys.split(" ")):
                 kwargs[pkv] = elem[ykv]
-              nobj = this_attr.add(**kwargs)
+                keystr += u"%s " % elem[ykv]
+              keystr = keystr.rstrip(" ")
+              if not keystr in this_attr:
+                nobj = this_attr.add(**kwargs)
+              else:
+                nobj = this_attr[keystr]
             else:
-              nobj = this_attr.add(elem[this_attr._yang_keys])
+              k = elem[this_attr._yang_keys]
+              if not k in this_attr:
+                nobj = this_attr.add(k)
+              else:
+                nobj = this_attr[k]
             pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj,
                 path_helper=path_helper, extmethods=extmethods,
                   overwrite=overwrite)
