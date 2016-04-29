@@ -170,6 +170,28 @@ def main():
         "restricted range using max was not set correctly (%d -> %s != %s)" % \
             (i[0], passed, i[1])
 
+  for i in [(0, True), (10, True), (-128, True), (-300, False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_min = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+        "restricted range using min was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
+
+  for i in [(0, True), (10, True), (-128, True), (-300, False)]:
+    passed = False
+    try:
+      u.int_container.restricted_ueight_min_alias = i[0]
+      passed = True
+    except ValueError:
+      pass
+    assert passed == i[1], \
+        "restricted range using min alias was not set correctly (%d -> %s != %s)" % \
+            (i[0], passed, i[1])
+
   for i in [(0, True), (13, False), (-20, False), (5, True), (16, True)]:
     passed = False
     try:
@@ -225,6 +247,66 @@ def main():
     assert passed == i[1], \
         "complex range with equals case was not set correctly " + \
             " (%d -> %s != %s)" % (i[0], passed, i[1])
+  bounds = {
+    'eight': (-2**7, 2**7-1),
+    'sixteen': (-2**15, 2**15-1),
+    'thirtytwo': (-2**31, 2**31-1),
+    'sixtyfour': (-2**63, 2**63-1),
+  }
+
+  for elem, vals in bounds.iteritems():
+    set_attr = getattr(u.int_container, "_set_%s" % elem, None)
+    assert set_attr is not None, "Could not find attribute"
+    for val in vals:
+      passed = True
+      try:
+        set_attr(vals[0])
+      except ValueError, m:
+        passed = False
+      assert passed is True, "Could not set int size %s to %d"  % \
+        (elem, val)
+
+    passed = False
+    try:
+      set_attr(vals[0] - 1)
+    except ValueError, m:
+      passed = True
+
+    assert passed is True, "Incorrectly set int size %s to %d" % \
+      (elem, vals[0]-1)
+
+    passed = False
+    try:
+      set_attr(vals[1] + 1)
+    except ValueError, m:
+      passed = True
+
+    assert passed is True, "Incorrectly set int size %s to %d" % \
+      (elem, vals[1]+1)
+
+  try:
+    u.int_container.restricted_ueight_min_alias = -2**7
+  except ValueError:
+    assert False, "Could not set min..max int8 to the minimum value"
+
+  try:
+    u.int_container.restricted_ueight_min_alias = 2**7-1
+  except ValueError:
+    assert False, "Could not set min..max int8 to the maximum value"
+
+  try:
+    u.int_container.restricted_ueight_min_alias = -2**7-1
+  except ValueError:
+    pass
+  else:
+    assert False, "Incorrectly set min..max int8 to the min value minus one"
+
+  try:
+    u.int_container.restricted_ueight_min_alias = 2**7+1
+  except ValueError:
+    pass
+  else:
+    assert False, "Incorrectly set min..max int8 to the max value plus one"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

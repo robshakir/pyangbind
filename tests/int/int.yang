@@ -130,6 +130,18 @@ module int {
             }
         }
 
+        leaf restricted-ueight-min {
+            type int8 {
+                range "-128..max";
+            }
+        }
+
+        leaf restricted-ueight-min-alias {
+            type int8 {
+                range "min..max";
+            }
+        }
+
         leaf complex-range {
             type int8 {
                 range "0..10|15..20";

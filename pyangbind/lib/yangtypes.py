@@ -171,7 +171,7 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+)([ ]+)?\.\.([ ]+)?" +
+      range_regex = re.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
                                 "(?P<high>(\-?[0-9\.]+|max))")
       range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
 
@@ -204,16 +204,6 @@ def RestrictedClassType(*args, **kwargs):
           raise ValueError("Invalid range or length argument specified")
 
       def in_range_check(low_high_tuples, length=False):
-        # length argument is used for strings
-        for check_tuple in low_high_tuples:
-          all_none = True
-          for i in range(0, len(check_tuple)):
-            if check_tuple[i] is not None:
-              all_none = False
-          if all_none:
-            raise AttributeError("Cannot specify a range that is all max " +
-                                  "and min")
-
         def range_check(value):
           if length and isinstance(value, bitarray):
             value = value.length()
