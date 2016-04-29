@@ -151,8 +151,9 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif type(obj) in [int, long]:
       return int(obj)
 
-    raise AttributeError("Unmapped type: %s, %s, %s, %s" %
-                                  (elem_name, orig_yangt, pybc, pyc))
+    raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
+                                  (elem_name, orig_yangt, pybc, pyc,
+                                    type(obj), obj))
 
   def map_pyangbind_type(self, map_val, original_yang_type, obj, mode):
     if map_val in ["pyangbind.lib.yangtypes.RestrictedClass",
@@ -380,6 +381,10 @@ class pybindJSONDecoder(object):
             raise AttributeError("List specified that did not exist")
           this_attr = this_attr()
           if hasattr(this_attr, "_keyval"):
+            if overwrite:
+              existing_keys = this_attr.keys()
+              for i in existing_keys:
+                this_attr.delete(i)
             #  this handles YANGLists
             if this_attr._keyval is False:
               # Keyless list, generate a key
@@ -408,6 +413,7 @@ class pybindJSONDecoder(object):
                   overwrite=overwrite)
             pybindJSONDecoder.check_metadata_add(key, d, nobj)
           else:
+            # this is a leaf-list
             std_method_set = True
       else:
         std_method_set = True
