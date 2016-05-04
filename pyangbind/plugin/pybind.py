@@ -106,24 +106,36 @@ class_map = {
       "pytype": YANGBits
     },
     'uint8': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['0..255']}, int_size=8)",
+        "native_type": ("RestrictedClassType(base_type=int," +
+                       " restriction_dict={'range': ['0..255']}, int_size=8)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..255']}, int_size=8)
+        "pytype": RestrictedClassType(base_type=int,
+                    restriction_dict={'range': ['0..255']}, int_size=8)
     },
     'uint16': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['0..65535']}, int_size=16)",
+        "native_type": ("RestrictedClassType(base_type=int," +
+                       " restriction_dict={'range': ['0..65535']}," +
+                       "int_size=16)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..65535']}, int_size=16)
+        "pytype": RestrictedClassType(base_type=int,
+                    restriction_dict={'range': ['0..65535']}, int_size=16)
     },
     'uint32': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['0..4294967295']}, int_size=32)",
+        "native_type": ("RestrictedClassType(base_type=long," +
+                        " restriction_dict={'range': ['0..4294967295']}," +
+                        " int_size=32)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['0..4294967295']}, int_size=32)
+        "pytype": RestrictedClassType(base_type=long,
+                    restriction_dict={'range': ['0..4294967295']}, int_size=32)
     },
     'uint64': {
-        "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['0..18446744073709551615']}, int_size=64)",
+        "native_type": ("RestrictedClassType(base_type=long, " +
+                       "restriction_dict={'range': " +
+                       " ['0..18446744073709551615']}, int_size=64)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=long, restriction_dict={'range': ['0..18446744073709551615']}, int_size=64)
+        "pytype": RestrictedClassType(base_type=long,
+                    restriction_dict={'range': ['0..18446744073709551615']},
+                    int_size=64)
     },
     'string': {
         "native_type": "unicode",
@@ -144,24 +156,38 @@ class_map = {
         "pytype": YANGBool
     },
     'int8': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['-127..127']}, int_size=8)",
+        "native_type": "RestrictedClassType(base_type=int, "+
+                      "restriction_dict={'range': ['-128..127']}, int_size=8)",
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-127..127']}, int_size=8)
+        "pytype": RestrictedClassType(base_type=int,
+                    restriction_dict={'range': ['-128..127']}, int_size=8)
     },
     'int16': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['-32767..32767']}, int_size=16)",
+        "native_type": ("RestrictedClassType(base_type=int,"
+                       "restriction_dict={'range': ['-32768..32767']}, " +
+                       "int_size=16)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-32767..32767']}, int_size=16)
+        "pytype": RestrictedClassType(base_type=int,
+                    restriction_dict={'range': ['-32768..32767']}, int_size=16)
     },
     'int32': {
-        "native_type": "RestrictedClassType(base_type=int, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)",
+        "native_type": ("RestrictedClassType(base_type=long," +
+                        " restriction_dict={'range': " +
+                        "['-2147483648..2147483647']}, int_size=32)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=int, restriction_dict={'range': ['-2147483647..2147483647']}, int_size=32)
+        "pytype": RestrictedClassType(base_type=long,
+                    restriction_dict={'range': ['-2147483648..2147483647']},
+                    int_size=32)
     },
     'int64': {
-        "native_type": "RestrictedClassType(base_type=long, restriction_dict={'range': ['-9223372036854775807..9223372036854775807']}, int_size=64)",
+        "native_type": ("RestrictedClassType(base_type=long, " +
+                       "restriction_dict={'range': " +
+                       "['-9223372036854775808..9223372036854775807']}, " +
+                       "int_size=64)"),
         "base_type": True,
-        "pytype": RestrictedClassType(base_type=long, restriction_dict={'range': ['-9223372036854775807..9223372036854775807']}, int_size=64)
+        "pytype": RestrictedClassType(base_type=long,
+                    restriction_dict={'range':
+                    ['-9223372036854775808..9223372036854775807']}, int_size=64)
     },
 }
 
@@ -1348,14 +1374,21 @@ def get_element(ctx, fd, element, module, parent, path,
   # produces a dictionary that can then be mapped into the relevant code that
   # dynamically generates a class.
 
-  # Find element's namespace
-  namespace = None
-  
-  if hasattr(element, "i_orig_module") and hasattr(element.i_orig_module.search_one("namespace"), "arg"):
-    namespace = element.i_orig_module.search_one("namespace").arg
+  # Find element's namespace and defining module
+  # If the element has the "main_module" attribute then it is part of a
+  # submodule and hence we should check the namespace and defining module
+  # of this, rather than the submodule
+  if hasattr(element, "main_module"):
+    element_module = element.main_module()
+  elif hasattr(element, "i_orig_module"):
+    element_module = element.i_orig_module
+  else:
+    element_module = None
 
-  defining_module = element.i_orig_module.arg if \
-                      hasattr(element, "i_orig_module") else None
+  namespace = element_module.search_one("namespace").arg if \
+                element_module.search_one("namespace") is not None else \
+                  None
+  defining_module = element_module.arg
 
   this_object = []
   default = False

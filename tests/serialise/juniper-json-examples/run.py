@@ -5,6 +5,7 @@ import sys
 import getopt
 import json
 import requests
+import time
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
@@ -64,11 +65,20 @@ def main():
       del_dirs.append(wrdir)
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):
-      response = requests.get(fn[0])
-      assert response.status_code == 200, "Could not get %s" % fn[0]
-      f = open(wrpath, 'w')
-      f.write(response.content)
-      f.close()
+      got = False
+      count = 0
+      for i in range(0,4):
+        response = requests.get(fn[0])
+        if response.status_code != 200:
+          time.sleep(2)
+        else:
+          got = True
+          f = open(wrpath, 'w')
+          f.write(response.content)
+          f.close()
+          break
+      assert got is True, "Could not get file %s from GitHub (response: %s)" \
+                % (response.status_code, fn[0])
 
   files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
                         os.listdir(os.path.join(this_dir, "openconfig"))])

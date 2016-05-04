@@ -157,8 +157,9 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif type(obj) in [int, long]:
       return int(obj)
 
-    raise AttributeError("Unmapped type: %s, %s, %s, %s" %
-                                  (elem_name, orig_yangt, pybc, pyc))
+    raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
+                                  (elem_name, orig_yangt, pybc, pyc,
+                                    type(obj), obj))
 
   def map_pyangbind_type(self, map_val, original_yang_type, obj, mode):
     if map_val in ["pyangbind.lib.yangtypes.RestrictedClass",
@@ -185,11 +186,10 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
     elif map_val in ["int"]:
-      # TODO: check what happens with uint64 and int64 and
-      # mode IETF here
       return int(obj)
     elif map_val in ["long"]:
-      if mode == "ietf":
+      int_size = getattr(obj, "_restricted_int_size", None)
+      if mode == "ietf" and int_size == 64:
         return unicode(obj)
       return int(obj)
 
@@ -220,6 +220,13 @@ class pybindJSONDecoder(object):
       else:
         # in this case, we cannot check for an existing object
         obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+
+    # Handle the case where we are supplied with a scalar value rather than
+    # a list
+    if not isinstance(d, dict) or isinstance(d, list):
+      set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
+      set_method(d)
+      return obj
 
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
@@ -337,6 +344,13 @@ class pybindJSONDecoder(object):
         # in this case, we cannot check for an existing object
         obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
 
+    # Handle the case where we are supplied with a scalar value rather than
+    # a list
+    if not isinstance(d, dict) or isinstance(d, list):
+      set_method = getattr(obj._parent, "_set_%s" % safe_name(obj._yang_name))
+      set_method(d)
+      return obj
+
     for key in d:
       # Fix any namespace that was supplied in the JSON
       if ":" in key:
@@ -373,24 +387,39 @@ class pybindJSONDecoder(object):
             raise AttributeError("List specified that did not exist")
           this_attr = this_attr()
           if hasattr(this_attr, "_keyval"):
+            if overwrite:
+              existing_keys = this_attr.keys()
+              for i in existing_keys:
+                this_attr.delete(i)
             #  this handles YANGLists
             if this_attr._keyval is False:
               # Keyless list, generate a key
               k = this_attr.add()
               nobj = this_attr[k]
             elif " " in this_attr._keyval:
+              keystr = u""
               kwargs = {}
               for pkv, ykv in zip(this_attr._keyval.split(" "),
                                       this_attr._yang_keys.split(" ")):
                 kwargs[pkv] = elem[ykv]
-              nobj = this_attr.add(**kwargs)
+                keystr += u"%s " % elem[ykv]
+              keystr = keystr.rstrip(" ")
+              if not keystr in this_attr:
+                nobj = this_attr.add(**kwargs)
+              else:
+                nobj = this_attr[keystr]
             else:
-              nobj = this_attr.add(elem[this_attr._yang_keys])
+              k = elem[this_attr._yang_keys]
+              if not k in this_attr:
+                nobj = this_attr.add(k)
+              else:
+                nobj = this_attr[k]
             pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj,
                 path_helper=path_helper, extmethods=extmethods,
                   overwrite=overwrite)
             pybindJSONDecoder.check_metadata_add(key, d, nobj)
           else:
+            # this is a leaf-list
             std_method_set = True
       else:
         std_method_set = True
@@ -459,6 +488,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         elif not flt:
           d[yname] = element
     return d
+
 
   def encode(self, obj):
     return json.JSONEncoder.encode(self,

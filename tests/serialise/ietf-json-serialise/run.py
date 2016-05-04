@@ -98,9 +98,9 @@ def main():
   external_json = json.load(
                       open(os.path.join(this_dir, "json", "obj.json"), 'r'))
 
-  #from pprint import PrettyPrinter
-  #pp = PrettyPrinter(indent=4)
-  #pp.pprint(pybind_json)
+  # from pprint import PrettyPrinter
+  # pp = PrettyPrinter(indent=4)
+  # pp.pprint(pybind_json)
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 
