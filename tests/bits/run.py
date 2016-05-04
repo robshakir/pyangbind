@@ -40,7 +40,7 @@ def main():
   os.system(cmd)
 
   from bindings import bits as b
-  from bitarray import bitarray
+
   t = b()
 
   for i in ["b1"]:

@@ -15,7 +15,7 @@ module bits {
           position 0;
         }
         bit flag2 {
-          position 1;
+          position 5;
         }
       }
     }
