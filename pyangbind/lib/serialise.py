@@ -115,6 +115,12 @@ class pybindJSONEncoder(json.JSONEncoder):
         return int(obj)
     elif orig_yangt in ["string", "enumeration"]:
       return unicode(obj)
+    elif orig_yangt in ["bits"]:
+      set_bits = []
+      for bit in obj.bits:
+        if obj[bit]:
+          set_bits.append(bit)
+      return " ".join(set_bits)
     elif orig_yangt in ["binary"]:
       return obj.to01()
     elif orig_yangt in ["decimal64"]:
