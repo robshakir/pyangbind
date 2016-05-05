@@ -7,13 +7,14 @@
 trap "exit 1;" SIGINT SIGTERM
 
 read -r -d "" HELP << "EOF"
-usage: y2c [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY]
+usage: y2c [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY] [-p PATH]
 
 Generates Python classes from YANG models.
 
 optional arguments:
   -i INPUT_DIR          Read YANG models from this directory root.
   -o OUTPUT_DIR         Write Python classes to this directory root.
+  -p PATH               Append PATH to the pyang -p option.
 EOF
 
 INPUT_DIR="models"
@@ -31,7 +32,7 @@ if [ -z "$PYBINDPLUGIN" ]; then
     exit 1
 fi
 
-while getopts ":hi:o:" opt; do
+while getopts ":hi:o:p:" opt; do
     case $opt in
         h)
             echo "$HELP" >&2
@@ -42,6 +43,9 @@ while getopts ":hi:o:" opt; do
             ;;
         o)
             OUTPUT_DIR=$OPTARG
+            ;;
+        p)
+            PYANG_PATH=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG" >&2
@@ -79,7 +83,7 @@ for YANG_SRC_FILE in $YANG_SRC_FILES; do
 
     echo "*** Processing $YANG_SRC_FILE ***"
 
-    $PYANG --plugindir $PYBINDPLUGIN -p $INPUT_DIR -f pybind --split-class-dir $OUTPUT_DIR/$CLASS_DIR $YANG_SRC_FILE
+    $PYANG --plugindir $PYBINDPLUGIN -p $INPUT_DIR:$PYANG_PATH -f pybind --split-class-dir $OUTPUT_DIR/$CLASS_DIR $YANG_SRC_FILE
 
     if [ $? != 0 ]; then
         echo "*** PROBLEM WITH $YANG_SRC_FILE ***"
