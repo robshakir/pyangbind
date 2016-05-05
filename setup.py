@@ -45,4 +45,5 @@ setup(
     packages=find_packages(exclude=['lib']),
     install_requires=inst_reqs,
     zip_safe = False,
+    scripts = ['scripts/y2c']
 )
