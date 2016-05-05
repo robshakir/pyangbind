@@ -54,8 +54,8 @@ PyangBind does not currently try and be feature complete against the YANG langua
  --------------------|--------------------|--------------------------|---------------
  **binary**          | -                   | [bitarray](https://github.com/ilanschnell/bitarray)           | tests/binary
  -                   | length              | Supported           | tests/binary
- **bits**            | -                   | Not supported           | N/A
- -                   | position            | Not supported           | N/A
+ **bits**            | -                   | YANGBits                | tests/bits
+ -                   | position            | Supported               | tests/bits
  **boolean**         | -                   | YANGBool                | tests/boolean-empty
  **empty**           | -                   | YANGBool                | tests/boolean-empty
  **decimal64**       | -                   | [Decimal](https://docs.python.org/2/library/decimal.html) | tests/decimal64

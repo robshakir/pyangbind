@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+#
+# Author: Cyrus Durgin <cyrusd@gmail.com>
+#
+
+trap "exit 1;" SIGINT SIGTERM
+
+read -r -d "" HELP << "EOF"
+usage: y2c [-i INPUT_DIRECTORY] [-o OUTPUT_DIRECTORY]
+
+Generates Python classes from YANG models.
+
+optional arguments:
+  -i INPUT_DIR          Read YANG models from this directory root.
+  -o OUTPUT_DIR         Write Python classes to this directory root.
+EOF
+
+INPUT_DIR="models"
+OUTPUT_DIR="classes"
+
+PYANG=`which pyang`
+if [ -z "$PYANG" ]; then
+    echo "Cannot locate pyang; install with pip." >&2
+    exit 1
+fi
+
+PYBINDPLUGIN=`/usr/bin/env python -c 'import pyangbind; import os; print "%s/plugin" % os.path.dirname(pyangbind.__file__)'`
+if [ -z "$PYBINDPLUGIN" ]; then
+    echo "Cannot locate pyangbind; install with pip." >&2
+    exit 1
+fi
+
+while getopts "hi:o:" opt; do
+    case $opt in
+        h)
+            echo "$HELP" >&2
+            exit 0
+            ;;
+        i)
+            INPUT_DIR=$OPTARG
+            ;;
+        o)
+            OUTPUT_DIR=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            echo >&2
+            echo "$HELP" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            echo >&2
+            echo "$HELP" >&2
+            exit 1
+            ;;
+    esac
+done
+
+YANG_SRC_FILES=$(find $INPUT_DIR -type f -a -name "*.yang" 2> /dev/null)
+
+if [ $? -gt 0 ]; then
+    echo "Cannot find yang models in '$INPUT_DIR'." >&2
+    echo >&2
+    echo "$HELP" >&2
+    exit 1
+fi
+
+ERRORS=0
+SRC_FILES=0
+SECONDS=0
+ERROR_FILES=()
+
+for YANG_SRC_FILE in $YANG_SRC_FILES; do
+    ((SRC_FILES++))
+
+    CLASS_DIR=$(echo $(dirname $(realpath $YANG_SRC_FILE)) | sed "s#$PWD/$INPUT_DIR##" | sed "s#^/##")
+    mkdir -p $OUTPUT_DIR/$CLASS_DIR
+    touch $OUTPUT_DIR/$CLASS_DIR/__init__.py
+
+    MODULE=$(basename $YANG_SRC_FILE | sed "s#.yang##" | sed "s#-#_#g")
+
+    echo "*** Processing $YANG_SRC_FILE ***"
+
+    $PYANG -o $OUTPUT_DIR/$CLASS_DIR/${MODULE}.py --plugindir $PYBINDPLUGIN -p $INPUT_DIR -f pybind $YANG_SRC_FILE
+
+    if [ $? != 0 ]; then
+        echo "*** PROBLEM WITH $YANG_SRC_FILE ***"
+        ((ERRORS++))
+        ERROR_FILES+=($YANG_SRC_FILE)
+    else
+        echo "*** Finished: output $OUTPUT_DIR/$CLASS_DIR/${MODULE}.py ***"
+    fi
+
+    echo
+done
+
+DURATION=$SECONDS
+
+echo "*** Processed $SRC_FILES source files with $ERRORS errors in $((DURATION / 60)) minutes and $((DURATION % 60))" \
+     "seconds ***"
+
+if [ $ERRORS -gt 0 ]; then
+    echo "*** Source files with errors:"
+    for ERROR_FILE in ${ERROR_FILES[@]}; do
+        echo "    $ERROR_FILE"
+    done
+    exit 1
+fi
+
+exit 0
+

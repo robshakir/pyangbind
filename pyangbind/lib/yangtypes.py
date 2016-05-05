@@ -779,6 +779,26 @@ def YANGListType(*args, **kwargs):
   return type(YANGList(*args, **kwargs))
 
 
+class YANGBits(bitarray):
+  """
+      A class for representing the 'bits' YANG type.
+  """
+  def __new__(self, bits, *args, **kwargs):
+    self.bits = bits
+    return bitarray.__new__(self, "0" * len(bits))
+
+  def __getitem__(self, index_or_name):
+    if int is type(index_or_name):
+      return super(YANGBits, self).__getitem__(index_or_name)
+    else:
+      return super(YANGBits, self).__getitem__(self.bits.index(index_or_name))
+
+  def __setitem__(self, index_or_name, value):
+    if int is type(index_or_name):
+      return super(YANGBits, self).__setitem__(index_or_name, value)
+    else:
+      return super(YANGBits, self).__setitem__(self.bits.index(index_or_name), value)
+
 class YANGBool(int):
   """
     A custom boolean class for using in YANG. Since bool has specific

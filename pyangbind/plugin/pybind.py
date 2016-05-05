@@ -26,7 +26,7 @@ import decimal
 import copy
 import os
 from bitarray import bitarray
-from pyangbind.lib.yangtypes import safe_name, YANGBool, \
+from pyangbind.lib.yangtypes import safe_name, YANGBool, YANGBits, \
                                   RestrictedClassType
 
 from pyang import plugin
@@ -98,6 +98,12 @@ class_map = {
         "base_type": True,
         "quote_arg": True,
         "pytype": bitarray
+    },
+    'bits': {
+      "native_type": "YANGBits",
+      "base_type": True,
+      "quote_arg": True,
+      "pytype": YANGBits
     },
     'uint8': {
         "native_type": ("RestrictedClassType(base_type=int," +
@@ -298,7 +304,7 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
   ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
   ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, """
+  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, YANGBits, """
   ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
   ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
   ctx.pybind_common_hdr += """from decimal import Decimal\n"""
@@ -945,6 +951,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
                                                         default_arg)
       if i["class"] == "container":
         class_str["arg"] += ", is_container='container'"
+      elif i["class"] == "bits":
+        class_str["arg"] += ", bits={0}".format(i["bit_list"])
       elif i["class"] == "list":
         class_str["arg"] += ", is_container='list'"
       elif i["class"] == "leaf-list":
@@ -1286,6 +1294,36 @@ def build_elemtype(ctx, et, prefix=False):
           pp.pprint(et.arg)
           pp.pprint(base_stmt.arg)
         sys.exit(127)
+    elif et.arg == "bits":
+        cls = 'bits'
+
+        bits = et.search('bit')
+
+        b_list = []
+
+        for bit in bits:
+            pos = bit.search_one('position')
+            if pos:
+                if pos.arg == '0':
+                    if len(b_list):
+                        b_list[0] = pos.arg
+                    else:
+                        b_list.append(bit.arg)
+                elif int(pos.arg) > len(b_list) - 1:
+                    b_list += [None for _ in range(0, int(pos.arg) - len(b_list))]
+                    b_list.append(bit.arg)
+                else:
+                    b_list[int(pos.arg)] = bit.arg
+            else:
+                b_list.append(bit.arg)
+
+        elemtype = {
+            "native_type": "YANGBits",
+            "parent_type": [],
+            "base_type": True,
+            "bit_list": b_list
+        }
+
     else:
       # For all other cases, then we should be able to look up directly in the
       # class_map for the defined type, since these are not 'derived' types
@@ -1444,6 +1482,7 @@ def get_element(ctx, fd, element, module, parent, path,
       create_list = True
     cls, elemtype = copy.deepcopy(build_elemtype(ctx,
                         element.search_one('type')))
+
 
     # Determine what the default for the leaf should be where there are
     # multiple available.
@@ -1624,9 +1663,13 @@ def get_element(ctx, fd, element, module, parent, path,
       elemdict["referenced_path"] = elemtype["referenced_path"]
       elemdict["require_instance"] = elemtype["require_instance"]
 
+    if cls == "bits":
+        elemdict["bit_list"] = elemtype["bit_list"]
+
     # In cases where there there are a set of interesting extensions specified
     # then build a dictionary of these extension values to provide with the
     # specific leaf for this element.
+
     if element.substmts is not None and \
           ctx.opts.pybind_interested_exts is not None:
       extensions = {}

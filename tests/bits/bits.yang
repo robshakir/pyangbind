@@ -1,0 +1,24 @@
+module bits {
+  yang-version "1";
+  namespace "http://rob.sh/yang/test/bits";
+  prefix "foo";
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+  description "A test module";
+
+  container container {
+    leaf b1 {
+      description "test bits";
+      type bits {
+        bit flag1 {
+          position 0;
+        }
+        bit flag2 {
+          position 5;
+        }
+      }
+    }
+  }
+}
+
