@@ -489,7 +489,7 @@ def build_identities(ctx, defnd):
   for identity in orig_identity_d:
     vals = find_all_identity_values(identity, orig_identity_d, values=[])
     for value in vals:
-      if value not in orig_identity_d[identity]:
+      if value not in orig_identity_d[identity] and value in orig_identity_d:
         identity_d[identity][value] = {k: v for k, v in
             orig_identity_d[value].iteritems() if k in
             ["@module", "@namespace"]}
