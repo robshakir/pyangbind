@@ -1,0 +1,56 @@
+{
+    "interfaces": {
+        "interface": {
+            "eth0": {
+                "hold-time": {
+                    "state": {
+                        "down": 0, 
+                        "up": 0
+                    }, 
+                    "config": {
+                        "down": 0, 
+                        "up": 0
+                    }
+                }, 
+                "config": {
+                    "enabled": true, 
+                    "type": "", 
+                    "description": "", 
+                    "name": "", 
+                    "mtu": 0
+                }, 
+                "state": {
+                    "name": "", 
+                    "type": "", 
+                    "description": "", 
+                    "enabled": true, 
+                    "admin-status": "", 
+                    "mtu": 0, 
+                    "ifindex": 0, 
+                    "last-change": 0, 
+                    "oper-status": "", 
+                    "counters": {
+                        "out-octets": 0, 
+                        "in-multicast-pkts": 0, 
+                        "out-broadcast-pkts": 0, 
+                        "out-errors": 0, 
+                        "in-unknown-protos": 0, 
+                        "out-multicast-pkts": 0, 
+                        "in-discards": 0, 
+                        "last-clear": "", 
+                        "in-unicast-pkts": 0, 
+                        "out-unicast-pkts": 0, 
+                        "out-discards": 0, 
+                        "in-broadcast-pkts": 0, 
+                        "in-errors": 0, 
+                        "in-octets": 0
+                    }
+                }, 
+                "name": "eth0", 
+                "subinterfaces": {
+                    "subinterface": {}
+                }
+            }
+        }
+    }
+}

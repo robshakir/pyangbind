@@ -1,0 +1,12 @@
+{
+    "openconfig-interfaces:interfaces": {
+        "interface": [
+            {
+                "config": {
+                    "name": "eth0"
+                }, 
+                "name": "eth0"
+            }
+        ]
+    }
+}

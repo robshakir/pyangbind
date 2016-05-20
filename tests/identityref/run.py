@@ -133,6 +133,18 @@ def main():
     assert passed is atype[1], "AK identity inheritance test failed - " + \
       "%s: %s != %s" % (atype[0], atype[1], passed)
 
+  for k in [("remote:remote-one", True), ("nottherightmodulename:remote-one", False),
+            ("remote:remote-two", True)]:
+    passed = True
+    try:
+      i.test_container.idr1 = k[0]
+    except ValueError:
+      passed = False
+
+    assert passed == k[1], "Did not set an identityref " + \
+      "based on the module-name:value format correctly:" + \
+      "  %s != %s for %s" % (k[1], passed, k[0])
+
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

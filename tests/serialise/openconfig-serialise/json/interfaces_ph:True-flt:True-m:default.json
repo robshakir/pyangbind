@@ -1,0 +1,12 @@
+{
+    "interfaces": {
+        "interface": {
+            "eth0": {
+                "config": {
+                    "name": "eth0"
+                }, 
+                "name": "eth0"
+            }
+        }
+    }
+}

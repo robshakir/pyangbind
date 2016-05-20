@@ -25,7 +25,7 @@ serialise:
 import json
 from collections import OrderedDict
 from decimal import Decimal
-from pyangbind.lib.yangtypes import safe_name
+from pyangbind.lib.yangtypes import safe_name, YANGBool
 from types import ModuleType
 import copy
 
@@ -150,6 +150,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       return unicode(obj)
     elif type(obj) in [int, long]:
       return int(obj)
+    elif type(obj) in [YANGBool]:
+      return bool(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
                                   (elem_name, orig_yangt, pybc, pyc,
@@ -186,6 +188,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       if mode == "ietf" and int_size == 64:
         return unicode(obj)
       return int(obj)
+    elif map_val in ["container"]:
+      return self._preprocess_element(obj.get(), mode=mode)
 
 
 
