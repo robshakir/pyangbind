@@ -883,6 +883,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
                                                   % i["user_ordered"]
         class_str["arg"] += ", path_helper=self._path_helper"
         class_str["arg"] += ", yang_keys='%s'" % i["yang_keys"]
+        class_str["arg"] += ", extensions=%s" % i["extensions"]
         if i["choice"]:
           class_str["arg"] += ", choice=%s" % repr(choice)
         class_str["arg"] += ")"
@@ -1370,6 +1371,18 @@ def get_element(ctx, fd, element, module, parent, path,
   else:
     elemdescr = elemdescr.arg
 
+    # In cases where there there are a set of interesting extensions specified
+    # then build a dictionary of these extension values to provide with the
+    # specific leaf for this element.
+  if element.substmts is not None and \
+        ctx.opts.pybind_interested_exts is not None:
+    extensions = {}
+    for ext in element.substmts:
+      if ext.keyword[0] in ctx.opts.pybind_interested_exts:
+        if not ext.keyword[0] in extensions:
+          extensions[ext.keyword[0]] = {}
+        extensions[ext.keyword[0]][ext.keyword[1]] = ext.arg
+
   # If the element has an i_children attribute then this is a container, list
   # leaf-list or choice. Alternatively, it can be the 'input' or 'output'
   # substmts of an RPC
@@ -1406,7 +1419,9 @@ def get_element(ctx, fd, element, module, parent, path,
           "register_paths": register_paths,
           "namespace": namespace,
           "defining_module": defining_module,
+          "extensions": extensions if len(extensions) else None,
       }
+
       # Handle the different cases of class name, this depends on whether we
       # were asked to split the bindings into a directory structure or not.
       if ctx.opts.split_class_dir:
@@ -1550,8 +1565,6 @@ def get_element(ctx, fd, element, module, parent, path,
         if not default_type["base_type"]:
           raise TypeError("default type was not a base type")
 
-    # TODO: should this be more indented
-
     # Set the default type based on what was determined above about the
     # correct value to set.
     if default_type:
@@ -1619,24 +1632,12 @@ def get_element(ctx, fd, element, module, parent, path,
         "namespace": namespace,
         "defining_module": defining_module
     }
+    if len(extensions):
+      elemdict["extensions"] = extensions
 
     if cls == "leafref":
       elemdict["referenced_path"] = elemtype["referenced_path"]
       elemdict["require_instance"] = elemtype["require_instance"]
-
-    # In cases where there there are a set of interesting extensions specified
-    # then build a dictionary of these extension values to provide with the
-    # specific leaf for this element.
-    if element.substmts is not None and \
-          ctx.opts.pybind_interested_exts is not None:
-      extensions = {}
-      for ext in element.substmts:
-        if ext.keyword[0] in ctx.opts.pybind_interested_exts:
-          if not ext.keyword[0] in extensions:
-            extensions[ext.keyword[0]] = {}
-          extensions[ext.keyword[0]][ext.keyword[1]] = ext.arg
-      if len(extensions):
-        elemdict["extensions"] = extensions
 
     this_object.append(elemdict)
   return this_object

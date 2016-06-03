@@ -1,0 +1,55 @@
+module extensions {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/extensions";
+    prefix "foo";
+
+    import extdef { prefix "ext"; }
+    import extdef-two { prefix "two"; }
+    import extdef-irr { prefix "irr"; }
+
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container test {
+        ext:extension-one "version";
+
+        leaf one {
+            type string;
+        }
+    }
+
+    container test-two {
+        leaf two {
+            type string;
+            ext:extension-two "value";
+        }
+    }
+
+    list l {
+        key "k";
+
+        leaf k {
+            type int8;
+            ext:extension-two "from-leaf";
+            ext:extension-one "from-leaf";
+        }
+
+        leaf q {
+            type uint64;
+            ext:extension-two "from-q";
+            two:extension-three "from-q";
+            irr:extension-four "from-q";
+        }
+
+        ext:extension-two "from-list";
+        ext:extension-two "from-list";
+    }
+
+}

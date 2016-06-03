@@ -471,11 +471,12 @@ def YANGListType(*args, **kwargs):
   yang_keys = kwargs.pop("yang_keys", False)
   user_ordered = kwargs.pop("user_ordered", False)
   path_helper = kwargs.pop("path_helper", None)
+  extensions = kwargs.pop("extensions", None)
 
   class YANGList(object):
     __slots__ = ('_pybind_generated_by', '_members', '_keyval',
                   '_contained_class', '_path_helper', '_yang_keys',
-                  '_ordered')
+                  '_ordered',)
     _pybind_generated_by = "YANGListType"
 
     def __init__(self, *args, **kwargs):
@@ -614,7 +615,8 @@ def YANGListType(*args, **kwargs):
                                path_helper=path_helper,
                                register_path=(self._parent._path() +
                                 [self._yang_name + path_keystring]),
-                               extmethods=self._parent._extmethods)
+                               extmethods=self._parent._extmethods,
+                               extensions=extensions)
           else:
             # hand the value to the init, rather than simply creating an empty
             # object.
@@ -625,7 +627,8 @@ def YANGListType(*args, **kwargs):
                                 register_path=(self._parent._path() +
                                 [self._yang_name + path_keystring]),
                                 extmethods=self._parent._extmethods,
-                                load=True)
+                                load=True,
+                                extensions=extensions)
 
           if keydict is not None:
             for kn in keydict:
@@ -641,7 +644,8 @@ def YANGListType(*args, **kwargs):
                                           parent=parent, yang_name=yang_name,
                                           is_container=is_container,
                                           path_helper=path_helper,
-                                          extmethods=self._parent._extmethods)
+                                          extmethods=self._parent._extmethods,
+                                          extensions=extensions)
         return k
 
     def __delitem__(self, k):
