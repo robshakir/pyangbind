@@ -25,13 +25,14 @@ print(oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag)
 # are not empty or the default
 print(oclr.local_routes.static_routes.static["192.0.2.1/32"].get(filter=True))
 
-# Add a next-hop
-rt.config.next_hop.append("10.0.0.1")
-rt.config.next_hop.append("192.168.207.1")
+# Add a set of next_hops
+for nhop in [(0, "192.168.0.1"), (1, "10.0.0.1")]:
+  nh = rt.next_hops.next_hop.add(nhop[0])
+  nh.config.next_hop = nhop[1]
 
 # Iterate through the next-hops added
-for nh in rt.config.next_hop:
-  print("%d: %s" % (rt.config.next_hop.index(nh), nh))
+for index, nh in rt.next_hops.next_hop.iteritems():
+  print("%s: %s" % (index, nh.config.next_hop))
 
 # Try and set an invalid tag type
 try:

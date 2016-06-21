@@ -2,13 +2,25 @@
     "openconfig-local-routing:static-routes": {
         "static": [
             {
-                "prefix": "192.0.2.2/32",
-                "config": {
-                    "set-tag": 256,
+                "next-hops": {
                     "next-hop": [
-                        "10.0.0.1",
-                        "192.168.207.1"
+                        {
+                            "index": "0", 
+                            "config": {
+                                "next-hop": "192.168.0.1"
+                            }
+                        }, 
+                        {
+                            "index": "1", 
+                            "config": {
+                                "next-hop": "10.0.0.1"
+                            }
+                        }
                     ]
+                }, 
+                "prefix": "192.0.2.1/32", 
+                "config": {
+                    "set-tag": 42
                 }
             }
         ]

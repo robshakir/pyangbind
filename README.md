@@ -130,16 +130,17 @@ print(oclr.local_routes.static_routes.static["192.0.2.1/32"].get(filter=True))
 
 The `filter` keyword allows only the elements within the class that have changed (are not empty or their default) to be output - rather than all possible elements.
 
-Since the `next-hop` element in this model is a `leaf-list` this acts like a Python list, albeit one that validates the contents that are put into it. For example, the `append` method can be used to add entries to the list, which can be iterated through using a standard Python loop:
+The `next-hops` element in this model is another list. This keyed data structure acts like a Python dictionary, and has the special method `add` to add items to it. YANG `leaf-list` types use the standard Python list `append` method to add items to it. Equally, a `list` can be iterated through using the same methods as a dictionary, for example, using `iteritems()`:
 
 ```python
-# Add a next-hop
-rt.config.next_hop.append("10.0.0.1")
-rt.config.next_hop.append("192.168.207.1")
+# Add a set of next_hops
+for nhop in [(0, "192.168.0.1"), (1, "10.0.0.1")]:
+  nh = rt.next_hops.next_hop.add(nhop[0])
+  nh.config.next_hop = nhop[1]
 
 # Iterate through the next-hops added
-for nh in rt.config.next_hop:
-  print("%d: %s" % (rt.config.next_hop.index(nh), nh))
+for index, nh in rt.next_hops.next_hop.iteritems():
+  print("%s: %s" % (index, nh.config.next_hop))
 ```
 
 Where (type or value) restrictions exist. PyangBind generated classes will result in a Python `ValueError` being raised. For example, if we attempt to set the `set_tag` leaf to an invalid value:
@@ -176,13 +177,25 @@ This outputs the following JSON structured text:
         "static-routes": {
             "static": {
                 "192.0.2.1/32": {
-                    "prefix": "192.0.2.1/32",
+                    "next-hops": {
+                        "next-hop": {
+                            "0": {
+                                "index": "0", 
+                                "config": {
+                                    "next-hop": "192.168.0.1"
+                                }
+                            }, 
+                            "1": {
+                                "index": "1", 
+                                "config": {
+                                    "next-hop": "10.0.0.1"
+                                }
+                            }
+                        }
+                    }, 
+                    "prefix": "192.0.2.1/32", 
                     "config": {
-                        "set-tag": 42,
-                        "next-hop": [
-                            "10.0.0.1",
-                            "192.168.207.1"
-                        ]
+                        "set-tag": 42
                     }
                 }
             }
@@ -207,13 +220,25 @@ And the corresponding output:
     "openconfig-local-routing:static-routes": {
         "static": [
             {
-                "prefix": "192.0.2.1/32",
-                "config": {
-                    "set-tag": 42,
+                "next-hops": {
                     "next-hop": [
-                        "10.0.0.1",
-                        "192.168.207.1"
+                        {
+                            "index": "0", 
+                            "config": {
+                                "next-hop": "192.168.0.1"
+                            }
+                        }, 
+                        {
+                            "index": "1", 
+                            "config": {
+                                "next-hop": "10.0.0.1"
+                            }
+                        }
                     ]
+                }, 
+                "prefix": "192.0.2.1/32", 
+                "config": {
+                    "set-tag": 42
                 }
             }
         ]
