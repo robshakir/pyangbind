@@ -1,5 +1,5 @@
 module ptr-tc02 {
-    yang-version "1";
+    yang-version "1.1";
     namespace "http://rob.sh/yang/xpathelper/tc02";
     prefix "tc01";
     organization "BugReports Inc";

@@ -81,6 +81,7 @@ def main():
   js.c1.l1[1].next_hop.append("DROP")
   js.c1.l1[1].next_hop.append("192.0.2.1")
   js.c1.l1[1].next_hop.append("fish")
+  js.c1.l1[1].typedef_decimal = Decimal("21.21")
 
   js.c1.l1[1].decleaf = Decimal("42.4422")
 

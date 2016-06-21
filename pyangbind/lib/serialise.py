@@ -164,7 +164,9 @@ class pybindJSONEncoder(json.JSONEncoder):
 
     if map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
       return self.default(obj._get(), mode=mode)
-    elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal"]:
+    elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal", "RestrictedPrecisionDecimal"]:
+      if mode == "ietf":
+        return unicode(obj)
       return float(obj)
     elif map_val in ["bitarray.bitarray"]:
       return obj.to01()

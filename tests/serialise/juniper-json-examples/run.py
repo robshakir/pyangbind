@@ -38,7 +38,7 @@ def main():
 
   OC = "https://raw.githubusercontent.com/openconfig/" + \
             "public/master/release/models/"
-  RFC = "https://raw.githubusercontent.com/YangModels/" + \
+  RFC = "https://raw.githubusercontent.com/robshakir/" + \
             "yang/master/standard/ietf/RFC/"
   FETCH_FILES = [
                   (OC + "bgp/openconfig-bgp-multiprotocol.yang", "openconfig"),

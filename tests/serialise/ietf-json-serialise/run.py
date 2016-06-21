@@ -78,6 +78,7 @@ def main():
   js.c1.l1[1].typedef_two = 8
   js.c1.l1[1].one_leaf = "hi"
   js.c1.l1[1].uint64type = 2**22
+  js.c1.l1[1].typedef_decimal = 32.29
 
   for i in range(1, 5):
     js.c1.l1[1].ll.append(unicode(i))
@@ -98,9 +99,9 @@ def main():
   external_json = json.load(
                       open(os.path.join(this_dir, "json", "obj.json"), 'r'))
 
-  # from pprint import PrettyPrinter
-  # pp = PrettyPrinter(indent=4)
-  # pp.pprint(pybind_json)
+  from pprint import PrettyPrinter
+  pp = PrettyPrinter(indent=4)
+  pp.pprint(pybind_json)
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 

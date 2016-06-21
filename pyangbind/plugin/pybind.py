@@ -813,7 +813,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
 
   elements_str = ""
   if len(elements) == 0:
-    nfd.write("  pass\n")
+    nfd.write("  _pyangbind_elements = {}")
   else:
     # We want to prevent a user from creating new attributes on a class that
     # are not allowed within the data model - this uses the __slots__ magic

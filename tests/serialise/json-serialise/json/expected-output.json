@@ -75,7 +75,8 @@
                 "restricted-string": "aardvark",
                 "ll": ["1", "2", "3", "4"],
                 "next-hop": ["DROP", "192.0.2.1", "fish"],
-                "decleaf": 42.4422
+                "decleaf": 42.4422,
+                "typedef-decimal": 21.21
             }
         }
     }

@@ -32,6 +32,12 @@ module ietf-json-serialise {
     type uint64;
   }
 
+  typedef decimaldefinedtype {
+    type decimal64 {
+      fraction-digits 2;
+    }
+  }
+
   typedef definedtype {
     type string;
   }
@@ -198,6 +204,10 @@ module ietf-json-serialise {
           type nhopenum;
           type string;
         }
+      }
+
+      leaf typedef-decimal {
+        type decimaldefinedtype;
       }
 
       leaf uint64type {

@@ -71,7 +71,8 @@
                 "ll": ["1", "2", "3", "4"],
                 "next-hop": ["DROP", "192.0.2.1", "TEST"],
                 "uint64type": "4194304",
-                "decleaf": "42.4422"
+                "decleaf": "42.4422",
+                "typedef-decimal": "32.29"
             }
         ]
     },

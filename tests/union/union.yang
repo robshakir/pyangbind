@@ -1,5 +1,5 @@
 module union {
-    yang-version "1";
+    yang-version "1.1";
     namespace "http://rob.sh/yang/test/union";
     prefix "foo";
     organization "BugReports Inc";

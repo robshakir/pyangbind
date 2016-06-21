@@ -29,6 +29,12 @@ module json-serialise {
     type string;
   }
 
+  typedef decimaldefinedtype {
+    type decimal64 {
+      fraction-digits 2;
+    }
+  }
+
   typedef definedtypeunion {
     type union {
       type uint8;
@@ -169,6 +175,10 @@ module json-serialise {
           type nhopenum;
           type string;
         }
+      }
+
+      leaf typedef-decimal {
+        type decimaldefinedtype;
       }
 
       choice test-choice {
