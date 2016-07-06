@@ -233,7 +233,7 @@ class pybindJSONDecoder(object):
       if child is None and skip_unknown is False:
         raise AttributeError("JSON object contained a key that" +
                               "did not exist (%s)" % (key))
-      elif skip_unknown:
+      elif child is None and skip_unknown:
         # skip unknown elements if we are asked to by the user`
         continue
       chobj = child()
@@ -251,9 +251,12 @@ class pybindJSONDecoder(object):
         # we need to add each key to the list and then skip a level in the
         # JSON hierarchy
         list_obj = getattr(obj, safe_name(key), None)
-        if list_obj is None:
+        if list_obj is None and skip_unknown is False:
           raise pybindJSONDecodeError("Could not load list object " +
                     "with name %s" % key)
+        if list_obj is None and skip_unknown is not False:
+          continue
+
         ordered_list = getattr(list_obj, "_ordered", None)
         if ordered_list:
           # Put keys in order:
