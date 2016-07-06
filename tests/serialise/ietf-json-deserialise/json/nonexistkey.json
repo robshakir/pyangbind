@@ -1,0 +1,16 @@
+{
+  "skey": [
+    {
+      "leaf-one": "one",
+      "non-exist": true
+    },
+    {
+      "leaf-one": "two",
+      "non-exist": false
+    },
+    {
+      "leaf-one": "three",
+      "non-exist": true
+    }
+  ]
+}

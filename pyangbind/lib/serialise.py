@@ -199,7 +199,7 @@ class pybindJSONEncoder(json.JSONEncoder):
 class pybindJSONDecoder(object):
   @staticmethod
   def load_json(d, parent, yang_base, obj=None, path_helper=None,
-                extmethods=None, overwrite=False):
+                extmethods=None, overwrite=False, skip_unknown=False):
 
     if obj is None:
       # we need to find the class to create, as one has not been supplied.
@@ -230,9 +230,12 @@ class pybindJSONDecoder(object):
 
     for key in d:
       child = getattr(obj, "_get_%s" % safe_name(key), None)
-      if child is None:
+      if child is None and skip_unknown is False:
         raise AttributeError("JSON object contained a key that" +
                               "did not exist (%s)" % (key))
+      elif skip_unknown:
+        # skip unknown elements if we are asked to by the user`
+        continue
       chobj = child()
       set_via_stdmethod = True
       pybind_attr = getattr(chobj, '_pybind_generated_by', None)
@@ -242,7 +245,7 @@ class pybindJSONDecoder(object):
             unsetchildelem = getattr(chobj, "_unset_%s" % elem)
             unsetchildelem()
         pybindJSONDecoder.load_json(d[key], chobj, yang_base, obj=chobj,
-            path_helper=path_helper)
+            path_helper=path_helper, skip_unknown=skip_unknown)
         set_via_stdmethod = False
       elif pybind_attr in ["YANGListType", "list"]:
         # we need to add each key to the list and then skip a level in the
@@ -277,7 +280,7 @@ class pybindJSONDecoder(object):
             chobj.add(child_key)
           parent = chobj[child_key]
           pybindJSONDecoder.load_json(d[key][child_key], parent, yang_base,
-                obj=parent, path_helper=path_helper)
+                obj=parent, path_helper=path_helper, skip_unknown=skip_unknown)
           set_via_stdmethod = False
         if overwrite:
           for child_key in chobj:
@@ -323,7 +326,7 @@ class pybindJSONDecoder(object):
 
   @staticmethod
   def load_ietf_json(d, parent, yang_base, obj=None, path_helper=None,
-                extmethods=None, overwrite=False):
+                extmethods=None, overwrite=False, skip_unknown=False):
     if obj is None:
       # we need to find the class to create, as one has not been supplied.
       base_mod_cls = getattr(parent, safe_name(yang_base))
@@ -373,12 +376,15 @@ class pybindJSONDecoder(object):
       if isinstance(d[key], dict):
         # Iterate through attributes and set to that value
         attr_get = getattr(obj, "_get_%s" % safe_name(ykey), None)
-        if attr_get is None:
+        if attr_get is None and skip_unknown is False:
           raise AttributeError("Invalid attribute specified (%s)" % ykey)
+        elif attr_get is None and skip_unknown is not False:
+          # Skip unknown JSON keys
+          continue
         pybindJSONDecoder.check_metadata_add(key, d, attr_get())
         pybindJSONDecoder.load_ietf_json(d[key], None, None, obj=attr_get(),
                   path_helper=path_helper, extmethods=extmethods,
-                      overwrite=overwrite)
+                      overwrite=overwrite, skip_unknown=skip_unknown)
       elif isinstance(d[key], list):
         for elem in d[key]:
           # if this is a list, then this is a YANG list
@@ -416,7 +422,7 @@ class pybindJSONDecoder(object):
                 nobj = this_attr[k]
             pybindJSONDecoder.load_ietf_json(elem, None, None, obj=nobj,
                 path_helper=path_helper, extmethods=extmethods,
-                  overwrite=overwrite)
+                  overwrite=overwrite, skip_unknown=skip_unknown)
             pybindJSONDecoder.check_metadata_add(key, d, nobj)
           else:
             # this is a leaf-list
@@ -426,9 +432,11 @@ class pybindJSONDecoder(object):
 
       if std_method_set:
         get_method = getattr(obj, "_get_%s" % safe_name(ykey), None)
-        if get_method is None:
-          raise AttributeError("JSON object contained a key that" +
+        if get_method is None and skip_unknown is False:
+          raise AttributeError("JSON object contained a key that " +
                               "did not exist (%s)" % (ykey))
+        elif get_method is None and skip_unknown is not False:
+          continue
         chk = get_method()
         if chk._is_keyval is True:
           pass

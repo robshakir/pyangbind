@@ -5,6 +5,7 @@ import sys
 import getopt
 import json
 import pyangbind.lib.serialise as pbS
+from pyangbind.lib.serialise import pybindJSONDecoder
 import pyangbind.lib.pybindJSON as pbJ
 from bitarray import bitarray
 from decimal import *
@@ -128,6 +129,19 @@ def main():
                 bindings, "json_deserialise", path_helper=y)
   assert js.ordered.keys() == ["one", "two"], \
         "Did not correctly follow ordering in JSON file"
+
+  pth = os.path.join(this_dir, "json", "nonexist.json")
+  for i in [True, False]:
+    nobj = None
+    success = True
+    try:
+      nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
+        bindings, "json_deserialise", skip_unknown=i)
+    except AttributeError:
+      success = False
+
+    assert success is i, "Skipping keys that did not exist was not" + \
+      " successfully handled"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)

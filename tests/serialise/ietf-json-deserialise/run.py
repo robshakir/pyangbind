@@ -130,6 +130,20 @@ def main():
   assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
     "complete object not as expected"
 
+  pth = os.path.join(this_dir, "json", "nonexistkey.json")
+  for i in [True, False]:
+    nobj = None
+    success = True
+    try:
+      nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
+        bindings, "ietf_json_deserialise", skip_unknown=i)
+    except AttributeError:
+      success = False
+
+    assert success is i, "Skipping keys that did not exist was not" + \
+      " successfully handled"
+
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
