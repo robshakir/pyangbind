@@ -1,0 +1,18 @@
+{
+    "load-list": {
+        "1": {
+            "index": 1,
+            "value": "one",
+            "no": "thisdoesnotexist"
+        },
+        "2": {
+            "index": 2,
+            "value": "two",
+            "fourtytwo": 42
+        },
+        "3": {
+            "index": 3,
+            "value": "three"
+        }
+    }
+}
