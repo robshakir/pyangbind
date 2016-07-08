@@ -834,6 +834,8 @@ def YANGDynClass(*args, **kwargs):
                      with the type.
       - is_config:   Whether this is a configuration (editable)
                      node.
+      - presence:    Whether the YANG container that is being
+                     represented has the presence keyword
   """
   base_type = kwargs.pop("base", False)
   default = kwargs.pop("default", False)
@@ -853,6 +855,7 @@ def YANGDynClass(*args, **kwargs):
   defining_module = kwargs.pop("defining_module", None)
   load = kwargs.pop("load", None)
   is_config = kwargs.pop("is_config", True)
+  has_presence = kwargs.pop("presence", None)
 
   if not base_type:
     raise TypeError("must have a base type")
@@ -883,7 +886,8 @@ def YANGDynClass(*args, **kwargs):
                  '_is_leaf', '_is_container', '_extensionsd',
                  '_pybind_base_class', '_extmethods', '_is_keyval',
                  '_register_paths', '_namespace', '_yang_type',
-                 '_defining_module', '_metadata', '_is_config']
+                 '_defining_module', '_metadata', '_is_config', '_cpresent',
+                 '_presence']
 
   if extmethods:
     rpath = None
@@ -937,6 +941,8 @@ def YANGDynClass(*args, **kwargs):
       self._yang_type = yang_type
       self._defining_module = defining_module
       self._metadata = {}
+      self._presence = has_presence
+      self._cpresent = False
 
       if self._extmethods:
         chk_path = \
@@ -1019,6 +1025,9 @@ def YANGDynClass(*args, **kwargs):
 
       self._mchanged = True
 
+      if self._presence:
+        self._cpresent = True
+
       if self._parent and hasattr(self._parent, "_set"):
         self._parent._set(choice=choice)
 
@@ -1084,6 +1093,22 @@ def YANGDynClass(*args, **kwargs):
         kwargs['path_helper'] = self._path_helper
         return methodfn(*args, **kwargs)
       return extmethodfn
+
+    def _set_present(self, present=True):
+      if not self._is_container == 'container':
+        raise AttributeError("Cannot set presence on a non-container")
+      self._cpresent = present
+      if present is True:
+        self._set()
+
+    def _present(self):
+      if not self._is_container == 'container':
+        return None
+
+      if self._presence is False:
+        return None
+
+      return self._cpresent
 
   return YANGBaseClass(*args, **kwargs)
 

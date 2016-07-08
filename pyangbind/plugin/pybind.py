@@ -259,6 +259,12 @@ class PyangBindClass(plugin.PyangPlugin):
                                       defined in each module. These
                                       are placed at the root of
                                       each module"""),
+          optparse.make_option("--presence",
+                                dest="generate_presence",
+                                action="store_true",
+                                help="""Capture whether the presence
+                                        keyword is used in the generated
+                                        code."""),
       ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -666,6 +672,7 @@ def find_definitions(defn, ctx, module, prefix):
 
 def get_children(ctx, fd, i_children, module, parent, path=str(),
                  parent_cfg=True, choice=False, register_paths=True):
+
   # Iterative function that is called for all elements that have childen
   # data nodes in the tree. This function resolves those nodes into the
   # relevant leaf, or container/list configuration and outputs the python
@@ -946,6 +953,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
                                                         default_arg)
       if i["class"] == "container":
         class_str["arg"] += ", is_container='container'"
+        if ctx.opts.generate_presence:
+          class_str["arg"] += ", presence=%s" % i["presence"]
       elif i["class"] == "list":
         class_str["arg"] += ", is_container='list'"
       elif i["class"] == "leaf-list":
@@ -1404,8 +1413,12 @@ def get_element(ctx, fd, element, module, parent, path,
       npath = path
 
     # Create an element for a container.
-    if element.i_children:
+    if element.i_children or ctx.opts.generate_presence:
       chs = element.i_children
+      has_presence = True if element.search_one('presence') is not None else False
+      if has_presence is False and len(chs) == 0:
+        return []
+
       get_children(ctx, fd, chs, module, element, npath, parent_cfg=parent_cfg,
                    choice=choice, register_paths=register_paths)
 
@@ -1420,6 +1433,7 @@ def get_element(ctx, fd, element, module, parent, path,
           "namespace": namespace,
           "defining_module": defining_module,
           "extensions": extensions if len(extensions) else None,
+          "presence": has_presence,
       }
 
       # Handle the different cases of class name, this depends on whether we

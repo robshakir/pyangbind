@@ -18,8 +18,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import copy
-
 
 class PybindBase(object):
 
@@ -34,6 +32,7 @@ class PybindBase(object):
   def get(self, filter=False):
     def error():
       return NameError, "element does not exist"
+
     d = {}
     # for each YANG element within this container.
     for element_name in self._pyangbind_elements:
@@ -44,6 +43,7 @@ class PybindBase(object):
         element_id = yang_name()
       else:
         element_id = element_name
+
       if hasattr(element, "get"):
         # this is a YANG container that has its own
         # get method
@@ -53,12 +53,29 @@ class PybindBase(object):
           # filtering unchanged elements, remove it
           # from the dictionary
           if isinstance(d[element_id], dict):
-            for entry in d[element_id]:
+            for entry in d[element_id].keys():
+              changed, present = False, False
+
               if hasattr(d[element_id][entry], "_changed"):
-                if not d[element_id][entry]._changed():
-                  del d[element_id][entry]
+                if d[element_id][entry]._changed():
+                  changed = True
+              else:
+                changed = None
+
+              if hasattr(d[element_id][entry], "_present"):
+                if not d[element_id][entry]._present() is True:
+                  present = True
+              else:
+                present = None
+
+              if present is False and changed is False:
+                del d[element_id][entry]
+
             if len(d[element_id]) == 0:
-              del d[element_id]
+              if element._presence and element._present():
+                pass
+              else:
+                del d[element_id]
           elif isinstance(d[element_id], list):
             for list_entry in d[element_id]:
               if hasattr(list_entry, "_changed"):
@@ -69,12 +86,12 @@ class PybindBase(object):
       else:
         # this is an attribute that does not have get()
         # method
-        if filter is False and not element._changed():
+        if filter is False and not element._changed() and not element._present() is True:
           if element._default is not False and element._default:
             d[element_id] = element._default
           else:
             d[element_id] = element
-        elif element._changed():
+        elif element._changed() or element._present() is True:
           d[element_id] = element
         else:
           # changed = False, and filter = True

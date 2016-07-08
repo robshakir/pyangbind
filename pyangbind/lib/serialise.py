@@ -237,6 +237,11 @@ class pybindJSONDecoder(object):
         # skip unknown elements if we are asked to by the user`
         continue
       chobj = child()
+
+      if hasattr(chobj, "_presence"):
+        if chobj._presence:
+          chobj._set_present()
+
       set_via_stdmethod = True
       pybind_attr = getattr(chobj, '_pybind_generated_by', None)
       if pybind_attr in ["container"]:
