@@ -389,8 +389,14 @@ class pybindJSONDecoder(object):
         elif attr_get is None and skip_unknown is not False:
           # Skip unknown JSON keys
           continue
-        pybindJSONDecoder.check_metadata_add(key, d, attr_get())
-        pybindJSONDecoder.load_ietf_json(d[key], None, None, obj=attr_get(),
+
+        chobj = attr_get()
+        if hasattr(chobj, "_presence"):
+          if chobj._presence:
+            chobj._set_present()
+
+        pybindJSONDecoder.check_metadata_add(key, d, chobj)
+        pybindJSONDecoder.load_ietf_json(d[key], None, None, obj=chobj,
                   path_helper=path_helper, extmethods=extmethods,
                       overwrite=overwrite, skip_unknown=skip_unknown)
       elif isinstance(d[key], list):

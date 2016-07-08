@@ -146,6 +146,16 @@ class PyangbindPresenceTests(unittest.TestCase):
     x = pbJ.loads(inputJ, bindings, "presence")
     self.assertIs(x.parent.child._present(), True)
 
+  def test_011_presence_deserialise(self):
+    inputJ = """
+              {
+                "presence:parent": {
+                  "child": {}
+                }
+              }"""
+    x = pbJ.loads_ietf(inputJ, bindings, "presence")
+    self.assertIs(x.parent.child._present(), True)
+
 
 if __name__ == '__main__':
   setup_test()
