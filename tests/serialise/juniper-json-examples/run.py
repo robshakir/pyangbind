@@ -41,8 +41,12 @@ def main():
   RFC = "https://raw.githubusercontent.com/robshakir/" + \
             "yang/master/standard/ietf/RFC/"
   FETCH_FILES = [
-                  (OC + "bgp/openconfig-bgp-multiprotocol.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-operational.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common-multiprotocol.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common-structure.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-global.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-neighbor.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-peer-group.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-types.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp.yang", "openconfig"),
@@ -53,6 +57,7 @@ def main():
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
                   (RFC + "ietf-inet-types.yang", "include"),
                   (RFC + "ietf-yang-types.yang", "include"),
+                  (RFC + "ietf-interfaces.yang", "include")
                 ]
 
   this_dir = os.path.dirname(os.path.realpath(__file__))

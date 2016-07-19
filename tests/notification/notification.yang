@@ -1,0 +1,83 @@
+module notification {
+    yang-version "1.1";
+    namespace "http://rob.sh/yang/test/notification";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2016-07-17 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    notification alert-one {
+        description
+            "Basic notification with a single argument";
+        leaf argument {
+            type string;
+        }
+    }
+
+    notification alert-two {
+        description
+            "Basic notification with two arguments";
+        leaf arg-one {
+            type int8;
+        }
+
+        leaf arg-two {
+            type int8;
+        }
+    }
+
+    notification alert-three {
+        description
+            "Notification with a container";
+        container arguments {
+            leaf arg-one {
+                type string;
+            }
+
+            leaf arg-two {
+                type string;
+            }
+        }
+    }
+
+    notification alert-four {
+        description
+            "Notification with multiple containers";
+        container arguments-one {
+            leaf arg-one {
+                type string;
+            }
+        }
+
+        container arguments-two {
+            leaf arg-two {
+                type string;
+            }
+        }
+    }
+
+    notification alert-five {
+        description
+            "Notification with values using a leafref which
+            requires use of the XPATHHELPER";
+
+        leaf argument {
+            type leafref {
+                path "/test/reference-target";
+                require-instance true;
+            }
+        }
+    }
+
+    container test {
+        leaf-list reference-target {
+            type string;
+        }
+    }
+}

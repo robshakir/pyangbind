@@ -34,7 +34,7 @@ reserved_name = ["list", "str", "int", "global", "decimal", "float",
                   "get", "default", "yang_name", "def", "print", "del",
                   "break", "continue", "raise", "in", "assert", "while",
                   "for", "try", "finally", "with", "except", "lambda",
-                  "or", "and", "not", "yield"]
+                  "or", "and", "not", "yield", "property", "min", "max"]
 
 
 def is_yang_list(arg):
