@@ -192,7 +192,7 @@ INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
 
 # The types that are built-in to YANG
 YANG_BUILTIN_TYPES = class_map.keys() + \
-                      ["container", "list", "rpc", "leafref"]
+                      ["container", "list", "rpc", "notification", "leafref"]
 
 
 # Base machinery to support operation as a plugin to pyang.
@@ -259,6 +259,13 @@ class PyangBindClass(plugin.PyangPlugin):
                                       defined in each module. These
                                       are placed at the root of
                                       each module"""),
+          optparse.make_option("--build-notifications",
+                              dest="build_notifications",
+                              action="store_true",
+                              help="""Generate class bindings for
+                                      notifications defined in each
+                                      module. These are placed at
+                                      the root of each module"""),
       ]
       g = optparser.add_option_group("pyangbind output specific options")
       g.add_options(optlist)
@@ -388,6 +395,15 @@ def build_pybind(ctx, modules, fd):
         if len(rpcs):
           get_children(ctx, fd, rpcs, module, module, register_paths=False,
                       path="/%s_rpc" % (safe_name(module.arg)))
+
+      if ctx.opts.build_notifications:
+        notifications = [ch for ch in module.i_children
+                  if ch.keyword == 'notification']
+        # Build notifications specifically under the module name,
+        # since this can be used as a proxy for the namespace.
+        if len(notifications):
+          get_children(ctx, fd, notifications, module, module, register_paths=False,
+                      path="/%s_notification" % (safe_name(module.arg)))
 
 
 def build_identities(ctx, defnd):
@@ -769,7 +785,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   # 'container', 'module', 'list' and 'submodule' all have their own classes
   # generated.
   if parent.keyword in ["container", "module", "list", "submodule", "input",
-                         "output", "rpc"]:
+                         "output", "rpc", "notification"]:
     if ctx.opts.split_class_dir:
       nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
     else:
@@ -1385,9 +1401,9 @@ def get_element(ctx, fd, element, module, parent, path,
 
   # If the element has an i_children attribute then this is a container, list
   # leaf-list or choice. Alternatively, it can be the 'input' or 'output'
-  # substmts of an RPC
+  # substmts of an RPC or a notification
   if hasattr(element, 'i_children'):
-    if element.keyword in ["container", "list", "input", "output"]:
+    if element.keyword in ["container", "list", "input", "output", "notification"]:
       has_children = True
     elif element.keyword in ["leaf-list"]:
       create_list = True
