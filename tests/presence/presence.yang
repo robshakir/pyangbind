@@ -1,0 +1,41 @@
+module presence {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/presence";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container empty-container {
+        presence "something implied implicity";
+    }
+
+    container parent {
+        container child {
+            presence "something else implicit";
+        }
+    }
+
+    container np-container {
+        description
+            "np container";
+
+        leaf s {
+            type string;
+        }
+    }
+
+    container pp {
+        presence "implicit";
+
+        leaf s {
+            type string;
+        }
+    }
+}

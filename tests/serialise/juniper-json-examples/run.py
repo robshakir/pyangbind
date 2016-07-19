@@ -126,6 +126,7 @@ def main():
         }
       }
     }
+
   assert ljs.get(filter=True) == expected_ljs, \
     "Invalid JSON loaded for global config"
 
