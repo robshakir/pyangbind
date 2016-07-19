@@ -35,6 +35,13 @@ module json-serialise {
     }
   }
 
+  typedef decimalrangetype {
+    type decimal64 {
+      fraction-digits 10;
+      range "1..max";
+    }
+  }
+
   typedef definedtypeunion {
     type union {
       type uint8;
@@ -179,6 +186,17 @@ module json-serialise {
 
       leaf typedef-decimal {
         type decimaldefinedtype;
+      }
+
+      leaf range-decimal {
+        type decimal64 {
+          fraction-digits 10;
+          range "1..10";
+        }
+      }
+
+      leaf typedef-decimalrange {
+        type decimalrangetype;
       }
 
       choice test-choice {

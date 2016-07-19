@@ -192,6 +192,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       return int(obj)
     elif map_val in ["container"]:
       return self._preprocess_element(obj.get(), mode=mode)
+    elif map_val in ["decimal.Decimal"]:
+      return unicode(obj) if mode == "ietf" else float(obj)
 
 
 

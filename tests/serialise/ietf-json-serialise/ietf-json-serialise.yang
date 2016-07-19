@@ -38,6 +38,13 @@ module ietf-json-serialise {
     }
   }
 
+  typedef decimalrangetype {
+    type decimal64 {
+      fraction-digits 10;
+      range "1..max";
+    }
+  }
+
   typedef definedtype {
     type string;
   }
@@ -208,6 +215,17 @@ module ietf-json-serialise {
 
       leaf typedef-decimal {
         type decimaldefinedtype;
+      }
+
+      leaf range-decimal {
+        type decimal64 {
+          fraction-digits 10;
+          range "1..10";
+        }
+      }
+
+      leaf typedef-decimalrange {
+        type decimalrangetype;
       }
 
       leaf uint64type {

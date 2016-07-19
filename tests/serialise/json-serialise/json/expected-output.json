@@ -76,7 +76,9 @@
                 "ll": ["1", "2", "3", "4"],
                 "next-hop": ["DROP", "192.0.2.1", "fish"],
                 "decleaf": 42.4422,
-                "typedef-decimal": 21.21
+                "typedef-decimal": 21.21,
+                "range-decimal": 4.44443322,
+                "typedef-decimalrange": 42.42
             }
         }
     }

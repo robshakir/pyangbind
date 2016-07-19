@@ -72,7 +72,9 @@
                 "next-hop": ["DROP", "192.0.2.1", "TEST"],
                 "uint64type": "4194304",
                 "decleaf": "42.4422",
-                "typedef-decimal": "32.29"
+                "typedef-decimal": "32.29",
+                "range-decimal": "4.44443322",
+                "typedef-decimalrange": "33.44"
             }
         ]
     },
