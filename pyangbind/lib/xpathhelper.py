@@ -294,5 +294,19 @@ class YANGPathHelper(PybindXpathHelper):
                                   % object_path)
     return obj[0]
 
+  def get_list(self, object_path, caller=False,
+                exception_to_raise=YANGPathHelperException):
+    if isinstance(object_path, str) or isinstance(object_path, unicode):
+      object_path = self._path_parts(object_path)
+
+    parent_obj = self.get_unique(object_path[:-1], caller=caller,
+                    exception_to_raise=exception_to_raise)
+
+    list_get_attr = getattr(parent_obj, "_get_%s" % object_path[-1], None)
+    if list_get_attr is None:
+      raise exception_to_raise("Element %s does not have an attribute named %s" % ("/".join(object_path[:-1], object_path[-1])))
+
+    return list_get_attr()
+
   def tostring(self, pretty_print=False):
     return etree.tostring(self._root, pretty_print=pretty_print)

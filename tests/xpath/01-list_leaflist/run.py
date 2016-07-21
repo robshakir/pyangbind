@@ -53,6 +53,7 @@ def main():
   t6_typedef_list_add(yobj, yhelper)
   t7_leaflist_of_leafrefs(yobj, yhelper)
   t8_standalone_leaflist_check(yobj, yhelper)
+  t9_get_list(yobj, yhelper)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
@@ -266,14 +267,19 @@ def t8_standalone_leaflist_check(yobj, tree):
   yobj.standalone.ll.append(1)
 
   x = tree.get("/standalone/ll")
-  print x[0]
+  assert x[0][0] == 1, "leaf-list was not as expected"
 
   yobj.standalone.l.add(1)
   x = tree.get("/standalone/l")
-  print x
+  assert x[0].x == 1, "list key was not as expected"
 
   yobj.standalone.ref = 1
-  print yobj.standalone.ref._ptr
+  assert yobj.standalone.ref._referenced_object == 1, "reference was not correct"
+
+def t9_get_list(yobj, tree):
+  l = tree.get_list("/standalone/l")
+  assert l._yang_name == "l", "Did not retrieve correct attribute for list"
+  assert l._is_container == "list", "Did not retrieve a list for the list"
 
 if __name__ == '__main__':
   from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
