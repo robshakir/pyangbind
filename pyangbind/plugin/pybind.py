@@ -340,21 +340,29 @@ def build_pybind(ctx, modules, fd):
     else:
       local_module_prefix = local_module_prefix.arg
     mods = [(local_module_prefix, module)]
+
+    imported_modules = module.search('import')
+
     # 'include' statements specify the submodules of the existing module -
     # that also need to be parsed.
     for i in module.search('include'):
       subm = ctx.get_module(i.arg)
       if subm is not None:
         mods.append((local_module_prefix, subm))
+        # Handle the case that imports are within a submodule
+        if subm.search('import') is not None:
+          imported_modules.extend(subm.search('import'))
+
     # 'import' statements specify the other modules that this module will
     # reference.
-    for j in module.search('import'):
+    for j in imported_modules:
       mod = ctx.get_module(j.arg)
       if mod is not None:
         imported_module_prefix = j.search_one('prefix').arg
         mods.append((imported_module_prefix, mod))
         modules.append(mod)
     all_mods.extend(mods)
+
 
   # remove duplicates from the list (same module and prefix)
   new_all_mods = []
@@ -449,8 +457,12 @@ def build_identities(ctx, defnd):
       # exists already
       if unicode(base.arg) in identity_d:
         base_id = unicode(base.arg)
-        namespace = defnd[ident].i_module.search_one('namespace').arg
-        module = defnd[ident].i_module.arg
+        if hasattr(defnd[ident], "main_module"):
+          mod = defnd[ident].main_module()
+        else:
+          mod = defnd[ident].i_module
+        namespace = mod.search_one('namespace').arg
+        module = mod.arg
         defn_content = {'@namespace': namespace, '@module': module}
         # if it did, then we can now define the value - we want to
         # define it as both the resolved value (i.e., with the prefix)

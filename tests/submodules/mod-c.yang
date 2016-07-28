@@ -1,0 +1,8 @@
+module mod-c {
+  namespace "http://example.com/c";
+  prefix "c";
+
+  typedef t {
+    type string;
+  }
+}

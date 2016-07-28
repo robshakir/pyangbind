@@ -1,0 +1,14 @@
+submodule subm-b {
+  belongs-to mod-a { prefix a; }
+  import mod-c { prefix "c"; }
+
+  grouping TEST {
+    leaf b {
+      type c:t;
+    }
+  }
+
+  identity i { }
+  identity j { base i; }
+
+}

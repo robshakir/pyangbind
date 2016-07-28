@@ -1,0 +1,17 @@
+module mod-a {
+  namespace "http://example.com/a";
+  prefix a;
+  include subm-b;
+
+  container a {
+    uses TEST;
+  }
+
+  container q {
+    leaf idref {
+      type identityref {
+        base i;
+      }
+    }
+  }
+}
