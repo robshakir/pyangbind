@@ -48,10 +48,10 @@ def main():
                   (OC + "bgp/openconfig-bgp-neighbor.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-peer-group.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-types.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-types.yang", "include"),
                   (OC + "bgp/openconfig-bgp.yang", "openconfig"),
                   (OC + "policy/openconfig-routing-policy.yang", "openconfig"),
-                  (OC + "policy/openconfig-policy-types.yang", "openconfig"),
+                  (OC + "policy/openconfig-policy-types.yang", "include"),
                   (OC + "openconfig-extensions.yang", "include"),
                   (OC + "openconfig-types.yang", "include"),
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
@@ -93,7 +93,7 @@ def main():
   cmd += " -f pybind --split-class-dir %s/ocbind" % this_dir
   cmd += " -p %s" % this_dir
   cmd += " -p %s" % os.path.join(this_dir, "include")
-  cmd += files_str
+  cmd += " %s" % os.path.join(this_dir, "openconfig", "openconfig-bgp.yang")
   # NB: use-xpathhelper is NOT specified here, so we don't try and do anything
   # with leafrefs
   os.system(cmd)
