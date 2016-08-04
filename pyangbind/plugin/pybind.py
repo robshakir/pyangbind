@@ -316,6 +316,7 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
   ctx.pybind_common_hdr += """from decimal import Decimal\n"""
   ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
+  ctx.pybind_common_hdr += """import __builtin__\n"""
 
   if not ctx.opts.split_class_dir:
     fd.write(ctx.pybind_common_hdr)
@@ -1166,9 +1167,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         rw = False
 
       if not rw:
-        nfd.write("""  %s = property(_get_%s)\n""" % (i["name"], i["name"]))
+        nfd.write("""  %s = __builtin__.property(_get_%s)\n""" % (i["name"], i["name"]))
       else:
-        nfd.write("""  %s = property(_get_%s, _set_%s)\n""" %
+        nfd.write("""  %s = __builtin__.property(_get_%s, _set_%s)\n""" %
                           (i["name"], i["name"], i["name"]))
   nfd.write("\n")
 
