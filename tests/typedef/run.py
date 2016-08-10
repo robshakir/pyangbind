@@ -157,6 +157,17 @@ def main():
       "scoped leaf was not set correctly (%s - %s != True)" % \
           (t.container.scoped_leaf, passed)
 
+  for i in [("IDONE", True), (42, True), (-127, False), ("badstr", False)]:
+    passed = True
+    try:
+      t.container.union_idref = i[0]
+    except ValueError:
+      passed = False
+
+    assert passed is i[1], \
+      "union with an identityref within it was not set " + \
+        "correctly: %s != %s (%s)" % (passed, i[1], i[0])
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

@@ -95,6 +95,15 @@ module typedef {
         }
     }
 
+    typedef union-with-idref {
+        type union {
+            type identityref {
+                base identity_base;
+            }
+            type uint8;
+        }
+    }
+
     typedef referenced-leaf {
         type leafref {
             path "/container/target";
@@ -193,6 +202,10 @@ module typedef {
 
         leaf reference {
             type referenced-leaf;
+        }
+
+        leaf union-idref {
+            type union-with-idref;
         }
 
         uses scoped-typedef;

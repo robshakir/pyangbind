@@ -556,12 +556,18 @@ def build_typedefs(ctx, defnd):
   known_types.append('enumeration')
   known_types.append('leafref')
   process_typedefs_ordered = []
+
   while len(unresolved_t):
 
     t = unresolved_t.pop(0)
     base_t = defnd[t].search_one('type')
     if base_t.arg == "union":
-      subtypes = [i for i in base_t.search('type')]
+      subtypes = []
+      for i in base_t.search('type'):
+        if i.arg == "identityref":
+          subtypes.append(i.search_one('base'))
+        else:
+          subtypes.append(i)
     elif base_t.arg == "identityref":
       subtypes = [base_t.search_one('base')]
     else:
@@ -571,6 +577,7 @@ def build_typedefs(ctx, defnd):
     for i in subtypes:
       if i.arg not in known_types:
         any_unknown = True
+
     if not any_unknown:
       process_typedefs_ordered.append((t, defnd[t]))
       known_types.append(t)
@@ -649,16 +656,21 @@ def build_typedefs(ctx, defnd):
       parent_type = []
       default = False if default_stmt is None else default_stmt.arg
       for i in elemtype:
+
         if isinstance(i[1]["native_type"], list):
           native_type.extend(i[1]["native_type"])
         else:
           native_type.append(i[1]["native_type"])
+
         if i[1]["yang_type"] in known_types:
           parent_type.append(i[1]["yang_type"])
+        elif i[1]["yang_type"] == "identityref":
+          parent_type.append(i[1]["parent_type"])
         else:
           msg = "typedef in a union specified a native type that was not"
-          msg += "supported (%s in %s)" % (i[1]["yang_type"], item.arg)
+          msg += " supported (%s in %s)" % (i[1]["yang_type"], item.arg)
           raise TypeError(msg)
+
         if "default" in i[1] and not default:
           # When multiple 'default' values are specified within a union that
           # is within a typedef, then pyangbind will choose the first one.
