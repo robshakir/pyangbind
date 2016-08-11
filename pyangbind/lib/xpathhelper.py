@@ -26,6 +26,8 @@ from lxml import etree
 import re
 import uuid
 import sys
+from .yangtypes import safe_name
+from .base import PybindBase
 
 
 class YANGPathHelperException(Exception):
@@ -89,6 +91,13 @@ class PybindXpathHelper(object):
                                     "not implement get()")
 
 
+# A class which acts as "/" within the hierarchy - it acts as per any other
+# PyangBind element for the purposes of get() calls - allowing "/" to be
+# serialised to
+class FakeRoot(PybindBase):
+  def __init__(self):
+    self._pyangbind_elements = {}
+
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
   _arg_re = re.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?" +
@@ -97,8 +106,12 @@ class YANGPathHelper(PybindXpathHelper):
   _relative_path_re = re.compile("^(\.|\.\.)")
 
   def __init__(self):
+    # Initialise an empty library and a new FakeRoot class to act as the
+    # data tree's root.
     self._root = etree.Element("root")
     self._library = {}
+    self._library["root"] = FakeRoot()
+    self._root.set("obj_ptr", "root")
 
   def _path_parts(self, path):
     c = 0
@@ -208,8 +221,17 @@ class YANGPathHelper(PybindXpathHelper):
   def register(self, object_path, object_ptr, caller=False):
     if isinstance(object_path, str):
       raise XPathError("not meant to receive strings as input to register()")
+
     if re.match('^\.\.', object_path[0]):
       raise XPathError("unhandled relative path in register()")
+
+    # This is a hack to register anything that is a top-level object,
+    # it allows modules to register themselves against the FakeRoot
+    # class which acts as per other PyangBind objects.
+    if len(object_path) == 1:
+      setattr(self._library["root"], object_path[0], object_ptr)
+      setattr(self._library["root"], "_get_%s" % safe_name(object_path[0]), lambda: object_ptr)
+      self._library["root"]._pyangbind_elements[object_path[0]] = None
 
     # check whether we're updating
     this_obj_existing = self._get_etree(object_path)

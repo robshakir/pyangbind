@@ -176,7 +176,8 @@ def main():
   assert value_err is None, "Expected value could not be set for ch5" \
           + " (arg-two): %s" % value_err
 
-  assert ph.tostring() == "<root/>", "Attributes within an RPC registered" + \
+
+  assert ph.get_unique("/").get() == {}, "Attributes within an RPC registered" + \
         " in the path helper erroneously"
 
   from bindings import rpc

@@ -321,6 +321,7 @@ class pybindJSONDecoder(object):
       else:
         raise pybindJSONUpdateError("unknown pybind type when loading JSON: %s"
                                      % pybind_attr)
+
       if set_via_stdmethod:
         # simply get the set method and then set the value of the leaf
         set_method = getattr(obj, "_set_%s" % safe_name(key))

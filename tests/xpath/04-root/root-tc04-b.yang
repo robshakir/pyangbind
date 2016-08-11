@@ -1,0 +1,20 @@
+module root-tc04-b {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/root-tc04-b";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container root-tc04-b {
+        leaf b {
+            type string;
+        }
+    }
+}
