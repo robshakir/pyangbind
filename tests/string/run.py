@@ -173,6 +173,28 @@ def main():
         "stringLeafWithComplexLength set to %s incorrectly (%s != %s)" % \
             (tc[0], tc[1], passed)
 
+  for tc in [("fi$h", True), ("void", False), ("fi$ho", True)]:
+    try:
+      test_instance.string_container.stringLeafWithPatternWithDollar = tc[0]
+      passed = True
+    except ValueError:
+      passed = False
+
+    assert passed is tc[1], "stringLeafWithPatternWithDollar set " + \
+     "incorrectly to %s" % tc[0]
+
+  for tc in [("fi$h", True), ("void", False), ("fi$ho", False)]:
+    try:
+      test_instance.string_container.dollarAtEnd = tc[0]
+      passed = True
+    except ValueError:
+      passed = False
+
+    assert passed is tc[1], "dollarAtEnd set " + \
+     "incorrectly to %s" % tc[0]
+
+  
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

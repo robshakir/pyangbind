@@ -1,6 +1,8 @@
 """
 Copyright 2015, Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
+Modifications copyright 2016, Google Inc.
+
 This project has been supported by:
           * Jive Communications, Inc.
           * BT plc.
@@ -324,9 +326,9 @@ class YANGPathHelper(PybindXpathHelper):
     parent_obj = self.get_unique(object_path[:-1], caller=caller,
                     exception_to_raise=exception_to_raise)
 
-    list_get_attr = getattr(parent_obj, "_get_%s" % object_path[-1], None)
+    list_get_attr = getattr(parent_obj, "_get_%s" % safe_name(object_path[-1]), None)
     if list_get_attr is None:
-      raise exception_to_raise("Element %s does not have an attribute named %s" % ("/".join(object_path[:-1], object_path[-1])))
+      raise exception_to_raise("Element %s does not have an attribute named %s" % ("/".join(object_path[:-1]), object_path[-1]))
 
     return list_get_attr()
 

@@ -1,6 +1,8 @@
 """
 Copyright 2015, Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
+Modifications copyright 2016, Google Inc.
+
 This project has been supported by:
           * Jive Communications, Inc.
           * BT plc.
@@ -176,6 +178,21 @@ def RestrictedClassType(*args, **kwargs):
       range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
 
       def convert_regexp(pattern):
+
+        # Some patterns include a $ character in them in some IANA modules, this
+        # is not escaped. Do some logic to escape them, whilst leaving one at the
+        # end of the string if it's there.
+        trimmed = False
+        if pattern[-1] == "$":
+          tmp_pattern = pattern[:-1]
+          trimmed = True
+        else:
+          tmp_pattern = pattern
+        tmp_pattern = tmp_pattern.replace("$", "\$")
+        pattern = tmp_pattern
+        if trimmed:
+          pattern += "$"
+
         if not pattern[0] == "^":
           pattern = "^%s" % pattern
         if not pattern[len(pattern) - 1] == "$":
@@ -575,7 +592,6 @@ def YANGListType(*args, **kwargs):
           tmp = YANGDynClass(base=self._contained_class, parent=parent,
                               yang_name=yang_name, is_container='container',
                               path_helper=False)
-
           keydict = None
 
           if " " in self._keyval and not named_set:
@@ -588,7 +604,6 @@ def YANGListType(*args, **kwargs):
             if not len(keyparts) == len(keys):
               raise KeyError("YANGList key must contain all key elements (%s)"
                                 % (self._keyval.split(" ")))
-
           elif named_set:
             k = kwargs.pop("_python_key", None)
             keydict = copy.copy(kwargs)
@@ -634,6 +649,10 @@ def YANGListType(*args, **kwargs):
             for kn in keydict:
               key = getattr(tmp, "_set_%s" % safe_name(kn))
               key(keydict[kn], load=True)
+
+          if hasattr(k, "_referenced_object") and \
+              k._referenced_object is not None:
+            k = k._referenced_object
 
           self._members[k] = tmp
 
@@ -983,6 +1002,7 @@ def YANGDynClass(*args, **kwargs):
         if load is not None:
           kwargs['load'] = load
 
+
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except Exception as e:
@@ -1129,7 +1149,8 @@ def ReferenceType(*args, **kwargs):
   class ReferencePathType(object):
 
     __slots__ = ('_referenced_path', '_path_helper', '_caller',
-                  '_referenced_object', '_ptr', '_require_instance', '_type')
+                  '_referenced_object', '_ptr', '_require_instance', '_type',
+                  '_utype')
 
     _pybind_generated_by = "ReferencePathType"
 
@@ -1141,6 +1162,7 @@ def ReferenceType(*args, **kwargs):
       self._ptr = False
       self._require_instance = require_instance
       self._type = "unicode"
+      self._utype = unicode
 
       if len(args):
         value = args[0]
@@ -1178,9 +1200,11 @@ def ReferenceType(*args, **kwargs):
             set_method(value)
           self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
+
+          self._utype = get_method()._base_type
           self._ptr = True
         elif self._require_instance:
-          if not value:
+          if value is None:
             self._referenced_object = None
           else:
             found = False
