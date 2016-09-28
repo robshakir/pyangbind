@@ -150,7 +150,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return unicode(obj)
     elif type(obj) in [int, long]:
       return int(obj)
-    elif type(obj) in [YANGBool]:
+    elif type(obj) in [YANGBool, bool]:
       return bool(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
@@ -482,7 +482,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
     """
     generated_by = getattr(obj, "_pybind_generated_by", None)
     if generated_by == "YANGListType":
-      return [pybindIETFJSONEncoder.generate_element(i) for i in
+      return [pybindIETFJSONEncoder.generate_element(i, flt=flt) for i in
                                                             obj.itervalues()]
     d = {}
     for element_name in obj._pyangbind_elements:
