@@ -36,6 +36,7 @@ def main():
   cmd += " -f pybind -o %s/bindings.py" % this_dir
   cmd += " -p %s" % this_dir
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
+  cmd += " %s/remote-two.yang" % (this_dir)
   os.system(cmd)
 
   from bindings import identityref
@@ -144,6 +145,17 @@ def main():
     assert passed == k[1], "Did not set an identityref " + \
       "based on the module-name:value format correctly:" + \
       "  %s != %s for %s" % (k[1], passed, k[0])
+
+  for tc in [("remote-id", True), ("remote-two:remote-id", True),
+             ("invalid", False)]:
+    passed = True
+    try:
+      i.ietfint.ref = tc[0]
+    except ValueError:
+      passed = False
+
+    assert passed == tc[1], "setting ietfint.ref to %s incorrect " + \
+      "%s != %s" % (tc[0], tc[1], passed)
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)

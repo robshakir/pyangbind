@@ -1,7 +1,10 @@
 """
 Copyright 2015, Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
+Modifications copyright 2016, Google Inc.
+
 This project has been supported by:
+          * Google, Inc.
           * Jive Communications, Inc.
           * BT plc.
 
@@ -28,9 +31,12 @@ import os
 from bitarray import bitarray
 from pyangbind.lib.yangtypes import safe_name, YANGBool, \
                                   RestrictedClassType
+from pyangbind.helpers.identity import IdentityStore
+import pyangbind.helpers.misc as misc_help
 
 from pyang import plugin
 from pyang import statements
+from pyang import util
 
 DEBUG = True
 if DEBUG:
@@ -378,7 +384,7 @@ def build_pybind(ctx, modules, fd):
   for defnt in ['typedef', 'identity']:
     defn[defnt] = {}
     for m in all_mods:
-      t = find_definitions(defnt, ctx, m[1], m[0])
+      t = misc_help.find_definitions(defnt, ctx, m[1], m[0])
       for k in t:
         if k not in defn[defnt]:
           defn[defnt][k] = t[k]
@@ -420,127 +426,44 @@ def build_pybind(ctx, modules, fd):
           get_children(ctx, fd, notifications, module, module, register_paths=False,
                       path="/%s_notification" % (safe_name(module.arg)))
 
-
 def build_identities(ctx, defnd):
-  def find_all_identity_values(item, definitions, values=list()):
-    if not item in definitions:
-      return values
+  # Build a storage object that has all the definitions that we
+  # require within it.
+  idstore = IdentityStore()
+  idstore.build_store_from_definitions(ctx, defnd)
 
-    new_values = [k for k in definitions[item] if k not
-                    in ["@module", "@namespace"] and k not in values]
-    for v in new_values:
-      values.extend([i for i in find_all_identity_values(v, definitions,
-                        values=values) if i not in values])
-    values.extend(new_values)
-    return values
+  identity_dict = {}
+  for identity in idstore:
+    for prefix in identity.prefixes():
+      ident = "%s:%s" % (prefix, identity.name)
+      identity_dict[ident] = {}
+      identity_dict["%s" % identity.name] = {}
+      for ch in identity.children:
+        d = {"@module": ch.source_module, "@namespace": ch.source_namespace}
+        for cpfx in ch.prefixes() + [None]:
+          if cpfx is not None:
+            spfx = "%s:" % cpfx
+          else:
+            spfx = ""
+          identity_dict[ident][ch.name] = d
+          identity_dict[identity.name][ch.name] = d
+          identity_dict[ident]["%s%s" % (spfx, ch.name)] = d
+          identity_dict[identity.name]["%s%s" % (spfx, ch.name)] = d
 
-  # Build dicionaries which determine how identities work. Essentially, an
-  # identity is modelled such that it is a dictionary where the keys of that
-  # dictionary are the valid values for an identityref.
-  unresolved_idc = {}
-  for i in defnd:
-    unresolved_idc[i] = 0
-  unresolved_ids = defnd.keys()
-  error_ids = []
-  identity_d = {}
-
-  # The order of an identity being built is important. Find those identities
-  # that either have no "base" statement, or have a known base statement, and
-  # queue these to be processed first.
-  while len(unresolved_ids):
-    ident = unresolved_ids.pop(0)
-    base = defnd[ident].search_one('base')
-    reprocess = False
-    if base is None and not unicode(ident) in identity_d:
-      identity_d[unicode(ident)] = {}
-    else:
-      # the identity has a base, so we need to check whether it
-      # exists already
-      if unicode(base.arg) in identity_d:
-        base_id = unicode(base.arg)
-        if hasattr(defnd[ident], "main_module"):
-          mod = defnd[ident].main_module()
-        else:
-          mod = defnd[ident].i_module
-        namespace = mod.search_one('namespace').arg
-        module = mod.arg
-        defn_content = {'@namespace': namespace, '@module': module}
-        # if it did, then we can now define the value - we want to
-        # define it as both the resolved value (i.e., with the prefix)
-        # and the unresolved value.
-        if ":" in ident:
-          prefix, value = ident.split(":")
-          prefix, value = unicode(prefix), unicode(value)
-          if value not in identity_d[base_id]:
-            identity_d[base_id][value] = defn_content
-            identity_d[base_id]["%s:%s" % (module, value)] = defn_content
-          if value not in identity_d:
-            identity_d[value] = {}
-          # check whether the base existed with the prefix that was
-          # used for this value too, as long as the base_id is not
-          # already resolved
-          if ":" not in base_id:
-            resolved_base = unicode("%s:%s" % (prefix, base_id))
-            if resolved_base not in identity_d:
-              reprocess = True
-            else:
-              identity_d[resolved_base][ident] = defn_content
-              identity_d[resolved_base][value] = defn_content
-              identity_d[resolved_base]["%s:%s" % (module, value)] = defn_content
-        if ident not in identity_d[base_id]:
-          identity_d[base_id][ident] = defn_content
-          if not ":" in ident:
-            identity_d[base_id]["%s:%s" % (module, ident)] = defn_content
-        if ident not in identity_d:
-          identity_d[ident] = defn_content
-      else:
-        reprocess = True
-
-      if reprocess:
-        # Fall-out from the loop of resolving the identity. If we've looped
-        # around many times, we can't find a base for the identity, which means
-        # it is invalid.
-        if unresolved_idc[ident] > 1000:
-          sys.stderr.write("could not find a match for %s base: %s\n" %
-            (ident, base.arg))
-          error_ids.append(ident)
-        else:
-          unresolved_ids.append(ident)
-          unresolved_idc[ident] += 1
-
-  # Remove those identities that do not have any members. This would remove
-  # identities that are solely bases, but have no other members. However, this
-  # is a problem if particular modules are compiled.
-  # for potential_identity in identity_d.keys():
-  #  if len(identity_d[potential_identity]) == 0:
-  #    del identity_d[potential_identity]
-
-  if error_ids:
-    raise TypeError("could not resolve identities %s" % error_ids)
-
-  # Loop through all identities and determine whether there are
-  # inheritance tasks to do
-  orig_identity_d = copy.deepcopy(identity_d)
-  for identity in orig_identity_d:
-    vals = find_all_identity_values(identity, orig_identity_d, values=[])
-    for value in vals:
-      if value not in orig_identity_d[identity] and value in orig_identity_d:
-        identity_d[identity][value] = {k: v for k, v in
-            orig_identity_d[value].iteritems() if k in
-            ["@module", "@namespace"]}
+    if not identity.name in identity_dict:
+      identity_dict[identity.name] = {}
 
   # Add entries to the class_map such that this identity can be referenced by
   # elements that use this identity ref.
-  for i in identity_d:
+  for i in identity_dict:
     id_type = {"native_type": """RestrictedClassType(base_type=unicode, """ +
                               """restriction_type="dict_key", """ +
-                              """restriction_arg=%s,)""" % identity_d[i],
-                "restriction_argument": identity_d[i],
+                              """restriction_arg=%s,)""" % identity_dict[i],
+                "restriction_argument": identity_dict[i],
                 "restriction_type": "dict_key",
                 "parent_type": "string",
                 "base_type": False}
     class_map[i] = id_type
-
 
 def build_typedefs(ctx, defnd):
   # Build the type definitions that are specified within a model. Since
@@ -555,10 +478,10 @@ def build_typedefs(ctx, defnd):
   known_types = class_map.keys()
   known_types.append('enumeration')
   known_types.append('leafref')
+  base_types = copy.deepcopy(known_types)
   process_typedefs_ordered = []
 
   while len(unresolved_t):
-
     t = unresolved_t.pop(0)
     base_t = defnd[t].search_one('type')
     if base_t.arg == "union":
@@ -575,7 +498,33 @@ def build_typedefs(ctx, defnd):
 
     any_unknown = False
     for i in subtypes:
-      if i.arg not in known_types:
+      # Resolve this typedef to the module that it
+      # was defined by
+
+      if ":" in i.arg:
+        defining_module = util.prefix_to_module(defnd[t].i_module,
+                           i.arg.split(":")[0], defnd[t].pos, ctx.errors)
+      else:
+        defining_module = defnd[t].i_module
+
+      belongs_to = defining_module.search_one('belongs-to') 
+      if belongs_to is not None:
+        for mod in ctx.modules:
+          if mod[0] == belongs_to.arg:
+            defining_module = ctx.modules[mod]
+
+      real_pfx = defining_module.search_one('prefix').arg
+
+      if ":" in i.arg:
+        tn = u"%s:%s" % (real_pfx, i.arg.split(":")[1])
+      elif i.arg not in base_types:
+        # If this was not a base type (defined in YANG) then resolve it
+        # to the module it belongs to.
+        tn = u"%s:%s" % (real_pfx, i.arg)
+      else:
+        tn = i.arg
+
+      if tn not in known_types:
         any_unknown = True
 
     if not any_unknown:
@@ -682,34 +631,7 @@ def build_typedefs(ctx, defnd):
         class_map[type_name]["default"] = default[0]
         class_map[type_name]["quote_default"] = default[1]
 
-
-def find_child_definitions(obj, defn, prefix, definitions):
-  for i in obj.search(defn):
-    if i.arg in definitions:
-      sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
-    else:
-      definitions["%s:%s" % (prefix, i.arg)] = i
-      definitions[i.arg] = i
-
-  for ch in obj.search('grouping'):
-    if ch.i_children:
-      find_child_definitions(ch, defn, prefix, definitions)
-
-  return definitions
-
-
-def find_definitions(defn, ctx, module, prefix):
-  # Find the statements within a module that map to a particular type of
-  # statement, for instance - find typedefs, or identities, and reutrn them
-  # as a dictionary to the calling function.
-  mod = ctx.get_module(module.arg)
-  if mod is None:
-    raise AttributeError("expected to be able to find module %s, " %
-                        (module.arg) + "but could not")
-  definitions = {}
-  defin = find_child_definitions(mod, defn, prefix, definitions)
-  return defin
-
+    class_map[type_name.split(":")[1]] = class_map[type_name]
 
 def get_children(ctx, fd, i_children, module, parent, path=str(),
                  parent_cfg=True, choice=False, register_paths=True):
@@ -857,7 +779,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   """\n''' % (module.arg, (path if not path == "" else "/%s" % parent.arg),
               parent_descr))
   else:
-    raise TypeError("unhandled keyword with children %s" % parent.keyword)
+    raise TypeError("unhandled keyword with children %s at %s" % 
+      (parent.keyword, parent.pos))
 
   elements_str = ""
   if len(elements) == 0:
@@ -1140,6 +1063,9 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if parent is not None and load is False:
       raise AttributeError("Cannot set keys directly when" +
                              " within an instantiated list")\n""")
+      nfd.write("""
+    if hasattr(v, "_utype"):
+      v = v._utype(v)""")
       nfd.write("""
     try:
       t = %s(v,%s)""" % (c_str["type"], c_str["arg"]))

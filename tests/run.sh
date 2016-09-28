@@ -37,7 +37,7 @@ fi
 export PATH_TO_PYBIND_TEST_PYTHON="$TESTDIR/pyvirtualenv/bin/python"
 FAIL=0
 
-for TEST in $TESTDIR/yang_tests.sh $TESTDIR/xpath/xpath_tests.sh $TESTDIR/serialise/serialise_tests.sh; do
+for TEST in $TESTDIR/yang_tests.sh $TESTDIR/xpath/xpath_tests.sh $TESTDIR/serialise/serialise_tests.sh $TESTDIR/integration/integration_tests.sh; do
   $TEST
   if [ $? -ne 0 ]; then
     FAIL=1

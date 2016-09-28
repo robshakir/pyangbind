@@ -1,6 +1,8 @@
 """
 Copyright 2015, Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
+Modifications copyright 2016, Google Inc.
+
 This project has been supported by:
           * Jive Communications, Inc.
           * BT plc.

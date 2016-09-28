@@ -61,6 +61,7 @@ module identityref {
         base mother;
     }
 
+    identity local-base;
 
     container test-container {
         leaf id1 {
@@ -137,5 +138,13 @@ module identityref {
 
     container ak {
         uses address;
+    }
+
+    container ietfint {
+        leaf ref {
+            type identityref {
+                base local-base;
+            }
+        }
     }
 }

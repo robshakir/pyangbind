@@ -1,0 +1,63 @@
+module misc {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/misc";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    list a {
+        key "foo";
+
+        leaf foo {
+            type leafref {
+                path "../config/foo";
+            }
+        }
+
+        container config {
+            leaf foo { type string; }
+        }
+    }
+
+    list b {
+        key "foo bar";
+
+        leaf foo {
+            type leafref {
+                path "../config/foo";
+            }
+        }
+
+        leaf bar {
+            type leafref {
+                path "../config/bar";
+            }
+        }
+
+        container config {
+            leaf foo { type string; }
+            leaf bar { type string; }
+        }
+    }
+
+    list c {
+        key "one";
+
+        leaf one {
+            type leafref {
+                path "../config/one";
+            }
+        }
+
+        container config {
+            leaf one { type uint8; }
+        }
+    }
+}

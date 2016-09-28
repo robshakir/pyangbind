@@ -1,6 +1,8 @@
 """
 Copyright 2015  Rob Shakir (rjs@jive.com, rjs@rob.sh)
 
+Modifications copyright 2016, Google, Inc.
+
 This project has been supported by:
           * Jive Communcations, Inc.
           * BT plc.
@@ -162,7 +164,7 @@ class pybindJSONEncoder(json.JSONEncoder):
                                                 "RestrictedClassType"]:
       map_val = getattr(obj, "_restricted_class_base")[0]
 
-    if map_val in ["pyangbind.lib.yangtypes.ReferencePathType"]:
+    if map_val in ["pyangbind.lib.yangtypes.ReferencePathType", "ReferencePathType"]:
       return self.default(obj._get(), mode=mode)
     elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal", "RestrictedPrecisionDecimal"]:
       if mode == "ietf":
