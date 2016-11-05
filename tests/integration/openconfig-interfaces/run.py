@@ -125,7 +125,10 @@ class PyangbindOCIntf(unittest.TestCase):
 
 if __name__ == '__main__':
   setup_test()
-  T = unittest.main(exit=False)
+  args = sys.argv
+  if '-k' in args:
+    args.remove('-k')
+  T = unittest.main(exit=False, argv=args)
   if len(T.result.errors) or len(T.result.failures):
     exitcode = 127
   else:
