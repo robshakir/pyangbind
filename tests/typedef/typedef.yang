@@ -210,4 +210,16 @@ module typedef {
 
         uses scoped-typedef;
     }
+
+    container scoped-container-typedef {
+        typedef ATEST {
+            type string {
+                pattern "a.*";
+            }
+        }
+
+        leaf two {
+            type ATEST;
+        }
+    }
 }
