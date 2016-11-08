@@ -15,7 +15,6 @@ TESTNAME = "openconfig-interfaces"
 
 # generate bindings in this folder
 def setup_test():
-  global k
   global this_dir
   global del_dirs
 
@@ -24,11 +23,6 @@ def setup_test():
   except getopt.GetoptError as e:
     print str(e)
     sys.exit(127)
-
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
                 os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
@@ -97,19 +91,16 @@ def setup_test():
   os.system(cmd)
 
 def teardown_test():
-  global k
   global this_dir
   global del_dirs
-
-  if not k:
-    del_dirs.append(os.path.join(this_dir, "ocbind"))
-    for dirname in del_dirs:
-      for root, dirs, files in os.walk(os.path.join(dirname), topdown=False):
-        for name in files:
-          os.remove(os.path.join(root, name))
-        for name in dirs:
-          os.rmdir(os.path.join(root, name))
-      os.rmdir(dirname)
+  del_dirs.append(os.path.join(this_dir, "ocbind"))
+  for dirname in del_dirs:
+    for root, dirs, files in os.walk(os.path.join(dirname), topdown=False):
+      for name in files:
+        os.remove(os.path.join(root, name))
+      for name in dirs:
+        os.rmdir(os.path.join(root, name))
+    os.rmdir(dirname)
 
 class PyangbindOCIntf(unittest.TestCase): 
   def __init__(self, *args, **kwargs):
@@ -124,11 +115,17 @@ class PyangbindOCIntf(unittest.TestCase):
     self.assertNotEqual(len(i0.config.type._restriction_dict), 0)
 
 if __name__ == '__main__':
+  keepfiles = False
+  args = sys.argv
+  if '-k' in args:
+    keepfiles = True
+    args.remove('-k')
   setup_test()
-  T = unittest.main(exit=False)
+  T = unittest.main(exit=False, argv=args)
   if len(T.result.errors) or len(T.result.failures):
     exitcode = 127
   else:
     exitcode = 0
-  teardown_test()
+  if keepfiles is False:
+    teardown_test()
   sys.exit(exitcode)

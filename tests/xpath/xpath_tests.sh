@@ -49,7 +49,7 @@ else
         fi
         if [ $? -ne 0 ]; then
             echo "TEST FAILED $i";
-            echo 127
+            exit 127
         fi
     done
 fi
