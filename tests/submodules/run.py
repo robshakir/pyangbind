@@ -9,8 +9,6 @@ from pyangbind.lib.yangtypes import safe_name
 import pyangbind.lib.pybindJSON as pbJ
 import json
 
-k = False
-
 # generate bindings in this folder
 def setup_test():
   try:
@@ -18,12 +16,7 @@ def setup_test():
   except getopt.GetoptError as e:
     sys.exit(127)
 
-  global k
   global this_dir
-
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
                 os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
@@ -46,12 +39,10 @@ def setup_test():
   os.system(cmd)
 
 def teardown_test():
-  global k
   global this_dir
 
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+  os.system("/bin/rm %s/bindings.py" % this_dir)
+  os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 class PyangbindSubmoduleTests(unittest.TestCase):
 
@@ -83,11 +74,17 @@ class PyangbindSubmoduleTests(unittest.TestCase):
     self.assertIs(passed, True)
 
 if __name__ == '__main__':
+  keepfiles = False
+  args = sys.argv
+  if '-k' in args:
+    args.remove('-k')
+    keepfiles = True
   setup_test()
   T = unittest.main(exit=False)
   if len(T.result.errors) or len(T.result.failures):
     exitcode = 127
   else:
     exitcode = 0
-  teardown_test()
+  if keepfiles is False:
+    teardown_test()
   sys.exit(exitcode)
