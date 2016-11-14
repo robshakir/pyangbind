@@ -199,7 +199,7 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "%s$" % pattern
         return pattern
 
-      def build_length_range_tuples(range, length=False):
+      def build_length_range_tuples(range, length=False, multiplier=1):
         if range_regex.match(range_spec):
           low, high = \
               range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
@@ -207,15 +207,15 @@ def RestrictedClassType(*args, **kwargs):
             high = base_type(high) if not high == "max" else None
             low = base_type(low) if not low == "min" else None
           else:
-            high = int(high) if not high == "max" else None
-            low = int(low) if not low == "min" else None
+            high = int(high)*multiplier if not high == "max" else None
+            low = int(low)*multiplier if not low == "min" else None
           return (low, high)
         elif range_single_value_regex.match(range_spec):
           eqval = range_single_value_regex.sub('\g<value>', range_spec)
           if not length:
             eqval = base_type(eqval) if eqval not in ["max", "min"] else None
           else:
-            eqval = int(eqval)
+            eqval = int(eqval)*multiplier
           return (eqval,)
         else:
           raise ValueError("Invalid range or length argument specified")
@@ -283,12 +283,17 @@ def RestrictedClassType(*args, **kwargs):
             except:
               raise TypeError("must specify a numeric type for a range " +
                                   "argument")
-        # elif rtype == "integer" and rarg is True:
-        #   self._restriction_tests.append(lambda x: type(x) is int)
         elif rtype == "length":
+          # When the type is a binary then the length is specified in
+          # octets rather than bits, so we must specify the length to
+          # be multiplied by 8.
+          multiplier = 1
+          if base_type == bitarray:
+            multiplier = 8
           lengths = []
           for range_spec in rarg:
-            lengths.append(build_length_range_tuples(range_spec, length=True))
+            lengths.append(build_length_range_tuples(range_spec, length=True,
+                                                    multiplier=multiplier))
           self._restriction_tests.append(in_range_check(lengths, length=True))
         elif rtype == "dict_key":
           new_rarg = copy.deepcopy(rarg)
