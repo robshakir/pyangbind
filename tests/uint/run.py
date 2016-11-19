@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -165,7 +165,7 @@ def main():
       passed = True
       try:
         set_attr(vals[0])
-      except ValueError, m:
+      except ValueError as m:
         passed = False
       assert passed is True, "Could not set int size %s to %d"  % \
         (elem, val)
@@ -173,7 +173,7 @@ def main():
     passed = False
     try:
       set_attr(vals[0] - 1)
-    except ValueError, m:
+    except ValueError as m:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
@@ -182,7 +182,7 @@ def main():
     passed = False
     try:
       set_attr(vals[1] + 1)
-    except ValueError, m:
+    except ValueError as m:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \

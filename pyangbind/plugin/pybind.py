@@ -197,7 +197,7 @@ INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
 
 # The types that are built-in to YANG
-YANG_BUILTIN_TYPES = class_map.keys() + \
+YANG_BUILTIN_TYPES = list(class_map.keys()) + \
                       ["container", "list", "rpc", "notification", "leafref"]
 
 
@@ -300,7 +300,7 @@ def build_pybind(ctx, modules, fd):
   # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
-      print "INFO: encountered %s" % str(e)
+      print("INFO: encountered %s" % e)
       if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
@@ -475,7 +475,7 @@ def build_typedefs(ctx, defnd):
     unresolved_tc[i] = 0
   unresolved_t = defnd.keys()
   error_ids = []
-  known_types = class_map.keys()
+  known_types = list(class_map.keys())
   known_types.append('enumeration')
   known_types.append('leafref')
   base_types = copy.deepcopy(known_types)
@@ -674,13 +674,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if not os.path.exists(fpath):
       try:
         nfd = open(fpath, 'w')
-      except IOError, m:
+      except IOError as m:
         raise IOError("could not open pyangbind output file (%s)" % m)
       nfd.write(ctx.pybind_common_hdr)
     else:
       try:
         nfd = open(fpath, 'a')
-      except IOError, w:
+      except IOError as w:
         raise IOError("could not open pyangbind output file (%s)" % m)
   else:
     # If we weren't asked to split the files, then just use the file handle

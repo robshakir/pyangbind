@@ -66,7 +66,7 @@ def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
              overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("could not open file to read: %s" % m)
   return loads(f, parent_pymod, yang_module, path_helper=path_helper,
                 extmethods=extmethods, overwrite=overwrite)
@@ -76,7 +76,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
               extmethods=None, overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("Could not open file to read: %s" % m)
   return loads_ietf(f, parent_pymod, yang_module, path_helper,
             extmethods=extmethods, overwrite=overwrite)
@@ -162,7 +162,7 @@ def dump(obj, fn, indent=4, filter=True, skip_subtrees=[],
          mode="default"):
   try:
     fh = open(fn, 'w')
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("could not open file for writing: %s" % m)
   fh.write(dumps(obj, indent=indent, filter=filter,
               skip_subtrees=skip_subtrees, mode=mode))

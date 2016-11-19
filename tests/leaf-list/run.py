@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -62,7 +62,7 @@ def main():
 
   try:
     leaflist_instance.container.leaflist.append(int(1))
-  except ValueError, m:
+  except ValueError:
     pass
 
   assert len(leaflist_instance.container.leaflist) == 1, \
