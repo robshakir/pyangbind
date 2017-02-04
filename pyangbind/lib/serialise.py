@@ -154,6 +154,8 @@ class pybindJSONEncoder(json.JSONEncoder):
       return int(obj)
     elif type(obj) in [YANGBool, bool]:
       return bool(obj)
+    elif type(obj) in [Decimal]:
+      return unicode(obj) if mode == "ietf" else float(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
                                   (elem_name, orig_yangt, pybc, pyc,
