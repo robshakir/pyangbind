@@ -10,8 +10,9 @@ import unittest
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
+import pyangbind.lib.pybindJSON as pbj
 
-TESTNAME = "openconfig-interfaces"
+TESTNAME = "openconfig-bgp"
 
 # generate bindings in this folder
 def setup_test():
@@ -41,12 +42,20 @@ def setup_test():
   FETCH_FILES = [
                   (OC + "openconfig-extensions.yang", "include"),
                   (OC + "openconfig-types.yang", "include"),
-                  (OC + "interfaces/openconfig-if-ip.yang", "openconfig"),
-                  (OC + "interfaces/openconfig-if-ethernet.yang", "openconfig"),
-                  (OC + "interfaces/openconfig-if-aggregate.yang", "openconfig"),
+                  (OC + "policy/openconfig-policy-types.yang", "include"),
+                  (OC + "policy/openconfig-routing-policy.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common-multiprotocol.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common-structure.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-common.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-global.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-neighbor.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-peer-group.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-types.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp.yang", "openconfig"),
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
-                  (OC + "vlan/openconfig-vlan.yang", "include"),
-                  (OC + "vlan/openconfig-vlan-types.yang", "include"),
+                  (OC + "types/openconfig-inet-types.yang", "include"),
+                  (OC + "types/openconfig-yang-types.yang", "include"),
                   (RFC + "ietf-inet-types.yang", "include"),
                   (RFC + "ietf-yang-types.yang", "include"),
                   (RFC + "ietf-interfaces.yang", "include")
@@ -86,7 +95,7 @@ def setup_test():
   cmd += " -p %s" % this_dir
   cmd += " -p %s" % os.path.join(this_dir, "include")
   cmd += " --use-xpathhelper"
-  for i in ["openconfig-interfaces", "openconfig-if-aggregate", "openconfig-if-ip"]:
+  for i in ["openconfig-bgp"]:
     cmd += " %s" % os.path.join(this_dir, "openconfig", "%s.yang" % i)
   os.system(cmd)
 
@@ -102,17 +111,57 @@ def teardown_test():
         os.rmdir(os.path.join(root, name))
     os.rmdir(dirname)
 
-class PyangbindOCIntf(unittest.TestCase):
+class PyangbindOCBGP(unittest.TestCase):
   def __init__(self, *args, **kwargs):
     unittest.TestCase.__init__(self, *args, **kwargs)
 
     import ocbind
     self.ph = YANGPathHelper()
-    self.instance = ocbind.openconfig_interfaces(path_helper=self.ph)
+    self.instance = ocbind.openconfig_bgp(path_helper=self.ph)
 
-  def test_001_populated_intf_type(self):
-    i0 = self.instance.interfaces.interface.add("eth0")
-    self.assertNotEqual(len(i0.config.type._restriction_dict), 0)
+  def test_001_add_bgp_neighbor(self):
+    n = self.instance.bgp.neighbors.neighbor.add("192.0.2.1")
+    self.assertNotEqual(len(self.instance.bgp.neighbors.neighbor), 0)
+
+  def test_010_filtered_json_output(self):
+    self.instance.bgp.global_.config.as_ = 2856
+    self.instance.bgp.global_.config.router_id = "192.0.2.1"
+    n = self.instance.bgp.neighbors.neighbor.add("192.1.1.1")
+    n.config.peer_as = 5400
+    n.config.description = "a fictional transit session"
+    json_out = pbj.dumps(self.instance)
+    testdata = open(this_dir + "/testdata/tc010.json").read()
+    self.assertEqual(json_out, testdata)
+
+  def test_020_unfiltered_json_output(self):
+    self.instance.bgp.global_.config.as_ = 2856
+    self.instance.bgp.global_.config.router_id = "192.0.2.1"
+    n = self.instance.bgp.neighbors.neighbor.add("192.1.1.1")
+    n.config.peer_as = 5400
+    n.config.description = "a fictional transit session"
+    json_out = pbj.dumps(self.instance, filter=False)
+    testdata = open(this_dir + "/testdata/tc020.json").read()
+    self.assertEqual(json_out, testdata)
+
+  def test_030_filtered_ietf_json_output(self):
+    self.instance.bgp.global_.config.as_ = 2856
+    self.instance.bgp.global_.config.router_id = "192.0.2.1"
+    n = self.instance.bgp.neighbors.neighbor.add("192.1.1.1")
+    n.config.peer_as = 5400
+    n.config.description = "a fictional transit session"
+    json_out = pbj.dumps(self.instance, mode="ietf")
+    testdata = open(this_dir + "/testdata/tc030.json").read()
+    self.assertEqual(json_out, testdata)
+
+  def test_040_unfiltered_ietf_json_output(self):
+    self.instance.bgp.global_.config.as_ = 2856
+    self.instance.bgp.global_.config.router_id = "192.0.2.1"
+    n = self.instance.bgp.neighbors.neighbor.add("192.1.1.1")
+    n.config.peer_as = 5400
+    n.config.description = "a fictional transit session"
+    json_out = pbj.dumps(self.instance, filter=False, mode="ietf")
+    testdata = open(this_dir + "/testdata/tc040.json").read()
+    self.assertEqual(json_out, testdata)
 
 if __name__ == '__main__':
   keepfiles = False
