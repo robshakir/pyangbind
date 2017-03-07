@@ -462,7 +462,8 @@ class pybindJSONDecoder(object):
         if chk._is_keyval is True:
           pass
         elif chk._yang_type == "empty":
-          if d[key] == None:
+          if d[key] == [None]:
+            set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
             set_method(True)
         else:
           set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
