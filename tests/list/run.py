@@ -201,8 +201,8 @@ def main():
     err = e
   assert err is None, "Could not remove entry from list with keyword arguments"
 
-  assert test_instance.list_container.list_eight.keys() == ['two twenty',
-      'value one value two'], "Entry remained in list after delete()"
+  expected = ['value one value two', 'two twenty']
+  assert test_instance.list_container.list_eight.keys() == expected, "Entry remained in list after delete()"
 
   err = False
   try:

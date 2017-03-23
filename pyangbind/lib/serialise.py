@@ -54,7 +54,7 @@ class pybindJSONEncoder(json.JSONEncoder):
         for k in d:
             if isinstance(d[k], dict) or isinstance(d[k], OrderedDict):
                 nd[k] = self._preprocess_element(d[k], mode=mode)
-                if isinstance(d, OrderedDict):
+                if getattr(d, "_user_ordered", False):
                     nd[k]['__yang_order'] = index
             else:
                 nd[k] = self.default(d[k], mode=mode)
