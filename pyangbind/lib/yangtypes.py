@@ -468,7 +468,7 @@ def TypedListType(*args, **kwargs):
 def YANGListType(*args, **kwargs):
   """
     Return a type representing a YANG list, with a contained class.
-    A dict or ordered dict is used to store the list, and the
+    An ordered dict is used to store the list, and the
     returned object behaves akin to a dictionary.
 
     Additional checks are performed to ensure that the keys of the
@@ -503,10 +503,10 @@ def YANGListType(*args, **kwargs):
 
     def __init__(self, *args, **kwargs):
       self._ordered = True if user_ordered else False
-      if user_ordered:
-        self._members = collections.OrderedDict()
-      else:
-        self._members = dict()
+      self._members = collections.OrderedDict()
+
+      self._members._user_ordered = True if user_ordered else False
+
       self._keyval = keyname
       if not type(listclass) == type(int):
         raise ValueError("contained class of a YANGList must be a class")
@@ -681,6 +681,12 @@ def YANGListType(*args, **kwargs):
     def keys(self):
       return self._members.keys()
 
+    def items(self):
+      return self._members.items()
+
+    def values(self):
+      return self._members.values()
+
     def _generate_key(self, *args, **kwargs):
       keyargs = None
       if len(args):
@@ -751,7 +757,7 @@ def YANGListType(*args, **kwargs):
         return k
 
     def delete(self, *args, **kwargs):
-      (k, discard) = self._generate_key(*args, **kwargs)
+      (k, _) = self._generate_key(*args, **kwargs)
 
       if self._path_helper:
         current_item = self._members[k]
@@ -793,10 +799,8 @@ def YANGListType(*args, **kwargs):
       return self._members[keystr]
 
     def get(self, filter=False):
-      if user_ordered:
-        d = collections.OrderedDict()
-      else:
-        d = {}
+      d = collections.OrderedDict()
+      d._user_ordered = self._members._user_ordered
       for i in self._members:
         if hasattr(self._members[i], "get"):
           d[i] = self._members[i].get(filter=filter)
