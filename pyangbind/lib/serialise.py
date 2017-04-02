@@ -93,6 +93,9 @@ class pybindJSONEncoder(json.JSONEncoder):
       elif pybc == "TypedListType":
         return [self.default(i) for i in obj]
 
+    # Check for Decimal
+    if isinstance(obj, Decimal):
+       return unicode(obj) if mode == "ietf" else float(obj)
     # Map based on YANG type
     if orig_yangt in ["leafref"]:
       return self.default(obj._get()) if hasattr(obj, "_get") \
