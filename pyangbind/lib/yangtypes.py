@@ -881,6 +881,7 @@ def YANGDynClass(*args, **kwargs):
   yang_type = kwargs.pop("yang_type", None)
   namespace = kwargs.pop("namespace", None)
   defining_module = kwargs.pop("defining_module", None)
+  original_module = kwargs.pop("original_module", None)
   load = kwargs.pop("load", None)
   is_config = kwargs.pop("is_config", True)
   has_presence = kwargs.pop("presence", None)
@@ -914,7 +915,7 @@ def YANGDynClass(*args, **kwargs):
                  '_is_leaf', '_is_container', '_extensionsd',
                  '_pybind_base_class', '_extmethods', '_is_keyval',
                  '_register_paths', '_namespace', '_yang_type',
-                 '_defining_module', '_metadata', '_is_config', '_cpresent',
+                 '_defining_module', '_original_module', '_metadata', '_is_config', '_cpresent',
                  '_presence']
 
   if extmethods:
@@ -968,6 +969,7 @@ def YANGDynClass(*args, **kwargs):
       self._namespace = namespace
       self._yang_type = yang_type
       self._defining_module = defining_module
+      self._original_module = original_module
       self._metadata = {}
       self._presence = has_presence
       self._cpresent = False
