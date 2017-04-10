@@ -945,6 +945,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
           class_str["arg"] += ", is_keyval=True"
         class_str["arg"] += ", namespace='%s'" % i["namespace"]
         class_str["arg"] += ", defining_module='%s'" % i["defining_module"]
+        class_str["arg"] += ", original_module='%s'" % i["original_module"]
         class_str["arg"] += ", yang_type='%s'" % i["origtype"]
         class_str["arg"] += ", is_config=%s" % (i["config"] and parent_cfg)
         classes[i["name"]] = class_str
@@ -1336,6 +1337,11 @@ def get_element(ctx, fd, element, module, parent, path,
                   None
   defining_module = element_module.arg
 
+  if hasattr(element, "i_orig_module"):
+    original_module = element.i_orig_module.arg
+  else:
+    original_module = defining_module
+
   this_object = []
   default = False
   has_children = False
@@ -1399,6 +1405,7 @@ def get_element(ctx, fd, element, module, parent, path,
           "register_paths": register_paths,
           "namespace": namespace,
           "defining_module": defining_module,
+          "original_module": element.i_orig_module.arg,
           "extensions": extensions if len(extensions) else None,
           "presence": has_presence,
       }
@@ -1611,7 +1618,8 @@ def get_element(ctx, fd, element, module, parent, path,
         "choice": choice,
         "register_paths": register_paths,
         "namespace": namespace,
-        "defining_module": defining_module
+        "defining_module": defining_module,
+        "original_module": element.i_orig_module.arg,
     }
     if len(extensions):
       elemdict["extensions"] = extensions
@@ -1622,3 +1630,4 @@ def get_element(ctx, fd, element, module, parent, path,
 
     this_object.append(elemdict)
   return this_object
+
