@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -117,7 +117,7 @@ def main():
       "leaf-list of union of unions did not correctly validate value " + \
         "(%s -> %s != %s)" % (i[0], passed, i[1])
 
-    print u.container.u9
+    print(u.container.u9)
 
   # 10-20, 30-40 or starting with a and b
   for i in [(15, True), (35, True), ("aardvark", True), ("bear", True),

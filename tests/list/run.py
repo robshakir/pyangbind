@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   keepfiles = False
@@ -54,7 +54,7 @@ def main():
 
   try:
     test_instance.list_container.list_element.add("wrong-key-type")
-  except KeyError, m:
+  except KeyError:
     pass
   assert len(test_instance.list_container.list_element) == 0, \
     "list item erroneously added with wrong key type"
@@ -107,7 +107,7 @@ def main():
 
   try:
     test_instance.list_container.list_element[2] = "anInvalidType"
-  except ValueError, m:
+  except ValueError:
     pass
   assert len(test_instance.list_container.list_element) == 0, \
     "item that was invalid was added to the list"

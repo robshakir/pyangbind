@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -50,9 +50,9 @@ def main():
     from bindings.notification_notification import alert_one
     ch = alert_one.alert_one(path_helper=ph)
     ch.argument = "test"
-  except ImportError, m:
+  except ImportError as m:
     import_error = m
-  except ValueError, m:
+  except ValueError as m:
     set_argument_error = m
 
   assert import_error is None, "Could not import alert_one notification: %s" \
@@ -65,9 +65,9 @@ def main():
   try:
     from bindings.notification_notification import alert_two
     ch = alert_two.alert_two(path_helper=ph)
-  except ImportError, m:
+  except ImportError as m:
     import_error = m
-  except TypeError, m:
+  except TypeError as m:
     instantiation_error = m
 
   assert import_error is None, "Could not import alert_two notification: %s" \
@@ -79,7 +79,7 @@ def main():
   try:
     ch.arg_one = 10
     ch.arg_two = 20
-  except ValueError, m:
+  except ValueError as m:
     val_set = False
 
   assert val_set is True, "Could not set leaf arguments directly" + \
@@ -95,9 +95,9 @@ def main():
   value_err = None
   try:
     ch3.arguments.arg_one = "test string"
-  except AttributeError, m:
+  except AttributeError as m:
     attribute_err = m
-  except ValueError, m:
+  except ValueError as m:
     value_err = m
 
   assert attribute_err is None, "Expected attribute for ch3 did not exist" \
@@ -109,9 +109,9 @@ def main():
   value_err = None
   try:
     ch3.arguments.arg_two = "test string"
-  except AttributeError, m:
+  except AttributeError as m:
     attribute_err = m
-  except ValueError, m:
+  except ValueError as m:
     value_err = m
 
   assert attribute_err is None, "Expected attribute for ch3 did not exist" \
@@ -123,9 +123,9 @@ def main():
   value_err = None
   try:
     ch4.arguments_one.arg_one = "test string"
-  except AttributeError, m:
+  except AttributeError as m:
     attribute_err = m
-  except ValueError, m:
+  except ValueError as m:
     value_err = m
 
   assert attribute_err is None, "Expected attribute for ch4 did not exist" \
@@ -137,9 +137,9 @@ def main():
   value_err = None
   try:
     ch4.arguments_two.arg_two = "test string"
-  except AttributeError, m:
+  except AttributeError as m:
     attribute_err = m
-  except ValueError, m:
+  except ValueError as m:
     value_err = m
 
   assert attribute_err is None, "Expected attribute for ch4 did not exist" \
@@ -155,7 +155,7 @@ def main():
   set_v = True
   try:
     ch5.argument = 'five'
-  except ValueError, m:
+  except ValueError:
     set_v = False
 
   assert set_v is True, "Could not set value of a leafref in a notification to a" + \
@@ -164,7 +164,7 @@ def main():
   set_v = True
   try:
     ch5.argument = 'fish'
-  except ValueError, m:
+  except ValueError:
     set_v = False
 
   assert set_v is False, "Set value of a leafref in a notification to a" + \

@@ -661,7 +661,7 @@ def YANGListType(*args, **kwargs):
 
           self._members[k] = tmp
 
-        except ValueError, m:
+        except ValueError as m:
           raise KeyError("key value must be valid, %s" % m)
       else:
         self._members[k] = YANGDynClass(base=self._contained_class,
@@ -697,7 +697,7 @@ def YANGListType(*args, **kwargs):
         for kn in self._keyval.split(" "):
           try:
             keyargs[kn] = kwargs[kn]
-          except KeyError, m:
+          except KeyError as m:
             raise AttributeError("Keyword list add function must have all " +
                 "keys specified - cannot find %s" % m)
           k += "%s " % kwargs[kn]
@@ -780,7 +780,7 @@ def YANGListType(*args, **kwargs):
         del self._members[k]
         if self._path_helper:
           self._path_helper.unregister(obj_path)
-      except KeyError, m:
+      except KeyError as m:
         raise KeyError("key %s was not in list (%s)" % (k, m))
 
     def _item(self, *args, **kwargs):
