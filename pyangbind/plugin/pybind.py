@@ -674,13 +674,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if not os.path.exists(fpath):
       try:
         nfd = open(fpath, 'w')
-      except IOError, m:
+      except IOError as m:
         raise IOError("could not open pyangbind output file (%s)" % m)
       nfd.write(ctx.pybind_common_hdr)
     else:
       try:
         nfd = open(fpath, 'a')
-      except IOError, w:
+      except IOError as w:
         raise IOError("could not open pyangbind output file (%s)" % m)
   else:
     # If we weren't asked to split the files, then just use the file handle
