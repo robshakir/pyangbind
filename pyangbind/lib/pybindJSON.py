@@ -17,10 +17,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from .serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
-from .serialise import pybindIETFJSONEncoder
+from __future__ import unicode_literals
+
+from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
+from pyangbind.lib.serialise import pybindIETFJSONEncoder
 import json
 import copy
+
+# Kludge to temporarily fix unicode references
+try:
+  unicode
+except NameError:
+  unicode = str
 
 
 def remove_path(tree, path):
