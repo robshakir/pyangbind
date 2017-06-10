@@ -19,12 +19,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from __future__ import unicode_literals
+
 from decimal import Decimal
 from bitarray import bitarray
 import uuid
 import re
 import collections
 import copy
+
+# Kludge to temporarily fix unicode references
+try:
+  unicode
+except NameError:
+  unicode = str
 
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
@@ -267,7 +275,7 @@ def RestrictedClassType(*args, **kwargs):
           raise ValueError("must specify either a restriction dictionary or" +
                             " a type and argument")
 
-      for rtype, rarg in self._restriction_dict.iteritems():
+      for rtype, rarg in self._restriction_dict.items():
         if rtype == "pattern":
           tests = []
           self._restriction_tests.append(match_pattern_check(rarg))
