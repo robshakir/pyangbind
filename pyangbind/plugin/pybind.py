@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from __future__ import unicode_literals
 
 import optparse
 import sys
@@ -37,6 +38,17 @@ import pyangbind.helpers.misc as misc_help
 from pyang import plugin
 from pyang import statements
 from pyang import util
+
+# Temporrary kludge for Python3 support
+try:
+  long
+except NameError:
+  long = int
+# Kludge to temporarily fix unicode references
+try:
+  unicode
+except NameError:
+  unicode = str
 
 DEBUG = True
 if DEBUG:
@@ -300,7 +312,7 @@ def build_pybind(ctx, modules, fd):
   # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
-      print("INFO: encountered %s" % e)
+      print("INFO: encountered %s" % str(e))
       if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
