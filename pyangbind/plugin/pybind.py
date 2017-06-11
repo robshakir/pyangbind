@@ -20,7 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from __future__ import unicode_literals
+#from __future__ import unicode_literals
 
 import optparse
 import sys
@@ -321,20 +321,28 @@ def build_pybind(ctx, modules, fd):
   # Build the common set of imports that all pyangbind files needs
   ctx.pybind_common_hdr = ""
   ctx.pybind_common_hdr += "\n"
-
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as " + \
-                                "xpathhelper\n"
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
-  ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
-  ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, """
-  ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
-  ctx.pybind_common_hdr += """from decimal import Decimal\n"""
-  ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
-  ctx.pybind_common_hdr += """import __builtin__\n"""
+    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as xpathhelper\n"
+
+  yangtypes_imports = ["RestrictedPrecisionDecimalType", "RestrictedClassType", "TypedListType",
+                       "YANGBool", "YANGListType", "YANGDynClass", "ReferenceType"]
+  for library in yangtypes_imports:
+    ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
+  ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
+  ctx.pybind_common_hdr += "from decimal import Decimal\n"
+  ctx.pybind_common_hdr += "from bitarray import bitarray\n"
+  ctx.pybind_common_hdr += "import __builtin__\n"
+  ctx.pybind_common_hdr += "import six\n"
+
+  # Python3 support
+  ctx.pybind_common_hdr += """
+# PY3 support of some PY2 keywords (needs improved)
+if six.PY3:
+ long = int
+ unicode = str
+
+"""
 
   if not ctx.opts.split_class_dir:
     fd.write(ctx.pybind_common_hdr)
