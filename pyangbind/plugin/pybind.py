@@ -332,15 +332,17 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
   ctx.pybind_common_hdr += "from decimal import Decimal\n"
   ctx.pybind_common_hdr += "from bitarray import bitarray\n"
-  ctx.pybind_common_hdr += "import __builtin__\n"
   ctx.pybind_common_hdr += "import six\n"
 
   # Python3 support
   ctx.pybind_common_hdr += """
 # PY3 support of some PY2 keywords (needs improved)
 if six.PY3:
+ import builtins
  long = int
  unicode = str
+elif six.PY2:
+  import __builtin__
 
 """
 
