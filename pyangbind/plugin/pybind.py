@@ -338,7 +338,7 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += """
 # PY3 support of some PY2 keywords (needs improved)
 if six.PY3:
- import builtins
+ import builtins as __builtin__
  long = int
  unicode = str
 elif six.PY2:
@@ -756,7 +756,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       for im in import_req:
         if im == parent.arg:
           im += "_"
-        nfd.write("""import %s\n""" % safe_name(im))
+        # Relative import in PY2/PY3 compatible style
+        nfd.write("from . import {}\n".format(safe_name(im)))
 
   # 'container', 'module', 'list' and 'submodule' all have their own classes
   # generated.
