@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -69,7 +69,7 @@ def main():
     try:
       q.container.dec64LeafWithRange = i[0]
       passed = True
-    except ValueError, m:
+    except ValueError:
       pass
     assert passed == i[1], \
         "decimal64 leaf with range was not correctly set (%f -> %s != %s)" \

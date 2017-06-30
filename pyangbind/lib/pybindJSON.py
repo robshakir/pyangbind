@@ -17,10 +17,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from .serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
-from .serialise import pybindIETFJSONEncoder
+from __future__ import unicode_literals
+
+from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
+from pyangbind.lib.serialise import pybindIETFJSONEncoder
 import json
 import copy
+
+# Kludge to temporarily fix unicode references
+try:
+  unicode
+except NameError:
+  unicode = str
 
 
 def remove_path(tree, path):
@@ -66,7 +74,7 @@ def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
              overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("could not open file to read: %s" % m)
   return loads(f, parent_pymod, yang_module, path_helper=path_helper,
                 extmethods=extmethods, overwrite=overwrite)
@@ -76,7 +84,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
               extmethods=None, overwrite=False):
   try:
     f = json.load(open(fn, 'r'))
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("Could not open file to read: %s" % m)
   return loads_ietf(f, parent_pymod, yang_module, path_helper,
             extmethods=extmethods, overwrite=overwrite)
@@ -162,7 +170,7 @@ def dump(obj, fn, indent=4, filter=True, skip_subtrees=[],
          mode="default"):
   try:
     fh = open(fn, 'w')
-  except IOError, m:
+  except IOError as m:
     raise pybindJSONIOError("could not open file for writing: %s" % m)
   fh.write(dumps(obj, indent=indent, filter=filter,
               skip_subtrees=skip_subtrees, mode=mode))

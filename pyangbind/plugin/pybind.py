@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+#from __future__ import unicode_literals
 
 import optparse
 import sys
@@ -37,6 +38,17 @@ import pyangbind.helpers.misc as misc_help
 from pyang import plugin
 from pyang import statements
 from pyang import util
+
+# Temporrary kludge for Python3 support
+try:
+  long
+except NameError:
+  long = int
+# Kludge to temporarily fix unicode references
+try:
+  unicode
+except NameError:
+  unicode = str
 
 DEBUG = True
 if DEBUG:
@@ -197,7 +209,7 @@ INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64",
                     "int8", "int16", "int32", "int64"]
 
 # The types that are built-in to YANG
-YANG_BUILTIN_TYPES = class_map.keys() + \
+YANG_BUILTIN_TYPES = list(class_map.keys()) + \
                       ["container", "list", "rpc", "notification", "leafref"]
 
 
@@ -300,7 +312,7 @@ def build_pybind(ctx, modules, fd):
   # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
-      print "INFO: encountered %s" % str(e)
+      print("INFO: encountered %s" % str(e))
       if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
@@ -309,20 +321,30 @@ def build_pybind(ctx, modules, fd):
   # Build the common set of imports that all pyangbind files needs
   ctx.pybind_common_hdr = ""
   ctx.pybind_common_hdr += "\n"
-
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as " + \
-                                "xpathhelper\n"
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
-  ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
-  ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, """
-  ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
-  ctx.pybind_common_hdr += """from decimal import Decimal\n"""
-  ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
-  ctx.pybind_common_hdr += """import __builtin__\n"""
+    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as xpathhelper\n"
+
+  yangtypes_imports = ["RestrictedPrecisionDecimalType", "RestrictedClassType", "TypedListType",
+                       "YANGBool", "YANGListType", "YANGDynClass", "ReferenceType"]
+  for library in yangtypes_imports:
+    ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
+  ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
+  ctx.pybind_common_hdr += "from decimal import Decimal\n"
+  ctx.pybind_common_hdr += "from bitarray import bitarray\n"
+  ctx.pybind_common_hdr += "import six\n"
+
+  # Python3 support
+  ctx.pybind_common_hdr += """
+# PY3 support of some PY2 keywords (needs improved)
+if six.PY3:
+ import builtins as __builtin__
+ long = int
+ unicode = str
+elif six.PY2:
+  import __builtin__
+
+"""
 
   if not ctx.opts.split_class_dir:
     fd.write(ctx.pybind_common_hdr)
@@ -475,7 +497,7 @@ def build_typedefs(ctx, defnd):
     unresolved_tc[i] = 0
   unresolved_t = defnd.keys()
   error_ids = []
-  known_types = class_map.keys()
+  known_types = list(class_map.keys())
   known_types.append('enumeration')
   known_types.append('leafref')
   base_types = copy.deepcopy(known_types)
@@ -674,13 +696,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if not os.path.exists(fpath):
       try:
         nfd = open(fpath, 'w')
-      except IOError, m:
+      except IOError as m:
         raise IOError("could not open pyangbind output file (%s)" % m)
       nfd.write(ctx.pybind_common_hdr)
     else:
       try:
         nfd = open(fpath, 'a')
-      except IOError, w:
+      except IOError as w:
         raise IOError("could not open pyangbind output file (%s)" % m)
   else:
     # If we weren't asked to split the files, then just use the file handle
@@ -734,7 +756,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       for im in import_req:
         if im == parent.arg:
           im += "_"
-        nfd.write("""import %s\n""" % safe_name(im))
+        # Relative import in PY2/PY3 compatible style
+        nfd.write("from . import {}\n".format(safe_name(im)))
 
   # 'container', 'module', 'list' and 'submodule' all have their own classes
   # generated.
