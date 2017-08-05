@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -207,7 +207,7 @@ def main():
     try:
       u.int_container.complex_range_two = i[0]
       passed = True
-    except ValueError, m:
+    except ValueError:
       pass
     assert passed == i[1], \
         "complex range with spaces and three elements not set correctly " + \
@@ -218,7 +218,7 @@ def main():
     try:
       u.int_container.complex_range_with_negative = i[0]
       passed = True
-    except ValueError, m:
+    except ValueError:
       pass
     assert passed == i[1], \
          "complex range with negatives not set correctly (%d -> %s != %s)" % \
@@ -230,7 +230,7 @@ def main():
     try:
       u.int_container.intLeafWithRange = i[0]
       passed = True
-    except ValueError, m:
+    except ValueError:
       pass
     assert passed == i[1], \
         "complex range with negatives and additional spaces not set " + \
@@ -242,7 +242,7 @@ def main():
     try:
       u.int_container.complex_range_with_equals_case = i[0]
       passed = True
-    except ValueError, m:
+    except ValueError:
       pass
     assert passed == i[1], \
         "complex range with equals case was not set correctly " + \
@@ -261,7 +261,7 @@ def main():
       passed = True
       try:
         set_attr(vals[0])
-      except ValueError, m:
+      except ValueError:
         passed = False
       assert passed is True, "Could not set int size %s to %d"  % \
         (elem, val)
@@ -269,7 +269,7 @@ def main():
     passed = False
     try:
       set_attr(vals[0] - 1)
-    except ValueError, m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
@@ -278,7 +278,7 @@ def main():
     passed = False
     try:
       set_attr(vals[1] + 1)
-    except ValueError, m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \

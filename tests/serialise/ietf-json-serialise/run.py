@@ -103,6 +103,12 @@ def main():
 
   assert pybind_json == external_json, "JSON did not match the expected output"
 
+  # Check that we can serialise a single element on its own.
+  pybind_json = json.loads(json.dumps(
+                  pybindIETFJSONEncoder.generate_element(js.c1.l1[1].string, flt=True),
+                  cls=pybindIETFJSONEncoder, indent=4))
+  assert pybind_json == "bear", "Single element JSON did not match the expected output"
+
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)

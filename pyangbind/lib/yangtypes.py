@@ -199,7 +199,7 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "%s$" % pattern
         return pattern
 
-      def build_length_range_tuples(range, length=False):
+      def build_length_range_tuples(range, length=False, multiplier=1):
         if range_regex.match(range_spec):
           low, high = \
               range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
@@ -207,15 +207,15 @@ def RestrictedClassType(*args, **kwargs):
             high = base_type(high) if not high == "max" else None
             low = base_type(low) if not low == "min" else None
           else:
-            high = int(high) if not high == "max" else None
-            low = int(low) if not low == "min" else None
+            high = int(high)*multiplier if not high == "max" else None
+            low = int(low)*multiplier if not low == "min" else None
           return (low, high)
         elif range_single_value_regex.match(range_spec):
           eqval = range_single_value_regex.sub('\g<value>', range_spec)
           if not length:
             eqval = base_type(eqval) if eqval not in ["max", "min"] else None
           else:
-            eqval = int(eqval)
+            eqval = int(eqval)*multiplier
           return (eqval,)
         else:
           raise ValueError("Invalid range or length argument specified")
@@ -283,12 +283,17 @@ def RestrictedClassType(*args, **kwargs):
             except:
               raise TypeError("must specify a numeric type for a range " +
                                   "argument")
-        # elif rtype == "integer" and rarg is True:
-        #   self._restriction_tests.append(lambda x: type(x) is int)
         elif rtype == "length":
+          # When the type is a binary then the length is specified in
+          # octets rather than bits, so we must specify the length to
+          # be multiplied by 8.
+          multiplier = 1
+          if base_type == bitarray:
+            multiplier = 8
           lengths = []
           for range_spec in rarg:
-            lengths.append(build_length_range_tuples(range_spec, length=True))
+            lengths.append(build_length_range_tuples(range_spec, length=True,
+                                                    multiplier=multiplier))
           self._restriction_tests.append(in_range_check(lengths, length=True))
         elif rtype == "dict_key":
           new_rarg = copy.deepcopy(rarg)
@@ -463,7 +468,7 @@ def TypedListType(*args, **kwargs):
 def YANGListType(*args, **kwargs):
   """
     Return a type representing a YANG list, with a contained class.
-    A dict or ordered dict is used to store the list, and the
+    An ordered dict is used to store the list, and the
     returned object behaves akin to a dictionary.
 
     Additional checks are performed to ensure that the keys of the
@@ -498,10 +503,10 @@ def YANGListType(*args, **kwargs):
 
     def __init__(self, *args, **kwargs):
       self._ordered = True if user_ordered else False
-      if user_ordered:
-        self._members = collections.OrderedDict()
-      else:
-        self._members = dict()
+      self._members = collections.OrderedDict()
+
+      self._members._user_ordered = True if user_ordered else False
+
       self._keyval = keyname
       if not type(listclass) == type(int):
         raise ValueError("contained class of a YANGList must be a class")
@@ -656,7 +661,7 @@ def YANGListType(*args, **kwargs):
 
           self._members[k] = tmp
 
-        except ValueError, m:
+        except ValueError as m:
           raise KeyError("key value must be valid, %s" % m)
       else:
         self._members[k] = YANGDynClass(base=self._contained_class,
@@ -676,6 +681,12 @@ def YANGListType(*args, **kwargs):
     def keys(self):
       return self._members.keys()
 
+    def items(self):
+      return self._members.items()
+
+    def values(self):
+      return self._members.values()
+
     def _generate_key(self, *args, **kwargs):
       keyargs = None
       if len(args):
@@ -686,7 +697,7 @@ def YANGListType(*args, **kwargs):
         for kn in self._keyval.split(" "):
           try:
             keyargs[kn] = kwargs[kn]
-          except KeyError, m:
+          except KeyError as m:
             raise AttributeError("Keyword list add function must have all " +
                 "keys specified - cannot find %s" % m)
           k += "%s " % kwargs[kn]
@@ -746,7 +757,7 @@ def YANGListType(*args, **kwargs):
         return k
 
     def delete(self, *args, **kwargs):
-      (k, discard) = self._generate_key(*args, **kwargs)
+      (k, _) = self._generate_key(*args, **kwargs)
 
       if self._path_helper:
         current_item = self._members[k]
@@ -769,7 +780,7 @@ def YANGListType(*args, **kwargs):
         del self._members[k]
         if self._path_helper:
           self._path_helper.unregister(obj_path)
-      except KeyError, m:
+      except KeyError as m:
         raise KeyError("key %s was not in list (%s)" % (k, m))
 
     def _item(self, *args, **kwargs):
@@ -788,10 +799,8 @@ def YANGListType(*args, **kwargs):
       return self._members[keystr]
 
     def get(self, filter=False):
-      if user_ordered:
-        d = collections.OrderedDict()
-      else:
-        d = {}
+      d = collections.OrderedDict()
+      d._user_ordered = self._members._user_ordered
       for i in self._members:
         if hasattr(self._members[i], "get"):
           d[i] = self._members[i].get(filter=filter)

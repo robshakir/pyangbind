@@ -66,7 +66,7 @@ class IdentityStore(object):
     return iter(self._store) 
 
   def build_store_from_definitions(self, ctx, defnd):
-    unresolved_identities = defnd.keys()
+    unresolved_identities = list(defnd.keys())
     unresolved_identity_count = {k: 0 for k in defnd}
     error_ids = []
 

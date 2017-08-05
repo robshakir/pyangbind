@@ -1,0 +1,22 @@
+{
+    "openconfig-bgp:bgp": {
+        "neighbors": {
+            "neighbor": [
+                {
+                    "neighbor-address": "192.1.1.1", 
+                    "config": {
+                        "neighbor-address": "192.1.1.1", 
+                        "peer-as": 5400, 
+                        "description": "a fictional transit session"
+                    }
+                }
+            ]
+        }, 
+        "global": {
+            "config": {
+                "as": 2856, 
+                "router-id": "192.0.2.1"
+            }
+        }
+    }
+}

@@ -97,6 +97,8 @@ class PybindXpathHelper(object):
 # PyangBind element for the purposes of get() calls - allowing "/" to be
 # serialised to
 class FakeRoot(PybindBase):
+  _pybind_generated_by = "FakeRoot"
+
   def __init__(self):
     self._pyangbind_elements = {}
 

@@ -34,9 +34,16 @@ def find_child_definitions(obj, defn, prefix, definitions):
     else:
       definitions["%s:%s" % (prefix, i.arg)] = i
 
-  for ch in obj.search('grouping'):
-    if ch.i_children:
-      find_child_definitions(ch, defn, prefix, definitions)
+  possible_parents = [
+                        'grouping', 'container',
+                        'list', 'rpc', 'input',
+                        'output', 'notification'
+                      ]
+
+  for parent_type in possible_parents:
+    for ch in obj.search(parent_type):
+      if ch.i_children:
+        find_child_definitions(ch, defn, prefix, definitions)
 
   return definitions
 

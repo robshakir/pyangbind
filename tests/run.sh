@@ -49,5 +49,6 @@ if [ "$DELENV" == "true" ]; then
 fi
 
 if [ $FAIL -ne 0 ]; then
+  echo "OVERALL TEST RUN: Tests failed"
   exit 127
 fi

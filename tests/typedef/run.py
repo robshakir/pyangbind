@@ -12,7 +12,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -167,6 +167,17 @@ def main():
     assert passed is i[1], \
       "union with an identityref within it was not set " + \
         "correctly: %s != %s (%s)" % (passed, i[1], i[0])
+
+  # check that typedefs nested in a container are supported
+  passed = None
+  try:
+    t.scoped_container_typedef.two = "amber"
+    passed = True
+  except ValueError:
+    passed = False
+
+  assert passed is True, \
+    "scoped typedef leaf within a container not set correctly"
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
