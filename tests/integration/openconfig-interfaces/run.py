@@ -53,6 +53,8 @@ def setup_test():
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
                   (OC + "vlan/openconfig-vlan.yang", "include"),
                   (OC + "vlan/openconfig-vlan-types.yang", "include"),
+                  (OC + "types/openconfig-inet-types.yang", "include"),
+                  (OC + "types/openconfig-yang-types.yang", "include"),
                   (RFC + "ietf-inet-types.yang", "include"),
                   (RFC + "ietf-yang-types.yang", "include"),
                   (RFC + "ietf-interfaces.yang", "include")
@@ -92,6 +94,7 @@ def setup_test():
   cmd += " -p %s" % this_dir
   cmd += " -p %s" % os.path.join(this_dir, "include")
   cmd += " --use-xpathhelper"
+  cmd += " --lax-quote-checks"
   for i in ["openconfig-interfaces", "openconfig-if-aggregate", "openconfig-if-ip"]:
     cmd += " %s" % os.path.join(this_dir, "openconfig", "%s.yang" % i)
   os.system(cmd)
