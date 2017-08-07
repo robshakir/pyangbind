@@ -333,9 +333,9 @@ def build_pybind(ctx, modules, fd):
   ctx.pybind_common_hdr += """
 # PY3 support of some PY2 keywords (needs improved)
 if six.PY3:
- import builtins as __builtin__
- long = int
- unicode = str
+  import builtins as __builtin__
+  long = int
+  unicode = str
 elif six.PY2:
   import __builtin__
 
