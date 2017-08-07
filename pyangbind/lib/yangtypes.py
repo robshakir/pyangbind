@@ -27,11 +27,10 @@ import uuid
 import re
 import collections
 import copy
+import six
 
-# Kludge to temporarily fix unicode references
-try:
-  unicode
-except NameError:
+# For Python3
+if six.PY3:
   unicode = str
 
 # Words that could turn up in YANG definition files that are actually
