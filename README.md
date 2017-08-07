@@ -54,7 +54,7 @@ where:
 
 * `$PYBINDPLUGIN` is the location that was exported from the above command.
 * `binding.py` is the desired output file.
-* `doc/base-test.yang` is the path to the YANG module that bindings are to be generated for.
+* `tests/base-test.yang` is the path to the YANG module that bindings are to be generated for.
 
 There are a number of other options for **PyangBind**, which are discussed further in the `docs/` directory.
 
