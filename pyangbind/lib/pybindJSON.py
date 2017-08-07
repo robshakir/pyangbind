@@ -23,11 +23,9 @@ from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybind
 from pyangbind.lib.serialise import pybindIETFJSONEncoder
 import json
 import copy
+import six
 
-# Kludge to temporarily fix unicode references
-try:
-  unicode
-except NameError:
+if six.PY3:
   unicode = str
 
 
