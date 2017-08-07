@@ -13,7 +13,7 @@ You may obtain a copy of the License at
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+WITHOUT WARRANTIES OR CONDITIONS OF ANY 
 See the License for the specific language governing permissions and
 limitations under the License.
 """
@@ -23,12 +23,10 @@ from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybind
 from pyangbind.lib.serialise import pybindIETFJSONEncoder
 import json
 import copy
+import six
 
-# Kludge to temporarily fix unicode references
-try:
-  unicode
-except NameError:
-  unicode = str
+if six.PY3:
+   unicode = str
 
 
 def remove_path(tree, path):

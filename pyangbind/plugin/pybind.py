@@ -20,7 +20,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-#from __future__ import unicode_literals
 
 import optparse
 import sys
@@ -30,6 +29,8 @@ import decimal
 import copy
 import os
 from bitarray import bitarray
+import six
+
 from pyangbind.lib.yangtypes import safe_name, YANGBool, \
                                   RestrictedClassType
 from pyangbind.helpers.identity import IdentityStore
@@ -39,16 +40,10 @@ from pyang import plugin
 from pyang import statements
 from pyang import util
 
-# Temporrary kludge for Python3 support
-try:
-  long
-except NameError:
-  long = int
-# Kludge to temporarily fix unicode references
-try:
-  unicode
-except NameError:
-  unicode = str
+# Python3 support
+if six.PY3:
+    long = int
+    unicode = str
 
 DEBUG = True
 if DEBUG:
