@@ -42,8 +42,8 @@ from pyang import util
 
 # Python3 support
 if six.PY3:
-    long = int
-    unicode = str
+  long = int
+  unicode = str
 
 DEBUG = True
 if DEBUG:

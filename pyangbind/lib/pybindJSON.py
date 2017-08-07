@@ -26,7 +26,7 @@ import copy
 import six
 
 if six.PY3:
-   unicode = str
+  unicode = str
 
 
 def remove_path(tree, path):
