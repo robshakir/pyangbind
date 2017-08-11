@@ -53,6 +53,7 @@ def setup_test():
                   (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-types.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-errors.yang", "openconfig"),
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
                   (OC + "types/openconfig-inet-types.yang", "include"),
                   (OC + "types/openconfig-yang-types.yang", "include"),
@@ -131,7 +132,7 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance)
     testdata = open(this_dir + "/testdata/tc010.json").read()
-    self.assertEqual(json_out, testdata)
+    self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_020_unfiltered_json_output(self):
     self.instance.bgp.global_.config.as_ = 2856
@@ -141,7 +142,7 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, filter=False)
     testdata = open(this_dir + "/testdata/tc020.json").read()
-    self.assertEqual(json_out, testdata)
+    self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_030_filtered_ietf_json_output(self):
     self.instance.bgp.global_.config.as_ = 2856
@@ -151,7 +152,7 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, mode="ietf")
     testdata = open(this_dir + "/testdata/tc030.json").read()
-    self.assertEqual(json_out, testdata)
+    self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_040_unfiltered_ietf_json_output(self):
     self.instance.bgp.global_.config.as_ = 2856
@@ -161,7 +162,7 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, filter=False, mode="ietf")
     testdata = open(this_dir + "/testdata/tc040.json").read()
-    self.assertEqual(json_out, testdata)
+    self.assertEqual(json.loads(json_out), json.loads(testdata))
 
 if __name__ == '__main__':
   keepfiles = False

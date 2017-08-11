@@ -5,7 +5,6 @@
             "confederation" : {
                "config" : {
                   "identifier" : "65517",
-                  "enabled" : "true",
                   "member-as" : [
                      "65518",
                      "65519",

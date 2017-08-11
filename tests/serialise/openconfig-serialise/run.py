@@ -107,6 +107,8 @@ def main():
     i.interfaces.interface.add("eth0")
 
     jstr = json.loads(dumps(i, filter=bool(filter), mode=mode))
+    sys.stdout.flush()
+
     assert jstr == jobj, "Generated JSON did not match expected object for %s" % fn \
             + " %s != %s" % (jstr, jobj)
 
@@ -119,7 +121,6 @@ def main():
     assert passed, "Serialisation test for object with pybindIETFJSONEncoder threw an error"
 
     jstr = json.loads(json.dumps(i, cls=pybindJSONEncoder))
-    print jstr
 
   if not k:
     del_dirs.append(os.path.join(this_dir, "ocbind"))

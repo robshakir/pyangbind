@@ -14,20 +14,6 @@
                             "route-reflector-cluster-id": 0
                         }
                     }, 
-                    "apply-policy": {
-                        "state": {
-                            "export-policy": [], 
-                            "import-policy": [], 
-                            "default-export-policy": "REJECT_ROUTE", 
-                            "default-import-policy": "REJECT_ROUTE"
-                        }, 
-                        "config": {
-                            "export-policy": [], 
-                            "import-policy": [], 
-                            "default-export-policy": "REJECT_ROUTE", 
-                            "default-import-policy": "REJECT_ROUTE"
-                        }
-                    }, 
                     "error-handling": {
                         "state": {
                             "treat-as-withdraw": false, 
@@ -37,8 +23,17 @@
                             "treat-as-withdraw": false
                         }
                     }, 
-                    "afi-safis": {
-                        "afi-safi": {}
+                    "as-path-options": {
+                        "state": {
+                            "allow-own-as": 0, 
+                            "disable-peer-as-filter": false, 
+                            "replace-peer-as": false
+                        }, 
+                        "config": {
+                            "allow-own-as": 0, 
+                            "disable-peer-as-filter": false, 
+                            "replace-peer-as": false
+                        }
                     }, 
                     "state": {
                         "send-community": "NONE", 
@@ -56,11 +51,17 @@
                         "dynamically-configured": false, 
                         "messages": {
                             "received": {
+                                "last-notification-error-code": "", 
                                 "NOTIFICATION": 0, 
+                                "last-notification-error-subcode": "", 
+                                "last-notification-time": 0, 
                                 "UPDATE": 0
                             }, 
                             "sent": {
+                                "last-notification-error-code": "", 
                                 "NOTIFICATION": 0, 
+                                "last-notification-error-subcode": "", 
+                                "last-notification-time": 0, 
                                 "UPDATE": 0
                             }
                         }, 
@@ -72,16 +73,18 @@
                         }, 
                         "last-established": 0
                     }, 
-                    "add-paths": {
+                    "apply-policy": {
                         "state": {
-                            "receive": false, 
-                            "eligible-prefix-policy": false, 
-                            "send-max": 0
+                            "export-policy": [], 
+                            "import-policy": [], 
+                            "default-export-policy": "REJECT_ROUTE", 
+                            "default-import-policy": "REJECT_ROUTE"
                         }, 
                         "config": {
-                            "receive": false, 
-                            "eligible-prefix-policy": false, 
-                            "send-max": 0
+                            "export-policy": [], 
+                            "import-policy": [], 
+                            "default-export-policy": "REJECT_ROUTE", 
+                            "default-import-policy": "REJECT_ROUTE"
                         }
                     }, 
                     "timers": {
@@ -99,15 +102,8 @@
                             "keepalive-interval": 30.0
                         }
                     }, 
-                    "as-path-options": {
-                        "state": {
-                            "allow-own-as": 0, 
-                            "replace-peer-as": false
-                        }, 
-                        "config": {
-                            "allow-own-as": 0, 
-                            "replace-peer-as": false
-                        }
+                    "afi-safis": {
+                        "afi-safi": {}
                     }, 
                     "ebgp-multihop": {
                         "state": {
@@ -275,12 +271,10 @@
             "confederation": {
                 "state": {
                     "identifier": 0, 
-                    "enabled": false, 
                     "member-as": []
                 }, 
                 "config": {
                     "identifier": 0, 
-                    "enabled": false, 
                     "member-as": []
                 }
             }, 

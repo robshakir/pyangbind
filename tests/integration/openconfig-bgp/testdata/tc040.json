@@ -14,20 +14,6 @@
                             "route-reflector-cluster-id": 0
                         }
                     }, 
-                    "apply-policy": {
-                        "state": {
-                            "export-policy": [], 
-                            "import-policy": [], 
-                            "default-export-policy": "", 
-                            "default-import-policy": ""
-                        }, 
-                        "config": {
-                            "export-policy": [], 
-                            "import-policy": [], 
-                            "default-export-policy": "", 
-                            "default-import-policy": ""
-                        }
-                    }, 
                     "error-handling": {
                         "state": {
                             "treat-as-withdraw": false, 
@@ -40,10 +26,12 @@
                     "as-path-options": {
                         "state": {
                             "allow-own-as": 0, 
+                            "disable-peer-as-filter": false, 
                             "replace-peer-as": false
                         }, 
                         "config": {
                             "allow-own-as": 0, 
+                            "disable-peer-as-filter": false, 
                             "replace-peer-as": false
                         }
                     }, 
@@ -63,11 +51,17 @@
                         "dynamically-configured": false, 
                         "messages": {
                             "received": {
+                                "last-notification-error-code": "", 
                                 "NOTIFICATION": "0", 
+                                "last-notification-error-subcode": "", 
+                                "last-notification-time": "0", 
                                 "UPDATE": "0"
                             }, 
                             "sent": {
+                                "last-notification-error-code": "", 
                                 "NOTIFICATION": "0", 
+                                "last-notification-error-subcode": "", 
+                                "last-notification-time": "0", 
                                 "UPDATE": "0"
                             }
                         }, 
@@ -79,16 +73,18 @@
                         }, 
                         "last-established": "0"
                     }, 
-                    "add-paths": {
+                    "apply-policy": {
                         "state": {
-                            "receive": false, 
-                            "eligible-prefix-policy": false, 
-                            "send-max": 0
+                            "export-policy": [], 
+                            "import-policy": [], 
+                            "default-export-policy": "", 
+                            "default-import-policy": ""
                         }, 
                         "config": {
-                            "receive": false, 
-                            "eligible-prefix-policy": false, 
-                            "send-max": 0
+                            "export-policy": [], 
+                            "import-policy": [], 
+                            "default-export-policy": "", 
+                            "default-import-policy": ""
                         }
                     }, 
                     "timers": {
@@ -263,12 +259,10 @@
             "confederation": {
                 "state": {
                     "identifier": 0, 
-                    "enabled": false, 
                     "member-as": []
                 }, 
                 "config": {
                     "identifier": 0, 
-                    "enabled": false, 
                     "member-as": []
                 }
             }, 

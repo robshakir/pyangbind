@@ -48,6 +48,7 @@ def main():
                   (OC + "bgp/openconfig-bgp-neighbor.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-peer-group.yang", "openconfig"),
                   (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
+                  (OC + "bgp/openconfig-bgp-errors.yang", "openconfig"),
                   (OC + "types/openconfig-inet-types.yang", "include"),
                   (OC + "types/openconfig-yang-types.yang", "include"),
                   (OC + "bgp/openconfig-bgp-types.yang", "include"),
@@ -119,7 +120,6 @@ def main():
            "confederation": {
               "config": {
                  "identifier": 65517,
-                 "enabled": True,
                  "member-as": [
                     65518,
                     65519,
