@@ -29,6 +29,8 @@ import decimal
 import copy
 import os
 from bitarray import bitarray
+import six
+
 from pyangbind.lib.yangtypes import safe_name, YANGBool, \
                                   RestrictedClassType
 from pyangbind.helpers.identity import IdentityStore
@@ -37,6 +39,11 @@ import pyangbind.helpers.misc as misc_help
 from pyang import plugin
 from pyang import statements
 from pyang import util
+
+# Python3 support
+if six.PY3:
+  long = int
+  unicode = str
 
 DEBUG = True
 if DEBUG:
@@ -300,7 +307,7 @@ def build_pybind(ctx, modules, fd):
   # we provided but then unused.
   if len(ctx.errors):
     for e in ctx.errors:
-      print("INFO: encountered %s" % e)
+      print("INFO: encountered %s" % str(e))
       if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
         sys.stderr.write("FATAL: pyangbind cannot build module that pyang" +
           " has found errors with.\n")
@@ -309,20 +316,30 @@ def build_pybind(ctx, modules, fd):
   # Build the common set of imports that all pyangbind files needs
   ctx.pybind_common_hdr = ""
   ctx.pybind_common_hdr += "\n"
-
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
-    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as " + \
-                                "xpathhelper\n"
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import """
-  ctx.pybind_common_hdr += """RestrictedPrecisionDecimalType, """
-  ctx.pybind_common_hdr += """RestrictedClassType, TypedListType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.yangtypes import YANGBool, """
-  ctx.pybind_common_hdr += """YANGListType, YANGDynClass, ReferenceType\n"""
-  ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase\n"""
-  ctx.pybind_common_hdr += """from decimal import Decimal\n"""
-  ctx.pybind_common_hdr += """from bitarray import bitarray\n"""
-  ctx.pybind_common_hdr += """import __builtin__\n"""
+    ctx.pybind_common_hdr += "import pyangbind.lib.xpathhelper as xpathhelper\n"
+
+  yangtypes_imports = ["RestrictedPrecisionDecimalType", "RestrictedClassType", "TypedListType",
+                       "YANGBool", "YANGListType", "YANGDynClass", "ReferenceType"]
+  for library in yangtypes_imports:
+    ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
+  ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
+  ctx.pybind_common_hdr += "from decimal import Decimal\n"
+  ctx.pybind_common_hdr += "from bitarray import bitarray\n"
+  ctx.pybind_common_hdr += "import six\n"
+
+  # Python3 support
+  ctx.pybind_common_hdr += """
+# PY3 support of some PY2 keywords (needs improved)
+if six.PY3:
+  import builtins as __builtin__
+  long = int
+  unicode = str
+elif six.PY2:
+  import __builtin__
+
+"""
 
   if not ctx.opts.split_class_dir:
     fd.write(ctx.pybind_common_hdr)
@@ -734,7 +751,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       for im in import_req:
         if im == parent.arg:
           im += "_"
-        nfd.write("""import %s\n""" % safe_name(im))
+        # Relative import in PY2/PY3 compatible style
+        nfd.write("from . import {}\n".format(safe_name(im)))
 
   # 'container', 'module', 'list' and 'submodule' all have their own classes
   # generated.
