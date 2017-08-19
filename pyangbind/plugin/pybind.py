@@ -808,8 +808,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
     elements_str = "_pyangbind_elements = OrderedDict(["
-    slots_str = "  __slots__ = ('_pybind_generated_by', '_path_helper',"
-    slots_str += " '_yang_name', '_extmethods', "
+    slots_str = "  __slots__ = ('_path_helper',"
+    slots_str += " '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
       elements_str += "('%s', %s), " % (i["name"], i["name"])
