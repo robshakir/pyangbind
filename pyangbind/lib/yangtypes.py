@@ -503,7 +503,7 @@ def YANGListType(*args, **kwargs):
   extensions = kwargs.pop("extensions", None)
 
   class YANGList(object):
-    __slots__ = ('_pybind_generated_by', '_members', '_keyval',
+    __slots__ = ('_members', '_keyval',
                   '_contained_class', '_path_helper', '_yang_keys',
                   '_ordered',)
     _pybind_generated_by = "YANGListType"
@@ -919,7 +919,7 @@ def YANGDynClass(*args, **kwargs):
   clsslots = ['_default', '_mchanged', '_yang_name', '_choice', '_parent',
                  '_supplied_register_path', '_path_helper', '_base_type',
                  '_is_leaf', '_is_container', '_extensionsd',
-                 '_pybind_base_class', '_extmethods', '_is_keyval',
+                 '_extmethods', '_is_keyval',
                  '_register_paths', '_namespace', '_yang_type',
                  '_defining_module', '_metadata', '_is_config', '_cpresent',
                  '_presence']
