@@ -169,7 +169,11 @@ def RestrictedClassType(*args, **kwargs):
         self.__check(args[0])
       except IndexError:
         pass
-      super(RestrictedClass, self).__init__(*args, **kwargs)
+
+      try:
+        super(RestrictedClass, self).__init__(*args, **kwargs)
+      except TypeError:
+        super(RestrictedClass, self).__init__()
 
     def __new__(self, *args, **kwargs):
       self._restriction_dict = restriction_dict
@@ -958,7 +962,10 @@ def YANGDynClass(*args, **kwargs):
                                   str(base_type))
 
     def __new__(self, *args, **kwargs):
-      obj = base_type.__new__(self, *args, **kwargs)
+      try:
+          obj = base_type.__new__(self, *args, **kwargs)
+      except TypeError:
+          obj = base_type.__new__(self)
       return obj
 
     def __init__(self, *args, **kwargs):
@@ -1026,7 +1033,10 @@ def YANGDynClass(*args, **kwargs):
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
+      except TypeError:
+        super(YANGBaseClass, self).__init__()
       except Exception as e:
+        raise
         raise TypeError("couldn't generate dynamic type -> %s -> %s"
                         % (type(e), e))
 
