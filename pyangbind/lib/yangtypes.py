@@ -24,7 +24,7 @@ from __future__ import unicode_literals
 from decimal import Decimal
 from bitarray import bitarray
 import uuid
-import re
+import regex
 import collections
 import copy
 import six
@@ -32,7 +32,7 @@ import six
 # For Python3
 if six.PY3:
   unicode = str
-
+  basestring = str
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
@@ -139,7 +139,7 @@ def RestrictedClassType(*args, **kwargs):
   # this gives deserialisers some hints as to how to encode/decode this value
   # it must be a list since a restricted class can encapsulate a restricted
   # class
-  current_restricted_class_type = re.sub("<(type|class) '(?P<class>.*)'>",
+  current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>",
                                           "\g<class>", str(base_type))
   if hasattr(base_type, "_restricted_class_base"):
     restricted_class_hint = getattr(base_type, "_restricted_class_base")
@@ -179,15 +179,15 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
+      range_regex = regex.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
                                 "(?P<high>(\-?[0-9\.]+|max))")
-      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
+      range_single_value_regex = regex.compile("(?P<value>\-?[0-9\.]+)")
 
       def convert_regexp(pattern):
 
         # Some patterns include a $ character in them in some IANA modules, this
         # is not escaped. Do some logic to escape them, whilst leaving one at the
-        # end of the string if it's there.
+        # end of the string if it's theregexp.
         trimmed = False
         if pattern[-1] == "$":
           tmp_pattern = pattern[:-1]
@@ -203,6 +203,7 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "^%s" % pattern
         if not pattern[len(pattern) - 1] == "$":
           pattern = "%s$" % pattern
+
         return pattern
 
       def build_length_range_tuples(range, length=False, multiplier=1):
@@ -253,7 +254,7 @@ def RestrictedClassType(*args, **kwargs):
         def mp_check(value):
           if not isinstance(value, basestring):
             return False
-          if re.match(convert_regexp(regexp), value):
+          if regex.match(convert_regexp(regexp), value):
             return True
           return False
         return mp_check
@@ -947,7 +948,7 @@ def YANGDynClass(*args, **kwargs):
     if yang_type in ["container", "list"] or is_container == "container":
       __slots__ = tuple(clsslots)
 
-    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+    _pybind_base_class = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
 
     def __new__(self, *args, **kwargs):
@@ -1211,7 +1212,7 @@ def ReferenceType(*args, **kwargs):
 
           if value is not None:
             set_method(value)
-          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+          self._type = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
 
           self._utype = get_method()._base_type
