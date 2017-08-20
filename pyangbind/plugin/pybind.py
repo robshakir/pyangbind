@@ -325,6 +325,7 @@ def build_pybind(ctx, modules, fd):
   for library in yangtypes_imports:
     ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
   ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
+  ctx.pybind_common_hdr += "from collections import OrderedDict\n"
   ctx.pybind_common_hdr += "from decimal import Decimal\n"
   ctx.pybind_common_hdr += "from bitarray import bitarray\n"
   ctx.pybind_common_hdr += "import six\n"
@@ -813,14 +814,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # variable of the class to restrict anyone from adding to these classes.
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
-    elements_str = "_pyangbind_elements = {"
+    elements_str = "_pyangbind_elements = OrderedDict(["
     slots_str = "  __slots__ = ('_path_helper',"
     slots_str += " '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
-      elements_str += "'%s': %s, " % (i["name"], i["name"])
+      elements_str += "('%s', %s), " % (i["name"], i["name"])
     slots_str += ")\n"
-    elements_str += "}\n"
+    elements_str += "])\n"
     nfd.write(slots_str + "\n")
     # Store the real name of the element - since we often get values that are
     # not allowed in python as identifiers, but we need the real-name when
