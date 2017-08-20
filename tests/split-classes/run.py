@@ -65,15 +65,15 @@ def main():
       "resulted in an invalid file"
 
   s.choices.case_one_container.user.add('first')
-  assert s.choices.case_one_container.user.keys() == ['first'], \
+  assert list(s.choices.case_one_container.user.keys()) == ['first'], \
     "Could not add an entry to the case one container correctly " + \
       "%s != ['first']" % s.choices.case_one_container.user.keys()
 
   s.choices.case_two_container.user.add('second')
-  assert s.choices.case_one_container.user.keys() == [], \
+  assert list(s.choices.case_one_container.user.keys()) == [], \
     "Setting case two leaf did not clear case-one branch " + \
       "%s != ['']" % s.choices.case_one_container.user.keys()
-  assert s.choices.case_two_container.user.keys() == ['second'], \
+  assert list(s.choices.case_two_container.user.keys()) == ['second'], \
     "Did not correctly add to the case two container " + \
       "%s != ['second']" % s.choices.case_two_container.user.keys()
 

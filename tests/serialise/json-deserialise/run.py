@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -19,7 +20,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -85,7 +86,7 @@ def main():
             'one-leaf': u'hi',
             'typedef-one': u'test',
             'boolean': True,
-            'binary': bitarray('111111'),
+            'binary': bitarray('010101'),
             'union': u'16',
             'identityref': u'idone',
             'enumeration': u'one',
@@ -120,13 +121,14 @@ def main():
   del js
   js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-order.json"),
                 bindings, "json_deserialise", path_helper=y)
-  assert js.ordered.keys() == ["two", "one"], \
+  assert list(js.ordered.keys()) == ["two", "one"], \
             "Did not correctly load a user ordered list"
 
   del js
   js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-no-order.json"),
                 bindings, "json_deserialise", path_helper=y)
-  assert js.ordered.keys() == ["two", "one"], \
+
+  assert list(js.ordered.keys()) == ["two", "one"], \
         "Did not correctly follow ordering in JSON file"
 
   pth = os.path.join(this_dir, "json", "nonexist.json")

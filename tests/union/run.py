@@ -4,6 +4,11 @@ import os
 import sys
 import getopt
 
+import six
+
+if six.PY3:
+    unicode = str
+
 TESTNAME = "union"
 
 
