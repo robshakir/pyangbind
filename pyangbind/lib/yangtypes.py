@@ -896,7 +896,11 @@ def YANGDynClass(*args, **kwargs):
   if not base_type:
     raise TypeError("must have a base type")
 
-  if isinstance(base_type, list):
+  if base_type == bitarray:
+      if len(args) == 1:
+          args = (str(args[0]) if isinstance(args[0], unicode) else args[0], )
+
+  elif isinstance(base_type, list):
     # this is a union, we must infer type
     if not len(args):
       # there is no argument to infer the type from
