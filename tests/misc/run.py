@@ -10,6 +10,13 @@ from pyangbind.lib.xpathhelper import YANGPathHelper
 import pyangbind.lib.pybindJSON as pbJ
 import json
 
+import six
+
+# For Python3
+if six.PY3:
+  unicode = str
+  basestring = str
+
 TESTNAME = "misc"
 
 # generate bindings in this folder
@@ -81,7 +88,7 @@ class PyangbindMiscTests(unittest.TestCase):
     b.bar = "stringvaltwo"
 
     self.instance.b.append(b)
-    self.assertEqual(type(self.instance.b.keys()[0]), unicode)
+    self.assertEqual(type(list(self.instance.b.keys())[0]), unicode)
 
   def test_003_checklistkeytype(self):
     globals()["miscc"] = importlib.import_module("bindings.c")
@@ -89,7 +96,7 @@ class PyangbindMiscTests(unittest.TestCase):
     c.one = 42
 
     self.instance.c.append(c)
-    self.assertEqual(type(self.instance.c.keys()[0]), int)
+    self.assertEqual(type(list(self.instance.c.keys())[0]), int)
 
 if __name__ == '__main__':
   keepfiles = False
