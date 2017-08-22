@@ -57,7 +57,7 @@ def main():
                   (OC + "policy/openconfig-routing-policy.yang", "openconfig"),
                   (OC + "policy/openconfig-policy-types.yang", "include"),
                   (OC + "openconfig-extensions.yang", "include"),
-                  (OC + "openconfig-types.yang", "include"),
+                  (OC + "types/openconfig-types.yang", "include"),
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
                   (OC + "types/openconfig-yang-types.yang", "openconfig"),
                   (OC + "types/openconfig-inet-types.yang", "openconfig"),

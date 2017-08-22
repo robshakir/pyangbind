@@ -46,7 +46,7 @@ def main():
             "yang/master/standard/ietf/RFC/"
   FETCH_FILES = [
                   (OC + "openconfig-extensions.yang", "include"),
-                  (OC + "openconfig-types.yang", "include"),
+                  (OC + "types/openconfig-types.yang", "include"),
                   (OC + "types/openconfig-yang-types.yang", "include"),
                   (OC + "types/openconfig-inet-types.yang", "include"),
                   (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
