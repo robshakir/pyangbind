@@ -117,7 +117,7 @@ class pybindJSONEncoder(json.JSONEncoder):
         return unicode(obj)
     elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
       return int(obj)
-    elif orig_yangt in ["int64" "uint64"]:
+    elif orig_yangt in ["int64", "uint64", "oc-types:timeticks64", "oc-yang:counter64"]:
       if mode == "ietf":
         return unicode(obj)
       else:
