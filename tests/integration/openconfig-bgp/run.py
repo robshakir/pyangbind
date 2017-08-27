@@ -81,7 +81,7 @@ def setup_test():
         else:
           got = True
           f = open(wrpath, 'w')
-          f.write(response.content)
+          f.write(response.text)
           f.close()
           break
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
@@ -130,7 +130,9 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.peer_as = 5400
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance)
-    testdata = open(this_dir + "/testdata/tc010.json").read()
+
+    with open("{}/testdata/tc010.json".format(this_dir)) as f:
+        testdata = f.read()
     self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_020_unfiltered_json_output(self):
@@ -140,7 +142,8 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.peer_as = 5400
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, filter=False)
-    testdata = open(this_dir + "/testdata/tc020.json").read()
+    with open("{}/testdata/tc020.json".format(this_dir)) as f:
+        testdata = f.read()
     self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_030_filtered_ietf_json_output(self):
@@ -150,7 +153,8 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.peer_as = 5400
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, mode="ietf")
-    testdata = open(this_dir + "/testdata/tc030.json").read()
+    with open("{}/testdata/tc030.json".format(this_dir)) as f:
+        testdata = f.read()
     self.assertEqual(json.loads(json_out), json.loads(testdata))
 
   def test_040_unfiltered_ietf_json_output(self):
@@ -160,7 +164,8 @@ class PyangbindOCBGP(unittest.TestCase):
     n.config.peer_as = 5400
     n.config.description = "a fictional transit session"
     json_out = pbj.dumps(self.instance, filter=False, mode="ietf")
-    testdata = open(this_dir + "/testdata/tc040.json").read()
+    with open("{}/testdata/tc040.json".format(this_dir)) as f:
+        testdata = f.read()
     self.assertEqual(json.loads(json_out), json.loads(testdata))
 
 
