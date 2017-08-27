@@ -74,7 +74,7 @@ def setup_test():
         else:
           got = True
           f = open(wrpath, 'w')
-          f.write(response.content)
+          f.write(response.text)
           f.close()
           break
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
