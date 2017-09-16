@@ -1012,8 +1012,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # Write out the classes that are stored locally as self.__foo where
     # foo is the safe YANG name.
     for c in classes:
-      nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"],
-                                  classes[c]["type"], classes[c]["arg"]))
+      nfd.write("    self.%s = None\n" % (classes[c]["name"]))
     # Don't accept arguments to a container/list/submodule class
     nfd.write("""
     load = kwargs.pop("load", None)
@@ -1056,13 +1055,23 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         description_str = "\n\n    YANG Description: %s" \
             % i["description"].decode('utf-8').encode('ascii', 'ignore')
       nfd.write('''
+  def _initialized_%s(self):
+    """
+    This method lets you know if the attribute has been initialized already
+    """
+    return self.__%s is not None
+
   def _get_%s(self):
     """
     Getter method for %s, mapped from YANG variable %s (%s)%s
     """
+    if self.__%s is None:
+        self.__%s = %s(%s)
     return self.__%s
-      ''' % (i["name"], i["name"], i["path"], i["origtype"],
-             description_str, i["name"]))
+      ''' % (i["name"], i["name"],
+             i["name"], i["name"], i["path"], i["origtype"], description_str,
+             i["name"], i["name"], c_str["type"], c_str["arg"],
+             i["name"]))
 
       nfd.write('''
   def _set_%s(self, v, load=False):
@@ -1072,9 +1081,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     source YANG file, then _set_%s is considered as a private
     method. Backends looking to populate this variable should
     do so via calling thisObj._set_%s() directly.%s
-    """''' % (i["name"], i["name"], i["path"],
-                          i["origtype"], i["name"], i["name"],
-                          description_str))
+    """
+    if self.__%s is None:
+        self.__%s = %s(%s)
+    ''' % (i["name"], i["name"], i["path"],
+           i["origtype"], i["name"], i["name"],
+           description_str,
+           i["name"], i["name"], c_str["type"], c_str["arg"],
+          ))
       if keyval and i["yang_name"] in keyval:
         nfd.write("""
     parent = getattr(self, "_parent", None)
