@@ -310,7 +310,7 @@ class pybindJSONDecoder(object):
           for elem in list_obj:
             list_copy.append(elem)
           for e in list_copy:
-            if e not in d[key]:
+            if str(e) not in d[key]:
               list_obj.remove(e)
           set_via_stdmethod = False
         else:
