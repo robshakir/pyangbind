@@ -23,6 +23,7 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+from collections import OrderedDict
 
 from lxml import etree
 import re
@@ -31,6 +32,12 @@ import sys
 from .yangtypes import safe_name
 from .base import PybindBase
 
+import six
+
+# For Python3
+if six.PY3:
+  unicode = str
+  basestring = str
 
 class YANGPathHelperException(Exception):
   pass
@@ -100,7 +107,7 @@ class FakeRoot(PybindBase):
   _pybind_generated_by = "FakeRoot"
 
   def __init__(self):
-    self._pyangbind_elements = {}
+    self._pyangbind_elements = OrderedDict()
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
@@ -170,7 +177,7 @@ class YANGPathHelper(PybindXpathHelper):
 
       if attributes is not None:
         epath += tagname + "["
-        for k, v in attributes.iteritems():
+        for k, v in attributes.items():
           # handling for rfc6020 current() specification
           if "current()" in v:
             remaining_path = re.sub("current\(\)(?P<remaining>.*)",
@@ -272,7 +279,7 @@ class YANGPathHelper(PybindXpathHelper):
 
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
-      for k, v in attributes.iteritems():
+      for k, v in attributes.items():
         added_item.set(k, v)
 
   def unregister(self, object_path, caller=False):
