@@ -300,7 +300,7 @@ def build_pybind(ctx, modules, fd):
   module_d = {}
   for mod in modules:
     module_d[mod.arg] = mod
-  pyang_called_modules = module_d.keys()
+  pyang_called_modules = list(module_d.keys())
 
   # Bail if there are pyang errors, since this certainly means that the
   # pyangbind output will fail - unless these are solely due to imports that
@@ -325,6 +325,7 @@ def build_pybind(ctx, modules, fd):
   for library in yangtypes_imports:
     ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
   ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
+  ctx.pybind_common_hdr += "from collections import OrderedDict\n"
   ctx.pybind_common_hdr += "from decimal import Decimal\n"
   ctx.pybind_common_hdr += "from bitarray import bitarray\n"
   ctx.pybind_common_hdr += "import six\n"
@@ -490,7 +491,7 @@ def build_typedefs(ctx, defnd):
   unresolved_tc = {}
   for i in defnd:
     unresolved_tc[i] = 0
-  unresolved_t = defnd.keys()
+  unresolved_t = list(defnd.keys())
   error_ids = []
   known_types = list(class_map.keys())
   known_types.append('enumeration')
@@ -571,7 +572,7 @@ def build_typedefs(ctx, defnd):
     # Copy the class_map entry - this is done so that we do not alter the
     # existing instance in memory as we add to it.
     cls, elemtype = copy.deepcopy(build_elemtype(ctx, item.search_one('type')))
-    known_types = class_map.keys()
+    known_types = list(class_map.keys())
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
@@ -783,8 +784,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # code that is generated.
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n  YANG Description: %s" % \
-          parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      if six.PY2:
+          parent_descr = "\n\n  YANG Description: %s" % \
+              parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      else:
+          parent_descr = "\n\n  YANG Description: %s" % \
+              parent_descr.arg
     else:
       parent_descr = ""
 
@@ -809,14 +814,14 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # variable of the class to restrict anyone from adding to these classes.
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
-    elements_str = "_pyangbind_elements = {"
-    slots_str = "  __slots__ = ('_pybind_generated_by', '_path_helper',"
-    slots_str += " '_yang_name', '_extmethods', "
+    elements_str = "_pyangbind_elements = OrderedDict(["
+    slots_str = "  __slots__ = ('_path_helper',"
+    slots_str += " '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
-      elements_str += "'%s': %s, " % (i["name"], i["name"])
+      elements_str += "('%s', %s), " % (i["name"], i["name"])
     slots_str += ")\n"
-    elements_str += "}\n"
+    elements_str += "])\n"
     nfd.write(slots_str + "\n")
     # Store the real name of the element - since we often get values that are
     # not allowed in python as identifiers, but we need the real-name when
@@ -1053,8 +1058,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n    YANG Description: %s" \
-            % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        if six.PY2:
+            description_str = "\n\n    YANG Description: %s" \
+                % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        else:
+            description_str = "\n\n    YANG Description: %s" \
+                % i["description"]
       nfd.write('''
   def _get_%s(self):
     """
