@@ -40,7 +40,7 @@ To generate your first set of classes, you will need a YANG module, and its depe
 To generate a set of Python classes, Pyang needs to be provided a pointer to where PyangBind's plugin is installed. This location can be found by running:
 
 ```
-$  export PYBINDPLUGIN=`/usr/bin/env python -c \
+$ export PYBINDPLUGIN=`/usr/bin/env python -c \
 	'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
 $ echo $PYBINDPLUGIN
 ```
