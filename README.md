@@ -41,7 +41,7 @@ To generate a set of Python classes, Pyang needs to be provided a pointer to whe
 
 ```
 $  export PYBINDPLUGIN=`/usr/bin/env python -c \
-	'import pyangbind; import os; print "%s/plugin" % os.path.dirname(pyangbind.__file__)'`
+	'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
 $ echo $PYBINDPLUGIN
 ```
 
