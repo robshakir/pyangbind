@@ -27,11 +27,16 @@ serialise:
 import json
 from collections import OrderedDict
 from decimal import Decimal
+from enum import IntEnum
 from pyangbind.lib.yangtypes import safe_name, YANGBool
 from types import ModuleType
 import copy
 
 import sys
+
+
+class WithDefaults(IntEnum):
+  IF_SET = 0
 
 
 class pybindJSONIOError(Exception):
@@ -477,11 +482,16 @@ class pybindJSONDecoder(object):
 class pybindIETFJSONEncoder(pybindJSONEncoder):
   @staticmethod
   def generate_element(obj, parent_namespace=None, flt=False,
-                       with_defaults=False):
+                       with_defaults=None):
     """
       Convert a pyangbind class to a format which encodes to the IETF JSON
       specification, rather than the default .get() format, which does not
       match this specification.
+
+      Modes of operation controlled by with_defaults:
+
+        - None: skip data set to default values
+        - WithDefaults.IF_SET: include all explicitly set data
 
       The implementation is based on draft-ietf-netmod-yang-json-07.
     """
@@ -521,12 +531,13 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         if not len(d[yname]):
           del d[yname]
       else:
-        if flt and element._changed():
-          d[yname] = element
-        else:
-          if not flt:
+        if with_defaults is None:
+          if flt and element._changed():
             d[yname] = element
-          elif with_defaults and element._default == element:
+          elif not flt:
+            d[yname] = element
+        elif with_defaults == WithDefaults.IF_SET:
+          if element._changed() or element._default == element:
             d[yname] = element
     return d
 

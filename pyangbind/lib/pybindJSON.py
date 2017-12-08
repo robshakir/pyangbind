@@ -89,7 +89,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
 
 
 def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
-            mode="default", with_defaults=False):
+            mode="default", with_defaults=None):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
