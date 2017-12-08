@@ -490,7 +490,7 @@ def build_typedefs(ctx, defnd):
   unresolved_tc = {}
   for i in defnd:
     unresolved_tc[i] = 0
-  unresolved_t = defnd.keys()
+  unresolved_t = list(defnd.keys())
   error_ids = []
   known_types = list(class_map.keys())
   known_types.append('enumeration')
@@ -571,7 +571,7 @@ def build_typedefs(ctx, defnd):
     # Copy the class_map entry - this is done so that we do not alter the
     # existing instance in memory as we add to it.
     cls, elemtype = copy.deepcopy(build_elemtype(ctx, item.search_one('type')))
-    known_types = class_map.keys()
+    known_types = list(class_map.keys())
     # Enumeration is a native type, but is not natively supported
     # in the class_map, and hence we append it here.
     known_types.append("enumeration")
