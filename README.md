@@ -140,7 +140,7 @@ for nhop in [(0, "192.168.0.1"), (1, "10.0.0.1")]:
 
 # Iterate through the next-hops added
 for index, nh in rt.next_hops.next_hop.iteritems():
-  print("%s: %s" % (index, nh.config.next_hop))
+    print("{}: {}".format(index, nh.config.next_hop))
 ```
 
 Where (type or value) restrictions exist. PyangBind generated classes will result in a Python `ValueError` being raised. For example, if we attempt to set the `set_tag` leaf to an invalid value:
@@ -150,7 +150,7 @@ Where (type or value) restrictions exist. PyangBind generated classes will resul
 try:
   rt.config.set_tag = "INVALID-TAG"
 except ValueError as m:
-  print("Cannot set tag: %s" % m)
+  print("Cannot set tag: {}".format(m))
 ```
 
 ### Serialising a Data Instance <a name="serialising"></a>
@@ -291,7 +291,7 @@ Following this load, the classes can be iterated through - showing both the orig
 # Iterate through the classes - both the 192.0.2.1/32 prefix and 192.0.2.2/32
 # prefix are now in the objects
 for prefix, route in new_oclr.local_routes.static_routes.static.iteritems():
-  print("Prefix: %s, tag: %d" % (prefix, route.config.set_tag))
+  print("Prefix: {}, tag: {}".format(prefix, route.config.set_tag))
 
 # Output:
 #		Prefix: 192.0.2.2/32, tag: 256
