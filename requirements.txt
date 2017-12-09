@@ -2,4 +2,4 @@ pyang
 bitarray
 lxml
 six
-enum
+enum34
