@@ -89,7 +89,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
 
 
 def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
-            mode="default"):
+            mode="default", with_defaults=None):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
@@ -109,7 +109,8 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
   if not isinstance(skip_subtrees, list):
     raise AttributeError('the subtrees to be skipped should be a list')
   if mode == 'ietf':
-    tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter)
+    tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter,
+                                                  with_defaults=with_defaults)
   else:
     tree = obj.get(filter=filter)
   for p in skip_subtrees:
