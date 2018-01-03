@@ -468,6 +468,10 @@ class pybindJSONDecoder(object):
           pass
         elif chk._yang_type == "empty":
           if d[key] == None:
+            set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
+            if set_method is None:
+              raise AttributeError("Invalid attribute specified in JSON - %s"
+                                      % (ykey))
             set_method(True)
         else:
           set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
