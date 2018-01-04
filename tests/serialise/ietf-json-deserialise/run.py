@@ -4,6 +4,7 @@ import os
 import sys
 import getopt
 import json
+from jsondiff import diff
 from pyangbind.lib.serialise import pybindJSONDecoder
 from pyangbind.lib.pybindJSON import dumps
 from bitarray import bitarray
@@ -94,6 +95,7 @@ def main():
             "uint16": 1,
             "union-list": [16, "chicken"],
             "uint32": 1,
+            "empty": True,
             "int32": 1,
             "int16": 1,
             "string": "bear",
@@ -127,8 +129,9 @@ def main():
       }
     }
   }
-  assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
-    "complete object not as expected"
+  actual_get = nobj.get(filter=True)
+  assert actual_get == expected_get, "Deserialisation of " + \
+    "complete object not as expected. Actual: %s\nExpected: %s\n\nDiff:%s" % (actual_get, expected_get, diff(actual_get, expected_get))
 
   pth = os.path.join(this_dir, "json", "nonexistkey.json")
   for i in [True, False]:
