@@ -40,7 +40,7 @@ def setup_test():
             "yang/master/standard/ietf/RFC/"
   FETCH_FILES = [
                   (OC + "openconfig-extensions.yang", "include"),
-                  (OC + "openconfig-types.yang", "include"),
+                  (OC + "types/openconfig-types.yang", "include"),
                   (OC + "interfaces/openconfig-if-ip.yang", "openconfig"),
                   (OC + "interfaces/openconfig-if-ethernet.yang", "openconfig"),
                   (OC + "interfaces/openconfig-if-aggregate.yang", "openconfig"),
