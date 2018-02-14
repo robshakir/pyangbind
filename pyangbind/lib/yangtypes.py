@@ -192,7 +192,7 @@ def RestrictedClassType(*args, **kwargs):
 
         # Some patterns include a $ character in them in some IANA modules, this
         # is not escaped. Do some logic to escape them, whilst leaving one at the
-        # end of the string if it's theregexp.
+        # end of the string if it's there.
         trimmed = False
         if pattern[-1] == "$":
           tmp_pattern = pattern[:-1]
@@ -900,11 +900,7 @@ def YANGDynClass(*args, **kwargs):
   if not base_type:
     raise TypeError("must have a base type")
 
-  if base_type == bitarray:
-      if len(args) == 1:
-          args = (str(args[0]) if isinstance(args[0], unicode) else args[0], )
-
-  elif isinstance(base_type, list):
+  if isinstance(base_type, list):
     # this is a union, we must infer type
     if not len(args):
       # there is no argument to infer the type from

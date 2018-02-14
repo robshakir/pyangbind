@@ -300,6 +300,7 @@ def build_pybind(ctx, modules, fd):
   module_d = {}
   for mod in modules:
     module_d[mod.arg] = mod
+  # Py3: keys() returns dict_keys so cast it to a list
   pyang_called_modules = list(module_d.keys())
 
   # Bail if there are pyang errors, since this certainly means that the
@@ -325,7 +326,6 @@ def build_pybind(ctx, modules, fd):
   for library in yangtypes_imports:
     ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
   ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
-  ctx.pybind_common_hdr += "from collections import OrderedDict\n"
   ctx.pybind_common_hdr += "from decimal import Decimal\n"
   ctx.pybind_common_hdr += "from bitarray import bitarray\n"
   ctx.pybind_common_hdr += "import six\n"
@@ -525,7 +525,7 @@ def build_typedefs(ctx, defnd):
       else:
         defining_module = defnd[t].i_module
 
-      belongs_to = defining_module.search_one('belongs-to') 
+      belongs_to = defining_module.search_one('belongs-to')
       if belongs_to is not None:
         for mod in ctx.modules:
           if mod[0] == belongs_to.arg:
@@ -802,7 +802,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   """\n''' % (module.arg, (path if not path == "" else "/%s" % parent.arg),
               parent_descr))
   else:
-    raise TypeError("unhandled keyword with children %s at %s" % 
+    raise TypeError("unhandled keyword with children %s at %s" %
       (parent.keyword, parent.pos))
 
   elements_str = ""
@@ -814,14 +814,15 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # variable of the class to restrict anyone from adding to these classes.
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
-    elements_str = "_pyangbind_elements = OrderedDict(["
+    elements_str = "_pyangbind_elements = {"
     slots_str = "  __slots__ = ('_path_helper',"
     slots_str += " '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
-      elements_str += "('%s', %s), " % (i["name"], i["name"])
+      # elements_str += "('%s', %s), " % (i["name"], i["name"])
+      elements_str += "'%s': %s, " % (i["name"], i["name"])
     slots_str += ")\n"
-    elements_str += "])\n"
+    elements_str += "}\n"
     nfd.write(slots_str + "\n")
     # Store the real name of the element - since we often get values that are
     # not allowed in python as identifiers, but we need the real-name when

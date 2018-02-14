@@ -95,7 +95,7 @@ def main():
 
   for fn in os.listdir(os.path.join(this_dir, "json")):
     jobj = json.load(open(os.path.join(this_dir, "json", fn), 'r'))
-    parameters = re.sub('interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json', 
+    parameters = re.sub('interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json',
                         '\g<pathhelper>||\g<filter>||\g<mode>', fn).split("||")
     path_helper,filter,mode = YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2]
 
@@ -110,6 +110,8 @@ def main():
     jstr = json.loads(dumps(i, filter=bool(filter), mode=mode))
     sys.stdout.flush()
 
+    print(len(jstr))
+    print(len(jobj))
     assert jstr == jobj, "Generated JSON did not match expected object for %s" % fn \
             + " %s != %s" % (jstr, jobj)
 
