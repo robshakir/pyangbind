@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -21,7 +22,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -72,7 +73,7 @@ def main():
         else:
           got = True
           f = open(wrpath, 'w')
-          f.write(response.content)
+          f.write(response.text)
           f.close()
           break
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
@@ -94,7 +95,7 @@ def main():
 
   for fn in os.listdir(os.path.join(this_dir, "json")):
     jobj = json.load(open(os.path.join(this_dir, "json", fn), 'r'))
-    parameters = re.sub('interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json', 
+    parameters = re.sub('interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json',
                         '\g<pathhelper>||\g<filter>||\g<mode>', fn).split("||")
     path_helper,filter,mode = YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2]
 
@@ -109,6 +110,8 @@ def main():
     jstr = json.loads(dumps(i, filter=bool(filter), mode=mode))
     sys.stdout.flush()
 
+    print(len(jstr))
+    print(len(jobj))
     assert jstr == jobj, "Generated JSON did not match expected object for %s" % fn \
             + " %s != %s" % (jstr, jobj)
 

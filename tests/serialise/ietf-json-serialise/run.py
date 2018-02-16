@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -7,6 +8,13 @@ import json
 from pyangbind.lib.serialise import pybindJSONEncoder, pybindIETFJSONEncoder
 from pyangbind.lib.pybindJSON import dumps
 from decimal import Decimal
+import six
+
+# For Python3
+if six.PY3:
+    unicode = str
+    basestring = str
+
 
 TESTNAME = "ietf-json-serialise"
 
@@ -16,7 +24,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
