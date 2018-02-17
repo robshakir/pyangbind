@@ -23,6 +23,7 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+from collections import OrderedDict
 
 from lxml import etree
 import re
@@ -100,7 +101,7 @@ class FakeRoot(PybindBase):
   _pybind_generated_by = "FakeRoot"
 
   def __init__(self):
-    self._pyangbind_elements = {}
+    self._pyangbind_elements = OrderedDict()
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
