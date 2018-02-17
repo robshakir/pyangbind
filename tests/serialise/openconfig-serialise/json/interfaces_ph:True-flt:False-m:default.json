@@ -13,17 +13,19 @@
                     }
                 }, 
                 "config": {
-                    "enabled": true, 
+                    "loopback-mode": false,
+                    "enabled": false, 
                     "type": "", 
                     "description": "", 
                     "name": "eth0", 
                     "mtu": 0
                 }, 
                 "state": {
+                    "loopback-mode": false,
                     "name": "", 
                     "type": "", 
                     "description": "", 
-                    "enabled": true, 
+                    "enabled": false, 
                     "admin-status": "", 
                     "mtu": 0, 
                     "ifindex": 0, 
