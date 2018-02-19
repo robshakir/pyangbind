@@ -127,7 +127,7 @@ def main():
   del js
   js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-no-order.json"),
                 bindings, "json_deserialise", path_helper=y)
-  assert js.ordered.keys() == ["one", "two"], \
+  assert js.ordered.keys() == ["two", "one"], \
         "Did not correctly follow ordering in JSON file"
 
   pth = os.path.join(this_dir, "json", "nonexist.json")

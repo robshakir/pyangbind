@@ -21,6 +21,7 @@
                     "mtu": 0
                 }, 
                 "state": {
+                    "loopback-mode": false,
                     "name": "", 
                     "type": "", 
                     "description": "", 
