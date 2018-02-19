@@ -13,8 +13,8 @@
                     }
                 }, 
                 "config": {
+                    "enabled": true, 
                     "loopback-mode": false,
-                    "enabled": false, 
                     "type": "", 
                     "description": "", 
                     "name": "eth0", 
@@ -25,7 +25,8 @@
                     "name": "", 
                     "type": "", 
                     "description": "", 
-                    "enabled": false, 
+                    "enabled": true, 
+                    "loopback-mode": false,
                     "admin-status": "", 
                     "mtu": 0, 
                     "ifindex": 0, 

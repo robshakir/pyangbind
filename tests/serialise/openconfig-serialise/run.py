@@ -7,6 +7,7 @@ import json
 import requests
 import time
 import re
+import difflib
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.pybindJSON import dumps
@@ -110,7 +111,7 @@ def main():
     sys.stdout.flush()
 
     assert jstr == jobj, "Generated JSON did not match expected object for %s" % fn \
-            + " %s != %s" % (jstr, jobj)
+            + " diff:\n%s" % (diff(jstr, jobj))
 
     passed = True
     try:
@@ -131,6 +132,11 @@ def main():
         for name in dirs:
           os.rmdir(os.path.join(root, name))
       os.rmdir(dirname)
+
+def diff(a, b):
+    ja = json.dumps(a, indent=4, sort_keys=True).split("\n")
+    jb = json.dumps(b, indent=4, sort_keys=True).split("\n")
+    return '\n'.join(difflib.unified_diff(ja, jb))
 
 
 if __name__ == '__main__':
