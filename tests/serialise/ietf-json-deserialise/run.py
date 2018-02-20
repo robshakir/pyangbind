@@ -106,7 +106,8 @@ def main():
             "remote-identityref": "remote:stilton",
             "int64": 1,
             "restricted-string": "aardvark",
-            "decimal": Decimal('16.32')
+            "decimal": Decimal('16.32'),
+            "empty": True,
           }
       },
       "l2": OrderedDict(
@@ -128,7 +129,8 @@ def main():
     }
   }
   assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
-    "complete object not as expected"
+          "complete object not as expected, got: %s" % \
+          dumps(nobj.get(filter=True), indent=4, mode="ietf")
 
   pth = os.path.join(this_dir, "json", "nonexistkey.json")
   for i in [True, False]:

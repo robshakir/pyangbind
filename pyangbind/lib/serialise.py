@@ -471,16 +471,17 @@ class pybindJSONDecoder(object):
           if chk._yang_type == "empty":
             # A 'none' value in the JSON means that an empty value is set, 
             # since this is serialised as [null] in the input JSON.
-            if val is None:
+            if val == [None]:
               val = True
             else:
-              val = None  # Ignore an input value different than null/empty
+              raise ValueError("Invalid value for empty in input JSON " + \
+                      "key: %s, got: %s" % (ykey, val))
           if val is not None:
             set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
             if set_method is None:
               raise AttributeError("Invalid attribute specified in JSON - %s"
                                       % (ykey))
-            set_method(d[key])
+            set_method(val)
         pybindJSONDecoder.check_metadata_add(key, d, get_method())
     return obj
 

@@ -53,7 +53,7 @@
                     "chicken"
                 ], 
                 "uint32": 1, 
-                "empty": null, 
+                "empty": [null], 
                 "int32": 1, 
                 "int16": 1, 
                 "string": "bear", 
