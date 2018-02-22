@@ -548,10 +548,10 @@ def YANGListType(*args, **kwargs):
       return True
 
     def iteritems(self):
-      return self._members.iteritems()
+      return six.iteritems(self._members)
 
     def itervalues(self):
-      return self._members.itervalues()
+      return six.itervalues(self._members)
 
     def _key_to_native_key_type(self, k):
       if self._keyval is False:
