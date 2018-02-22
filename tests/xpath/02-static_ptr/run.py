@@ -49,7 +49,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 def t1_listkey(yobj, tree=False):

@@ -128,7 +128,7 @@ def main():
   js = pbJ.load(os.path.join(this_dir, "json", "orderedlist-no-order.json"),
                 bindings, "json_deserialise", path_helper=y)
 
-  assert list(js.ordered.keys()) == ["two", "one"], \
+  assert list(js.ordered.keys()) == ["one", "two"], \
         "Did not correctly follow ordering in JSON file"
 
   pth = os.path.join(this_dir, "json", "nonexist.json")
@@ -145,7 +145,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

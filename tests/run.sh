@@ -11,6 +11,8 @@ function runtests {
     echo -n "Testing with "
     $PYTHON_INTERPRETER --version
 
+    export PYTHONDONTWRITEBYTECODE=1
+
     export PATH_TO_PYBIND_TEST_PYTHON="python"
     FAIL=0
 

@@ -111,7 +111,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

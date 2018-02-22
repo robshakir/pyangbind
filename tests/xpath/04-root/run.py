@@ -43,7 +43,6 @@ def setup_test():
 
 def teardown_test():
   os.system("/bin/rm %s/bindings.py" % this_dir)
-  os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 class PyangbindXpathRootTC04(unittest.TestCase):
