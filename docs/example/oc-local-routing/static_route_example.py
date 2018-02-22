@@ -6,6 +6,7 @@ from __future__ import print_function, unicode_literals
 from binding import openconfig_local_routing
 import pyangbind.lib.pybindJSON as pybindJSON
 import os
+import six
 
 # Instantiate a copy of the pyangbind-kettle module
 oclr = openconfig_local_routing()
@@ -33,7 +34,7 @@ for nhop in [(0, "192.168.0.1"), (1, "10.0.0.1")]:
   nh.config.next_hop = nhop[1]
 
 # Iterate through the next-hops added
-for index, nh in rt.next_hops.next_hop.iteritems():
+for index, nh in six.iteritems(rt.next_hops.next_hop):
   print("%s: %s" % (index, nh.config.next_hop))
 
 # Try and set an invalid tag type
@@ -56,11 +57,11 @@ new_oclr = pybindJSON.load(os.path.join("json", "oc-lr.json"), binding,
                               "openconfig_local_routing")
 
 # Manipulate the data loaded
-print("Current tag: %d" % 
+print("Current tag: %d" %
   new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
 new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag \
                                                                           += 1
-print("New tag: %d" % 
+print("New tag: %d" %
   new_oclr.local_routes.static_routes.static[u"192.0.2.1/32"].config.set_tag)
 
 # Load JSON into an existing class structure
