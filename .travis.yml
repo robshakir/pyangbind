@@ -1,11 +1,18 @@
-language:   python
+sudo: false
+language: python
+cache: pip
 python:
-            - "2.7"
-            - "3.6"
+  - 2.7
+  - 3.4
+  - 3.5
+  - 3.6
+martix:
+  include:
+  - python: 3.6
+    env: TOXENV=flake8
 install:
-    - pip install tox
-script:
-    - tox -e $(echo py$TRAVIS_PYTHON_VERSION | tr -d .)
+  - pip install tox tox-travis
+script: tox
 branches:
-        only:
-            - master
+  only:
+    - master
