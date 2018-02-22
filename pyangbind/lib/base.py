@@ -17,6 +17,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import six
 
 
 class PybindBase(object):
@@ -53,7 +54,7 @@ class PybindBase(object):
           # filtering unchanged elements, remove it
           # from the dictionary
           if isinstance(d[element_id], dict):
-            for entry in d[element_id].keys():
+            for entry in six.iterkeys(d[element_id]):
               changed, present = False, False
 
               if hasattr(d[element_id][entry], "_changed"):

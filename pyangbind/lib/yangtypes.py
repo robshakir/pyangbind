@@ -278,7 +278,7 @@ def RestrictedClassType(*args, **kwargs):
           raise ValueError("must specify either a restriction dictionary or" +
                             " a type and argument")
 
-      for rtype, rarg in self._restriction_dict.items():
+      for rtype, rarg in six.iteritems(self._restriction_dict):
         if rtype == "pattern":
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
@@ -688,13 +688,13 @@ def YANGListType(*args, **kwargs):
       return len(self._members)
 
     def keys(self):
-      return self._members.keys()
+      return six.iterkeys(self._members)
 
     def items(self):
-      return self._members.items()
+      return six.iteritems(self._members)
 
     def values(self):
-      return self._members.values()
+      return six.itervalues(self._members)
 
     def _generate_key(self, *args, **kwargs):
       keyargs = None

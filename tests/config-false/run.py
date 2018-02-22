@@ -4,6 +4,8 @@ import os
 import sys
 import getopt
 
+import six
+
 TESTNAME = "config-false"
 
 
@@ -57,20 +59,20 @@ def main():
       }
   }
 
-  for i in structure_dict.keys():
+  for i in six.iterkeys(structure_dict):
     assert hasattr(test_instance, i), "top level %s does not exist" % i
     if hasattr(test_instance, i):
       c = getattr(test_instance, i)
       if isinstance(structure_dict[i], dict):
-        for j in structure_dict[i].keys():
+        for j in six.iterkeys(structure_dict[i]):
           assert hasattr(c, j), "second level %s does not exist" % j
           d = getattr(c, j)
           if isinstance(structure_dict[i][j], dict):
-            for k in structure_dict[i][j].keys():
+            for k in six.iterkeys(structure_dict[i][j]):
               assert hasattr(d, k), "third-level %s does not exist" % k
               e = getattr(d, k)
               if isinstance(structure_dict[i][j][k], dict):
-                for l in structure_dict[i][j][k].keys():
+                for l in six.iterkeys(structure_dict[i][j][k]):
                   assert hasattr(e, l), "fourth level %s does not exist" % l
 
   # tests

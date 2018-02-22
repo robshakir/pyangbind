@@ -177,7 +177,7 @@ class YANGPathHelper(PybindXpathHelper):
 
       if attributes is not None:
         epath += tagname + "["
-        for k, v in attributes.items():
+        for k, v in six.iteritems(attributes):
           # handling for rfc6020 current() specification
           if "current()" in v:
             remaining_path = re.sub("current\(\)(?P<remaining>.*)",
@@ -279,7 +279,7 @@ class YANGPathHelper(PybindXpathHelper):
 
     added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
     if attributes is not None:
-      for k, v in attributes.items():
+      for k, v in six.iteritems(attributes):
         added_item.set(k, v)
 
   def unregister(self, object_path, caller=False):

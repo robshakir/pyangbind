@@ -4,6 +4,8 @@ import os
 import sys
 import getopt
 
+import six
+
 TESTNAME = "uint"
 
 
@@ -157,7 +159,7 @@ def main():
     'sixtyfour': (0, 2**64 - 1),
   }
 
-  for elem, vals in bounds.items():
+  for elem, vals in six.iteritems(bounds):
     set_attr = getattr(u.uint_container, "_set_%s" % elem, None)
     assert set_attr is not None, "Could not find attribute"
     for val in vals:
