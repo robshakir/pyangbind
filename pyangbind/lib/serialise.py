@@ -29,10 +29,7 @@ from collections import OrderedDict
 from decimal import Decimal
 from enum import IntEnum
 from pyangbind.lib.yangtypes import safe_name, YANGBool
-from types import ModuleType
-import copy
 
-import sys
 
 
 class WithDefaults(IntEnum):
@@ -203,8 +200,6 @@ class pybindJSONEncoder(json.JSONEncoder):
       return self._preprocess_element(obj.get(), mode=mode)
     elif map_val in ["decimal.Decimal"]:
       return unicode(obj) if mode == "ietf" else float(obj)
-
-
 
 
 class pybindJSONDecoder(object):
@@ -436,13 +431,13 @@ class pybindJSONDecoder(object):
                 kwargs[pkv] = elem[ykv]
                 keystr += u"%s " % elem[ykv]
               keystr = keystr.rstrip(" ")
-              if not keystr in this_attr:
+              if keystr not in this_attr:
                 nobj = this_attr.add(**kwargs)
               else:
                 nobj = this_attr[keystr]
             else:
               k = elem[this_attr._yang_keys]
-              if not k in this_attr:
+              if k not in this_attr:
                 nobj = this_attr.add(k)
               else:
                 nobj = this_attr[k]
@@ -474,7 +469,7 @@ class pybindJSONDecoder(object):
             if val == [None]:
               val = True
             else:
-              raise ValueError("Invalid value for empty in input JSON " + \
+              raise ValueError("Invalid value for empty in input JSON "
                       "key: %s, got: %s" % (ykey, val))
           if val is not None:
             set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
@@ -547,7 +542,6 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
           if element._changed() or element._default == element:
             d[yname] = element
     return d
-
 
   def encode(self, obj):
     return json.JSONEncoder.encode(self,
