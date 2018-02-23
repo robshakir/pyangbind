@@ -43,10 +43,10 @@ def main():
 
   leaflist_instance = leaflist()
 
-  assert hasattr(leaflist_instance, "container") == True, \
+  assert hasattr(leaflist_instance, "container") is True, \
     "base container missing"
 
-  assert hasattr(leaflist_instance.container, "leaflist") == True, \
+  assert hasattr(leaflist_instance.container, "leaflist") is True, \
     "leaf-list instance missing"
 
   assert len(leaflist_instance.container.leaflist) == 0, \
@@ -134,6 +134,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

@@ -75,15 +75,11 @@ def main():
   assert instantiation_error is None, "Could not instantiate alert_two: %s" \
             % (instantiation_error)
 
-  val_set = True
   try:
     ch.arg_one = 10
     ch.arg_two = 20
   except ValueError as m:
-    val_set = False
-
-  assert val_set is True, "Could not set leaf arguments directly" + \
-          + ": %s" % (m)
+    raise AssertionError("Could not set leaf arguments directly: %s" % (m))
 
   from bindings.notification_notification import alert_three, alert_four, alert_five
 
@@ -172,6 +168,7 @@ def main():
 
   if not k:
     os.system("/bin/rm -rf %s/bindings" % this_dir)
+
 
 if __name__ == '__main__':
   main()

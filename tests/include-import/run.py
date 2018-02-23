@@ -39,11 +39,12 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
-  from bindings import include_import
+  from bindings import include_import  # NOQA: F401
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

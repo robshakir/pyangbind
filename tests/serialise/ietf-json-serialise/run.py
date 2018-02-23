@@ -5,8 +5,7 @@ import sys
 import getopt
 import json
 import difflib
-from pyangbind.lib.serialise import pybindJSONEncoder, pybindIETFJSONEncoder
-from pyangbind.lib.pybindJSON import dumps
+from pyangbind.lib.serialise import pybindIETFJSONEncoder
 from decimal import Decimal
 
 TESTNAME = "ietf-json-serialise"
@@ -103,7 +102,7 @@ def main():
                       open(os.path.join(this_dir, "json", "obj.json"), 'r'))
 
   assert pybind_json == external_json, "JSON did not match the expected output, " + \
-	"diff: %s\n" % diff(pybind_json, external_json)
+    "diff: %s\n" % diff(pybind_json, external_json)
 
   # Check that we can serialise a single element on its own.
   pybind_json = json.loads(json.dumps(
@@ -115,10 +114,12 @@ def main():
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
+
 def diff(a, b):
     ja = json.dumps(a, indent=4, sort_keys=True).split("\n")
     jb = json.dumps(b, indent=4, sort_keys=True).split("\n")
     return '\n'.join(difflib.unified_diff(ja, jb))
+
 
 if __name__ == '__main__':
   main()

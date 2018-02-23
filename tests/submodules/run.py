@@ -4,10 +4,7 @@ import os
 import sys
 import getopt
 import unittest
-import importlib
-from pyangbind.lib.yangtypes import safe_name
-import pyangbind.lib.pybindJSON as pbJ
-import json
+
 
 # generate bindings in this folder
 def setup_test():
@@ -38,11 +35,13 @@ def setup_test():
   cmd += " %s/mod-a.yang" % (this_dir)
   os.system(cmd)
 
+
 def teardown_test():
   global this_dir
 
   os.system("/bin/rm %s/bindings.py" % this_dir)
   os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 class PyangbindSubmoduleTests(unittest.TestCase):
 
@@ -51,7 +50,7 @@ class PyangbindSubmoduleTests(unittest.TestCase):
 
     err = None
     try:
-      globals()["bindings"] = importlib.import_module("bindings")
+      import bindings
     except ImportError as e:
       err = e
     self.assertIs(err, None)
@@ -72,6 +71,7 @@ class PyangbindSubmoduleTests(unittest.TestCase):
       passed = False
 
     self.assertIs(passed, True)
+
 
 if __name__ == '__main__':
   keepfiles = False

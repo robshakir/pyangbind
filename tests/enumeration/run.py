@@ -54,7 +54,7 @@ def main():
   catch = False
   try:
     t.container.e = "twentyseven"
-  except:
+  except Exception:
     catch = True
   assert catch is True, \
       "erroneous value was not caught by restriction handler (%s)" % \
@@ -72,6 +72,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

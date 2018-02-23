@@ -53,7 +53,7 @@ def main():
     passed = True
     try:
       t.container.b1 = value[0]
-    except:
+    except Exception:
       passed = False
     assert passed == value[1], "could incorrectly set b1 to %s" % value[0]
 
@@ -65,7 +65,7 @@ def main():
     "Value of bitarray was not null when checking b2 (%s != %s)" \
         % (t.container.b2, bitarray())
 
-  assert t.container.b2._changed() == False, \
+  assert t.container.b2._changed() is False, \
     "Unset bitarray specified changed when was default (%s != False)" \
         % (t.container.b2._changed())
 
@@ -74,11 +74,11 @@ def main():
     "Bitarray not successfuly set (%s != %s)" % \
         (t.container.b2, bitarray('010'))
 
-  assert t.container.b2._changed() == True, \
+  assert t.container.b2._changed() is True, \
     "Bitarray value not flagged as changed (%s != %s)" % \
         (t.container.b2._changed(), True)
 
-  for v in [("0", False), ("1000000011110000", True), 
+  for v in [("0", False), ("1000000011110000", True),
               ("111111110000000011111111", False)]:
     try:
       t.container.b3 = v[0]
@@ -89,8 +89,8 @@ def main():
         "limited length binary incorrectly set to %s (%s != %s)" \
           % (v[0], v[1], passed)
 
-  for v in [("0", False), ("1111111100000000", True), 
-            ("111111110000000011111111", True), 
+  for v in [("0", False), ("1111111100000000", True),
+            ("111111110000000011111111", True),
             ("1111111100000000111111110000000011110000", False)]:
     try:
       t.container.b4 = v[0]
@@ -100,10 +100,10 @@ def main():
     assert passed == v[1], "limited length binary with range incorrectly " + \
       "set to %s (%s != %s)" % (v[0], v[1], passed)
 
-  for v in [("0", False), ("1111000011110000", True), 
-            ("111100001111000011110000", True), 
+  for v in [("0", False), ("1111000011110000", True),
+            ("111100001111000011110000", True),
             ("1111000011110000111100001111000011110000", False),
-            ("111100001111000011110000111100001111000011110000", True), 
+            ("111100001111000011110000111100001111000011110000", True),
             ("111100001111000011110000111100001111000011110000" +
               "11110000111100001111000011110000", True),
             ("111100001111000011110000111100001111000011110000" +
@@ -117,7 +117,7 @@ def main():
     try:
       t.container.b5 = v[0]
       passed = True
-    except:
+    except Exception:
       passed = False
     assert passed == v[1], "limited length binary with complex length " + \
         "argument incorrectly set to %s (%s != %s)" % (v[0], v[1], passed)
@@ -125,6 +125,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

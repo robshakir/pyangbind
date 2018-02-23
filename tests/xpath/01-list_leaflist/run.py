@@ -4,7 +4,9 @@ import sys
 import os
 import getopt
 
+
 TESTNAME = "list-tc01"
+this_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def main():
@@ -28,8 +30,6 @@ def main():
       os.environ.get('PYANGBINDPATH') is not None else False
   assert pyangpath is not False, "could not find path to pyang"
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
-
-  this_dir = os.path.dirname(os.path.realpath(__file__))
 
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
@@ -112,14 +112,13 @@ def t3_leaflist_remove(yobj, tree):
   for b in [("session-ipa", 1), ("amber-ale", 1), ("moose-drool", 0)]:
     path = "/container/t3"
     retr = tree.get(path)
-    passed = False
     assert len(retr) == 1, \
         "Looking up a leaf-list element returned multiple elements " + \
             "erroneously (%s -> %d elements (%s))" % (b[0], len(retr), retr)
 
     found = False
     try:
-      v = retr[0].index(b[0])
+      retr[0].index(b[0])
       found = 1
     except ValueError:
       found = 0
@@ -140,7 +139,7 @@ def t3_leaflist_remove(yobj, tree):
 
     found = False
     try:
-      v = new_retr[0].index(b[0])
+      new_retr[0].index(b[0])
       found = 1
     except ValueError:
       found = 0
@@ -224,7 +223,7 @@ def t5_typedef_leaflist_add_del(yobj, tree=False):
     assert expected_obj == bool(tc[1]), "Popped object was not the " + \
         "object that was expected (%s != %s)" % (tc[0], popped_obj)
     new_retr = tree.get(path)
-    assert (tc[0] in new_retr[0]) == False, "Retrieve of a leaf-list " + \
+    assert (tc[0] in new_retr[0]) is False, "Retrieve of a leaf-list " + \
         "element did not return expected result (%s->%s %s)" % (tc[0], tc[1],
               (new_retr[0]))
 
@@ -256,7 +255,7 @@ def t7_leaflist_of_leafrefs(yobj, tree):
     try:
       yobj.reference.t7_ptr.append(b[0])
       passed = True
-    except:
+    except Exception:
       pass
 
     assert passed == b[1], "A reference to a leaf-list of leafrefs " + \
@@ -276,11 +275,13 @@ def t8_standalone_leaflist_check(yobj, tree):
   yobj.standalone.ref = 1
   assert yobj.standalone.ref._referenced_object == 1, "reference was not correct"
 
+
 def t9_get_list(yobj, tree):
-  l = tree.get_list("/standalone/l")
-  assert l._yang_name == "l", "Did not retrieve correct attribute for list"
-  assert l._is_container == "list", "Did not retrieve a list for the list"
+  list_l = tree.get_list("/standalone/l")
+  assert list_l._yang_name == "l", "Did not retrieve correct attribute for list"
+  assert list_l._is_container == "list", "Did not retrieve a list for the list"
+
 
 if __name__ == '__main__':
-  from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
+  from pyangbind.lib.xpathhelper import YANGPathHelper
   main()

@@ -4,12 +4,15 @@ import os
 import sys
 import getopt
 import unittest
-import importlib
 from pyangbind.lib.yangtypes import safe_name
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
 import pyangbind.lib.pybindJSON as pbJ
 import json
+
+
+this_dir = os.path.dirname(os.path.realpath(__file__))
+
 
 # generate bindings in this folder
 def setup_test():
@@ -17,12 +20,6 @@ def setup_test():
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
     sys.exit(127)
-
-  global this_dir
-
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
                 os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
@@ -34,8 +31,6 @@ def setup_test():
   assert pyangpath is not False, "could not find path to pyang"
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
-
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind -o %s/bindings.py" % this_dir
@@ -45,11 +40,11 @@ def setup_test():
   cmd += " %s/root-tc04-a.yang %s/root-tc04-b.yang" % (this_dir, this_dir)
   os.system(cmd)
 
-def teardown_test():
-  global this_dir
 
+def teardown_test():
   os.system("/bin/rm %s/bindings.py" % this_dir)
   os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 class PyangbindXpathRootTC04(unittest.TestCase):
 
@@ -58,7 +53,7 @@ class PyangbindXpathRootTC04(unittest.TestCase):
 
     err = None
     try:
-      globals()["bindings"] = importlib.import_module("bindings")
+      import bindings
     except ImportError as e:
       err = e
     self.assertIs(err, None)
@@ -89,7 +84,7 @@ class PyangbindXpathRootTC04(unittest.TestCase):
     self.instance_b.root_tc04_b.b = "alpine-fork"
     expected_json = json.load(open(os.path.join(this_dir, "json", "04-serialise.json")))
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/")))
-    self.assertEqual(v,expected_json)
+    self.assertEqual(v, expected_json)
 
     expected_ietf_json = json.load(open(os.path.join(this_dir, "json", "04b-ietf-serialise.json")))
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/"), mode="ietf"))
@@ -110,6 +105,7 @@ class PyangbindXpathRootTC04(unittest.TestCase):
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/"), mode="ietf"))
     x = json.load(open(os.path.join(this_dir, "json", "06-deserialise-ietf.json"), 'r'))
     self.assertEqual(v, x)
+
 
 if __name__ == '__main__':
   keepfiles = False

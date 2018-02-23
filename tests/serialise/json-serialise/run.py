@@ -4,9 +4,7 @@ import os
 import sys
 import getopt
 import json
-from pyangbind.lib.serialise import pybindJSONEncoder
 from pyangbind.lib.pybindJSON import dumps
-from pyangbind.lib.xpathhelper import YANGPathHelper
 from decimal import Decimal
 
 TESTNAME = "json-serialise"
@@ -105,6 +103,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

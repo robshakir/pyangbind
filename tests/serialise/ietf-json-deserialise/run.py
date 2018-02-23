@@ -46,7 +46,7 @@ def main():
   os.system(cmd)
 
   import bindings
-  from bindings import ietf_json_deserialise
+  from bindings import ietf_json_deserialise  # NOQA: F401
 
   pth = os.path.join(this_dir, "json", "mkeylist.json")
   nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
@@ -145,10 +145,10 @@ def main():
     assert success is i, "Skipping keys that did not exist was not" + \
       " successfully handled"
 
-
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()
