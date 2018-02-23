@@ -38,6 +38,7 @@ if six.PY3:
   unicode = str
   basestring = str
 
+
 class YANGPathHelperException(Exception):
   pass
 

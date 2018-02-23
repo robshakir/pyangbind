@@ -38,6 +38,7 @@ if six.PY3:
   basestring = str
   long = int
 
+
 class WithDefaults(IntEnum):
   IF_SET = 0
 
