@@ -551,10 +551,16 @@ def YANGListType(*args, **kwargs):
       return True
 
     def iteritems(self):
-      return self._members.iteritems()
+      try:
+        return self._members.iteritems()
+      except AttributeError:
+        return self._members.items()
 
     def itervalues(self):
-      return self._members.itervalues()
+      try:
+        return self._members.itervalues()
+      except AttributeError:
+        return self._members.values()
 
     def _key_to_native_key_type(self, k):
       if self._keyval is False:
