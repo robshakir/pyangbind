@@ -28,7 +28,7 @@ class extmethodcls(object):
 def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
+  except getopt.GetoptError:
     sys.exit(127)
 
   k = False

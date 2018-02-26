@@ -32,7 +32,6 @@ from .yangtypes import safe_name
 from .base import PybindBase
 
 
-
 class YANGPathHelperException(Exception):
   pass
 

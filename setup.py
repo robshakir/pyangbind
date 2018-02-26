@@ -3,11 +3,12 @@ from pip.req import parse_requirements
 from codecs import open
 from os import path
 
+import pyangbind
+
 thisdir = path.abspath(path.dirname(__file__))
 pip_reqs = parse_requirements(path.join(thisdir, "requirements.txt"), session=False)
 inst_reqs = [str(ir.req) for ir in pip_reqs]
 
-import pyangbind
 
 with open(path.join(thisdir, "README.rst"), encoding='utf-8') as readme:
   long_description = readme.read()
@@ -44,5 +45,5 @@ setup(
     keywords="yang pyang",
     packages=find_packages(exclude=['lib']),
     install_requires=inst_reqs,
-    zip_safe = False,
+    zip_safe=False,
 )

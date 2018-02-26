@@ -164,7 +164,7 @@ def main():
       passed = True
       try:
         set_attr(vals[0])
-      except ValueError as m:
+      except ValueError:
         passed = False
       assert passed is True, "Could not set int size %s to %d" % \
         (elem, val)
@@ -172,7 +172,7 @@ def main():
     passed = False
     try:
       set_attr(vals[0] - 1)
-    except ValueError as m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
@@ -181,7 +181,7 @@ def main():
     passed = False
     try:
       set_attr(vals[1] + 1)
-    except ValueError as m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \

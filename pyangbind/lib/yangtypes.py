@@ -421,7 +421,7 @@ def TypedListType(*args, **kwargs):
             tmp = i(v)
             passed = True
             break
-        except Exception as m:
+        except Exception:
           # we catch all exceptions because we duck-type as
           # much as possible and some types - e.g., decimal do
           # not use builtins.
@@ -906,7 +906,7 @@ def YANGDynClass(*args, **kwargs):
         try:
           type_test = candidate_type(args[0])  # does the slipper fit?
           break
-        except Exception as m:
+        except Exception:
           pass  # don't worry, move on, plenty more fish (types) in the sea...
       if type_test is False:
         # we're left alone at midnight -- no types fit the arguments

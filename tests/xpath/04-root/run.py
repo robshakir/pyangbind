@@ -18,7 +18,7 @@ this_dir = os.path.dirname(os.path.realpath(__file__))
 def setup_test():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
+  except getopt.GetoptError:
     sys.exit(127)
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \

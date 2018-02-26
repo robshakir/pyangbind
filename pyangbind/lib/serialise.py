@@ -31,7 +31,6 @@ from enum import IntEnum
 from pyangbind.lib.yangtypes import safe_name, YANGBool
 
 
-
 class WithDefaults(IntEnum):
   IF_SET = 0
 
@@ -464,7 +463,7 @@ class pybindJSONDecoder(object):
         else:
           val = d[key]
           if chk._yang_type == "empty":
-            # A 'none' value in the JSON means that an empty value is set, 
+            # A 'none' value in the JSON means that an empty value is set,
             # since this is serialised as [null] in the input JSON.
             if val == [None]:
               val = True

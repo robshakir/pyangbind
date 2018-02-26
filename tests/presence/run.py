@@ -16,7 +16,7 @@ TESTNAME = "presence"
 def setup_test():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
+  except getopt.GetoptError:
     sys.exit(127)
 
   global this_dir
