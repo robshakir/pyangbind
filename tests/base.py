@@ -19,7 +19,7 @@ class PyangBindTestCase(unittest.TestCase):
     pyang_path = distutils.spawn.find_executable('pyang')
     if not pyang_path:
       raise RuntimeError("Could not locate `pyang` executable.")
-    base_dir, _ = os.path.abspath(__file__).split('{}tests{}'.format(os.path.sep, os.path.sep))
+    base_dir = os.path.dirname(os.path.dirname(__file__))
     test_path = os.path.dirname(inspect.getfile(cls))
     yang_files = [os.path.join(test_path, filename) for filename in cls.yang_files]
     plugin_dir = os.path.join(base_dir, 'pyangbind', 'plugin')
