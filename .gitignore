@@ -9,3 +9,16 @@ tmp/*
 *.PEP8-ERRORS
 /.project
 /.pydevproject
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+coverage-*.xml
+junit-*.xml
+*,cover
+reports/
