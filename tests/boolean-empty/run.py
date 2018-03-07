@@ -1,97 +1,85 @@
 #!/usr/bin/env python
 
+import unittest
 
-import os
-import sys
-import getopt
-
-TESTNAME = "boolean-empty"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class BooleanEmptyTests(PyangBindTestCase):
+  yang_files = ['boolean-empty.yang']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.boolean_obj = self.bindings.boolean_empty()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_leafs_exist(self):
+    for leaf in ["b1", "b2", "e1"]:
+        with self.subTest(leaf=leaf):
+          self.assertTrue(hasattr(self.boolean_obj.container, leaf),
+            "Element did not exist in container (%s)" % leaf)
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_boolean_leaf_accepts_boolean_values(self):
+    for value in [0, "0", False, "false", "False", 1, "1", True, "true", "True"]:
+      with self.subTest(value=value):
+        allowed = True
+        try:
+          self.boolean_obj.container.b1 = value
+        except ValueError:
+          allowed = False
+        self.assertTrue(allowed, "Value of b1 was not correctly set to %s" % value)
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_boolean_leaf_sets_boolean_values_correctly(self):
+    for value in [(0, False), ("0", False), (False, False), ("false", False),
+                  ("False", False), (1, True), ("1", True), (True, True),
+                  ("true", True), ("True", True)]:
+      with self.subTest(value=value):
+        try:
+          self.boolean_obj.container.b1 = value[0]
+        except ValueError:
+          pass
+        self.assertEqual(self.boolean_obj.container.b1, value[1],
+          "Value of b1 was not correctly set when compared (%s - set to %s)" % (self.boolean_obj.container.b1, value))
 
-  from bindings import boolean_empty as b
+  def test_empty_leaf_accepts_boolean_values(self):
+    for value in [0, "0", False, "false", "False", 1, "1", True, "true", "True"]:
+      with self.subTest(value=value):
+        allowed = True
+        try:
+          self.boolean_obj.container.e1 = value
+        except ValueError:
+          allowed = False
+        self.assertTrue(allowed, "Value of e1 was not correctly set to %s" % value)
 
-  t = b()
+  def test_empty_leaf_sets_boolean_values_correctly(self):
+    for value in [(0, False), ("0", False), (False, False), ("false", False),
+                  ("False", False), (1, True), ("1", True), (True, True),
+                  ("true", True), ("True", True)]:
+      with self.subTest(value=value):
+        try:
+          self.boolean_obj.container.e1 = value[0]
+        except ValueError:
+          pass
+        self.assertEqual(self.boolean_obj.container.e1, value[1],
+          "Value of e1 was not correctly set when compared (%s - set to %s)" % (self.boolean_obj.container.e1, value))
 
-  for i in ["b1", "b2", "e1"]:
-    assert hasattr(t.container, i), "element did not exist in container (%s)" \
-        % i
+  def test_boolean_leaf_default_value(self):
+    self.assertFalse(self.boolean_obj.container.b2._default,
+      "Value default was not correctly set (%s)" % self.boolean_obj.container.b2._default)
 
-  for value in [(0, False), ("0", False), (False, False), ("false", False),
-                ("False", False), (1, True), ("1", True), (True, True),
-                ("true", True), ("True", True)]:
-    passed = True
-    try:
-      t.container.b1 = value[0]
-    except Exception:
-      passed = False
+  def test_boolean_leaf_is_not_changed_by_default(self):
+    self.assertFalse(self.boolean_obj.container.b2._changed(),
+      "Value was marked as changed incorrectly (%s)" % self.boolean_obj.container.b2._changed())
 
-    assert passed is True, "value of b1 was not correctly set to %s" % value
-    assert t.container.b1 == value[1], "value of b1 was not correctly set " + \
-        "when compared (%s - set to %s)" % (t.container.b1, value)
+  def test_boolean_leaf_sets_changed(self):
+    self.boolean_obj.container.b2 = True
+    self.assertTrue(self.boolean_obj.container.b2._changed(),
+      "Value was not flagged as changed (%s != True)" % self.boolean_obj.container.b2._changed())
 
-  for value in [(0, False), ("0", False), (False, False), ("false", False),
-                ("False", False), (1, True), ("1", True), (True, True),
-                ("true", True), ("True", True)]:
-    passed = True
-    try:
-      t.container.e1 = value[0]
-    except Exception:
-      passed = False
-
-    assert passed is True, "value of e1 was not correctly set to %s" % value
-    assert t.container.e1 == value[1], "value of e1 was not correctly set " + \
-        "when compared (%s - set to %s)" % (t.container.e1, value)
-
-  assert t.container.b2._default is False, "value default was not " + \
-      "correctly set (%s)" % t.container.b2._default
-
-  assert t.container.b2._changed() is False, "value was marked as changed " + \
-      "incorrectly (%s)" % t.container.b2._changed()
-
-  t.container.b2 = True
-  assert t.container.b2._changed() is True, "value was not marked as " + \
-      "when it was (%s)" % t.container.b2._changed()
-
-  t.container.b2 = False
-  assert t.get() == {'container': {'e1': True, 'b1': True, 'b2': False}}, \
-    "wrong get() result returned %s" % t.get()
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+  def test_get(self):
+    self.boolean_obj.container.b1 = True
+    self.boolean_obj.container.e1 = True
+    self.assertEqual(self.boolean_obj.get(), {'container': {'e1': True, 'b1': True, 'b2': False}},
+      "Wrong result returned from get() (%s)" % self.boolean_obj.get())
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
