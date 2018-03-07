@@ -39,6 +39,7 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
+  # This has NOQA to avoid warnings on the unused import; in this case, importing the module is the test
   from bindings import include_import  # NOQA: F401
 
   if not keepfiles:

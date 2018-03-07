@@ -153,7 +153,6 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
-    # __slots__ = ('_restricted_class_base')
     _pybind_generated_by = "RestrictedClassType"
 
     _restricted_class_base = restricted_class_hint
