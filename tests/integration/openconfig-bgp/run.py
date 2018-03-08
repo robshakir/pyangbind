@@ -9,10 +9,10 @@ import time
 import unittest
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
-from pyangbind.lib.serialise import pybindJSONDecoder
 import pyangbind.lib.pybindJSON as pbj
 
 TESTNAME = "openconfig-bgp"
+
 
 # generate bindings in this folder
 def setup_test():
@@ -73,8 +73,7 @@ def setup_test():
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):
       got = False
-      count = 0
-      for i in range(0,4):
+      for i in range(0, 4):
         response = requests.get(fn[0])
         if response.status_code != 200:
           time.sleep(2)
@@ -87,9 +86,6 @@ def setup_test():
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
                 % (response.status_code, fn[0])
 
-  files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
-                        os.listdir(os.path.join(this_dir, "openconfig"))])
-
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind --split-class-dir %s/ocbind" % this_dir
@@ -99,6 +95,7 @@ def setup_test():
   for i in ["openconfig-bgp"]:
     cmd += " %s" % os.path.join(this_dir, "openconfig", "%s.yang" % i)
   os.system(cmd)
+
 
 def teardown_test():
   global this_dir
@@ -112,6 +109,7 @@ def teardown_test():
         os.rmdir(os.path.join(root, name))
     os.rmdir(dirname)
 
+
 class PyangbindOCBGP(unittest.TestCase):
   def __init__(self, *args, **kwargs):
     unittest.TestCase.__init__(self, *args, **kwargs)
@@ -121,7 +119,7 @@ class PyangbindOCBGP(unittest.TestCase):
     self.instance = ocbind.openconfig_bgp(path_helper=self.ph)
 
   def test_001_add_bgp_neighbor(self):
-    n = self.instance.bgp.neighbors.neighbor.add("192.0.2.1")
+    self.instance.bgp.neighbors.neighbor.add("192.0.2.1")
     self.assertNotEqual(len(self.instance.bgp.neighbors.neighbor), 0)
 
   def test_010_filtered_json_output(self):
@@ -163,6 +161,7 @@ class PyangbindOCBGP(unittest.TestCase):
     json_out = pbj.dumps(self.instance, filter=False, mode="ietf")
     testdata = open(this_dir + "/testdata/tc040.json").read()
     self.assertEqual(json.loads(json_out), json.loads(testdata))
+
 
 if __name__ == '__main__':
   keepfiles = False

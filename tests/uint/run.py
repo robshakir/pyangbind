@@ -45,7 +45,7 @@ def main():
 
   for name in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     for subname in ["", "default", "result", "restricted"]:
-      assert hasattr(u.uint_container, "%s%s" % (name, subname)) == True, \
+      assert hasattr(u.uint_container, "%s%s" % (name, subname)) is True, \
           "missing %s%s from container" % (name, subname)
 
   # tests default and equality
@@ -139,7 +139,7 @@ def main():
   assert e is True, \
      "incorrectly allowed value outside of range for sixtyfourrestricted (799)"
 
-  for v in  [(0, True), (10, True), (2**32-1, True), (2**64, False),
+  for v in [(0, True), (10, True), (2**32 - 1, True), (2**64, False),
               (2**32, False)]:
     val_set = False
     try:
@@ -150,12 +150,11 @@ def main():
     assert v[1] is val_set, "Value of region_id incorrectly set %s (%s != %s" \
       % (v[0], val_set, v[1])
 
-
   bounds = {
-    'eight': (0, 2**8-1),
-    'sixteen': (0, 2**16-1),
-    'thirtytwo': (0, 2**32-1),
-    'sixtyfour': (0, 2**64-1),
+    'eight': (0, 2**8 - 1),
+    'sixteen': (0, 2**16 - 1),
+    'thirtytwo': (0, 2**32 - 1),
+    'sixtyfour': (0, 2**64 - 1),
   }
 
   for elem, vals in bounds.iteritems():
@@ -165,34 +164,33 @@ def main():
       passed = True
       try:
         set_attr(vals[0])
-      except ValueError as m:
+      except ValueError:
         passed = False
-      assert passed is True, "Could not set int size %s to %d"  % \
+      assert passed is True, "Could not set int size %s to %d" % \
         (elem, val)
 
     passed = False
     try:
       set_attr(vals[0] - 1)
-    except ValueError as m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
-      (elem, vals[0]-1)
+      (elem, vals[0] - 1)
 
     passed = False
     try:
       set_attr(vals[1] + 1)
-    except ValueError as m:
+    except ValueError:
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
-      (elem, vals[1]+1)
-
-
+      (elem, vals[1] + 1)
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

@@ -39,7 +39,6 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
-  import bindings
   from bindings import decimal_ as d
   from decimal import Decimal
 
@@ -78,6 +77,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

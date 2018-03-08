@@ -4,19 +4,16 @@ import os
 import sys
 import getopt
 import unittest
-import importlib
-from pyangbind.lib.yangtypes import safe_name
 from pyangbind.lib.xpathhelper import YANGPathHelper
-import pyangbind.lib.pybindJSON as pbJ
-import json
 
 TESTNAME = "misc"
+
 
 # generate bindings in this folder
 def setup_test():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
+  except getopt.GetoptError:
     sys.exit(127)
 
   global this_dir
@@ -43,10 +40,12 @@ def setup_test():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
+
 def teardown_test():
   global this_dir
 
   os.system("/bin/rm -rf %s/bindings" % this_dir)
+
 
 class PyangbindMiscTests(unittest.TestCase):
 
@@ -57,7 +56,7 @@ class PyangbindMiscTests(unittest.TestCase):
 
     err = None
     try:
-      globals()["bindings"] = importlib.import_module("bindings")
+      import bindings
     except ImportError as e:
       err = e
     self.assertIs(err, None)
@@ -66,8 +65,8 @@ class PyangbindMiscTests(unittest.TestCase):
   # Check that we can ingest an OpenConfig style list entry
   # with a leafref to the key
   def test_001_setleafref(self):
-    globals()["misc"] = importlib.import_module("bindings.a")
-    a = misc.a()
+    import bindings.a as misca
+    a = misca.a()
     a.foo = "stringval"
 
     self.instance.a.append(a)
@@ -75,7 +74,7 @@ class PyangbindMiscTests(unittest.TestCase):
     self.assertEqual(self.instance.a["stringval"].config.foo, u"stringval")
 
   def test_002_checklistkeytype(self):
-    globals()["miscb"] = importlib.import_module("bindings.b")
+    import bindings.b as miscb
     b = miscb.b()
     b.foo = "stringvalone"
     b.bar = "stringvaltwo"
@@ -84,12 +83,13 @@ class PyangbindMiscTests(unittest.TestCase):
     self.assertEqual(type(self.instance.b.keys()[0]), unicode)
 
   def test_003_checklistkeytype(self):
-    globals()["miscc"] = importlib.import_module("bindings.c")
+    import bindings.c as miscc
     c = miscc.c()
     c.one = 42
 
     self.instance.c.append(c)
     self.assertEqual(type(self.instance.c.keys()[0]), int)
+
 
 if __name__ == '__main__':
   keepfiles = False

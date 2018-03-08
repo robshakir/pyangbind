@@ -43,15 +43,15 @@ def main():
 
   test_instance = nested()
 
-  assert test_instance.container.subcontainer._changed() == False, \
+  assert test_instance.container.subcontainer._changed() is False, \
     "subcontainer was marked to changed"
 
-  assert test_instance.container._changed() == False, \
+  assert test_instance.container._changed() is False, \
     "container was marked to changed"
 
   test_instance.container.subcontainer.a_leaf = 1
 
-  assert test_instance.container.subcontainer._changed() == True, \
+  assert test_instance.container.subcontainer._changed() is True, \
     "subcontainer not marked to changed after change"
 
   assert test_instance.container.subcontainer.get() == {'a-leaf': 1}, \
@@ -67,6 +67,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

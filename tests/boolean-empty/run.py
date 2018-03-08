@@ -54,7 +54,7 @@ def main():
     passed = True
     try:
       t.container.b1 = value[0]
-    except:
+    except Exception:
       passed = False
 
     assert passed is True, "value of b1 was not correctly set to %s" % value
@@ -67,7 +67,7 @@ def main():
     passed = True
     try:
       t.container.e1 = value[0]
-    except:
+    except Exception:
       passed = False
 
     assert passed is True, "value of e1 was not correctly set to %s" % value
@@ -77,11 +77,11 @@ def main():
   assert t.container.b2._default is False, "value default was not " + \
       "correctly set (%s)" % t.container.b2._default
 
-  assert t.container.b2._changed() == False, "value was marked as changed " + \
+  assert t.container.b2._changed() is False, "value was marked as changed " + \
       "incorrectly (%s)" % t.container.b2._changed()
 
   t.container.b2 = True
-  assert t.container.b2._changed() == True, "value was not marked as " + \
+  assert t.container.b2._changed() is True, "value was not marked as " + \
       "when it was (%s)" % t.container.b2._changed()
 
   t.container.b2 = False
@@ -91,6 +91,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

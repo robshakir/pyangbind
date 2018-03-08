@@ -4,7 +4,9 @@ import sys
 import os
 import getopt
 
+
 TESTNAME = "ptr-tc02"
+this_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def main():
@@ -28,8 +30,6 @@ def main():
       os.environ.get('PYANGBINDPATH') is not None else False
   assert pyangpath is not False, "could not find path to pyang"
   assert pyangbindpath is not False, "could not resolve pyangbind directory"
-
-  this_dir = os.path.dirname(os.path.realpath(__file__))
 
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
@@ -71,6 +71,7 @@ def t1_listkey(yobj, tree=False):
   if del_tree:
     del tree
 
+
 if __name__ == '__main__':
-  from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
+  from pyangbind.lib.xpathhelper import YANGPathHelper
   main()

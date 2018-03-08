@@ -23,8 +23,6 @@ limitations under the License.
 
 import optparse
 import sys
-import re
-import string
 import decimal
 import copy
 import os
@@ -163,7 +161,7 @@ class_map = {
         "pytype": YANGBool
     },
     'int8': {
-        "native_type": "RestrictedClassType(base_type=int, "+
+        "native_type": "RestrictedClassType(base_type=int, " +
                       "restriction_dict={'range': ['-128..127']}, int_size=8)",
         "base_type": True,
         "pytype": RestrictedClassType(base_type=int,
@@ -388,7 +386,6 @@ elif six.PY2:
         modules.append(mod)
     all_mods.extend(mods)
 
-
   # remove duplicates from the list (same module and prefix)
   new_all_mods = []
   for mod in all_mods:
@@ -444,6 +441,7 @@ elif six.PY2:
           get_children(ctx, fd, notifications, module, module, register_paths=False,
                       path="/%s_notification" % (safe_name(module.arg)))
 
+
 def build_identities(ctx, defnd):
   # Build a storage object that has all the definitions that we
   # require within it.
@@ -468,7 +466,7 @@ def build_identities(ctx, defnd):
           identity_dict[ident]["%s%s" % (spfx, ch.name)] = d
           identity_dict[identity.name]["%s%s" % (spfx, ch.name)] = d
 
-    if not identity.name in identity_dict:
+    if identity.name not in identity_dict:
       identity_dict[identity.name] = {}
 
   # Add entries to the class_map such that this identity can be referenced by
@@ -482,6 +480,7 @@ def build_identities(ctx, defnd):
                 "parent_type": "string",
                 "base_type": False}
     class_map[i] = id_type
+
 
 def build_typedefs(ctx, defnd):
   # Build the type definitions that are specified within a model. Since
@@ -525,7 +524,7 @@ def build_typedefs(ctx, defnd):
       else:
         defining_module = defnd[t].i_module
 
-      belongs_to = defining_module.search_one('belongs-to') 
+      belongs_to = defining_module.search_one('belongs-to')
       if belongs_to is not None:
         for mod in ctx.modules:
           if mod[0] == belongs_to.arg:
@@ -567,8 +566,6 @@ def build_typedefs(ctx, defnd):
   for i_tuple in process_typedefs_ordered:
     item = i_tuple[1]
     type_name = i_tuple[0]
-    mapped_type = False
-    restricted_arg = False
     # Copy the class_map entry - this is done so that we do not alter the
     # existing instance in memory as we add to it.
     cls, elemtype = copy.deepcopy(build_elemtype(ctx, item.search_one('type')))
@@ -586,7 +583,6 @@ def build_typedefs(ctx, defnd):
     # 'elemtype' is a list when the type includes a union, so we need to go
     # through and build a type definition that supports multiple types.
     if not isinstance(elemtype, list):
-      restricted = False
       # Map the original type to the new type, parsing the additional arguments
       # that may be specified, for example, a new default, a pattern that must
       # be matched, or a length (stored in the restriction_argument, and
@@ -651,6 +647,7 @@ def build_typedefs(ctx, defnd):
 
     class_map[type_name.split(":")[1]] = class_map[type_name]
 
+
 def get_children(ctx, fd, i_children, module, parent, path=str(),
                  parent_cfg=True, choice=False, register_paths=True):
 
@@ -661,7 +658,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   # ensure that where a parent container was set to config false, this is
   # inherited by all elements below it; and choice is used to store whether
   # these leaves are within a choice or not.
-  used_types, elements = [], []
+  elements = []
   choices = False
 
   # When pyangbind was asked to split classes, then we need to create the
@@ -699,7 +696,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       try:
         nfd = open(fpath, 'a')
       except IOError as w:
-        raise IOError("could not open pyangbind output file (%s)" % m)
+        raise IOError("could not open pyangbind output file (%s)" % w)
   else:
     # If we weren't asked to split the files, then just use the file handle
     # provided.
@@ -798,7 +795,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   """\n''' % (module.arg, (path if not path == "" else "/%s" % parent.arg),
               parent_descr))
   else:
-    raise TypeError("unhandled keyword with children %s at %s" % 
+    raise TypeError("unhandled keyword with children %s at %s" %
       (parent.keyword, parent.pos))
 
   elements_str = ""
@@ -1046,7 +1043,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       return self._parent._path()+[self._yang_name]
     else:
       return %s\n""" % path.split("/")[1:])
-    node = {}
 
     # For each element, write out a getter and setter method - with the doc
     # string of the element within the model.
@@ -1259,7 +1255,7 @@ def build_elemtype(ctx, et, prefix=False):
                     "referenced_path": path_stmt.arg,
                     "parent_type": "string",
                     "base_type": False,
-                    "require_instance": require_instance,}
+                    "require_instance": require_instance, }
         cls = "leafref"
       else:
         elemtype = {
@@ -1296,7 +1292,7 @@ def build_elemtype(ctx, et, prefix=False):
             tmp_name = "%s:%s" % (prefix, et.arg)
             elemtype = class_map[tmp_name]
             passed = True
-          except:
+          except Exception:
             pass
         if passed is False:
           sys.stderr.write("FATAL: unmapped type (%s)\n" % (et.arg))
@@ -1325,7 +1321,7 @@ def find_absolute_default_type(default_type, default_value, elemname):
     else:
       test_type = i[1]
     try:
-      tmp = test_type["pytype"](default_value)
+      test_type["pytype"](default_value)
       default_type = test_type
       break
     except (ValueError, TypeError):
@@ -1356,7 +1352,6 @@ def get_element(ctx, fd, element, module, parent, path,
   defining_module = element_module.arg
 
   this_object = []
-  default = False
   has_children = False
   create_list = False
 
@@ -1496,8 +1491,6 @@ def get_element(ctx, fd, element, module, parent, path,
     tmp_class_map = copy.deepcopy(class_map)
     tmp_class_map["enumeration"] = {"parent_type": "string"}
 
-
-
     if not default_type:
       if isinstance(elemtype, list):
         # this type has multiple parents
@@ -1585,7 +1578,6 @@ def get_element(ctx, fd, element, module, parent, path,
         cls = "leaf-list"
 
         if isinstance(elemtype, list):
-          c = 0
           allowed_types = []
           for subtype in elemtype:
             # nested union within a leaf-list type

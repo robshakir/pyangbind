@@ -3,15 +3,14 @@
 import os
 import sys
 import getopt
-import json
 import requests
 import time
 import unittest
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
-from pyangbind.lib.serialise import pybindJSONDecoder
 
 TESTNAME = "openconfig-interfaces"
+
 
 # generate bindings in this folder
 def setup_test():
@@ -65,8 +64,7 @@ def setup_test():
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):
       got = False
-      count = 0
-      for i in range(0,4):
+      for i in range(0, 4):
         response = requests.get(fn[0])
         if response.status_code != 200:
           time.sleep(2)
@@ -79,9 +77,6 @@ def setup_test():
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
                 % (response.status_code, fn[0])
 
-  files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
-                        os.listdir(os.path.join(this_dir, "openconfig"))])
-
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
   cmd += " -f pybind --split-class-dir %s/ocbind" % this_dir
@@ -92,6 +87,7 @@ def setup_test():
   for i in ["openconfig-interfaces", "openconfig-if-aggregate", "openconfig-if-ip"]:
     cmd += " %s" % os.path.join(this_dir, "openconfig", "%s.yang" % i)
   os.system(cmd)
+
 
 def teardown_test():
   global this_dir
@@ -105,6 +101,7 @@ def teardown_test():
         os.rmdir(os.path.join(root, name))
     os.rmdir(dirname)
 
+
 class PyangbindOCIntf(unittest.TestCase):
   def __init__(self, *args, **kwargs):
     unittest.TestCase.__init__(self, *args, **kwargs)
@@ -116,6 +113,7 @@ class PyangbindOCIntf(unittest.TestCase):
   def test_001_populated_intf_type(self):
     i0 = self.instance.interfaces.interface.add("eth0")
     self.assertNotEqual(len(i0.config.type._restriction_dict), 0)
+
 
 if __name__ == '__main__':
   keepfiles = False
