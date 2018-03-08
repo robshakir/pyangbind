@@ -73,7 +73,6 @@ def main():
     "object did not reset the value of the case-one side of the choice, %s" \
        % t.container.case_one_container.case_one_leaf
 
-
   t.container.case_one_container.user.add("first")
   assert t.container.case_one_container.user["first"].username == "first", \
        "object has the wrong username for user in case one list"
@@ -87,6 +86,7 @@ def main():
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# flake8: noqa
+
 from __future__ import unicode_literals, print_function
 import pprint
 import pyangbind.lib.pybindJSON as pbJ

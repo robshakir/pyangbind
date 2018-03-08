@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# flake8: noqa
+
 from __future__ import print_function, unicode_literals
 from binding import openconfig_local_routing
 import pyangbind.lib.pybindJSON as pybindJSON

@@ -8,7 +8,7 @@ import pyangbind.lib.serialise as pbS
 from pyangbind.lib.serialise import pybindJSONDecoder
 import pyangbind.lib.pybindJSON as pbJ
 from bitarray import bitarray
-from decimal import *
+from decimal import Decimal
 from pyangbind.lib.xpathhelper import YANGPathHelper
 
 TESTNAME = "json-deserialise"
@@ -76,7 +76,6 @@ def main():
             "Existing object load did not return the correct list"
   del expected_get
 
-
   all_items = pbJ.load(os.path.join(this_dir, "json", "alltypes.json"),
                 bindings, "json_deserialise", path_helper=y)
   expected_get = {
@@ -132,10 +131,9 @@ def main():
 
   pth = os.path.join(this_dir, "json", "nonexist.json")
   for i in [True, False]:
-    nobj = None
     success = True
     try:
-      nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
+      pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
         bindings, "json_deserialise", skip_unknown=i)
     except AttributeError:
       success = False
@@ -146,6 +144,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

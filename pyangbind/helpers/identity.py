@@ -19,6 +19,7 @@ limitations under the License.
 from pyang import util
 from .misc import module_import_prefixes
 
+
 class Identity(object):
   def __init__(self, name):
     self.name = name
@@ -29,7 +30,7 @@ class Identity(object):
     self.children = []
 
   def add_prefix(self, prefix):
-    if not prefix in self._imported_prefixes:
+    if prefix not in self._imported_prefixes:
       self._imported_prefixes.append(prefix)
 
   def add_child(self, child):
@@ -42,6 +43,7 @@ class Identity(object):
 
   def prefixes(self):
     return self._imported_prefixes
+
 
 class IdentityStore(object):
   def __init__(self):
@@ -63,7 +65,7 @@ class IdentityStore(object):
     return ["%s:%s" % (i.source_module, i.name) for i in self._store]
 
   def __iter__(self):
-    return iter(self._store) 
+    return iter(self._store)
 
   def build_store_from_definitions(self, ctx, defnd):
     unresolved_identities = list(defnd.keys())
@@ -108,7 +110,7 @@ class IdentityStore(object):
         else:
           base_pfx, base_name = prefix, base.arg
 
-        parent_module = util.prefix_to_module(defmod, base_pfx, 
+        parent_module = util.prefix_to_module(defmod, base_pfx,
                                   base.pos, ctx.errors)
 
         # Find whether we have the base in the store
@@ -118,11 +120,12 @@ class IdentityStore(object):
           # and if not, then push this identity back onto the stack
           unresolved_identities.append(this_id)
           unresolved_identity_count[this_id] += 1
-          if unresolved_identity_count[this_id] > 1000:
-            if unresolved_idc[ident] > 1000:
-              sys.stderr.write("could not find a match for %s base: %s\n" %
-                (iddef.arg, base_name))
-              error_ids.append(ident)            
+          # FIXME(Joey Wilhelm): `unresolved_idc` and `ident` are both undefined. What is the intent of this code?
+          # if unresolved_identity_count[this_id] > 1000:
+          #   if unresolved_idc[ident] > 1000:
+          #     sys.stderr.write("could not find a match for %s base: %s\n" %
+          #       (iddef.arg, base_name))
+          #     error_ids.append(ident)
         else:
           # Check we don't already have this identity defined
           if self.find_identity_by_source_name(defining_module, iddef.arg) is None:
@@ -148,7 +151,6 @@ class IdentityStore(object):
       children.append(child)
       self._recurse_children(child, children)
     return children
-
 
   def _build_inheritance(self):
     for i in self._store:

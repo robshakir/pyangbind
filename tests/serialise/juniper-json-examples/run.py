@@ -76,8 +76,7 @@ def main():
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):
       got = False
-      count = 0
-      for i in range(0,4):
+      for i in range(0, 4):
         response = requests.get(fn[0])
         if response.status_code != 200:
           time.sleep(2)
@@ -89,9 +88,6 @@ def main():
           break
       assert got is True, "Could not get file %s from GitHub (response: %s)" \
                 % (response.status_code, fn[0])
-
-  files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
-                        os.listdir(os.path.join(this_dir, "openconfig"))])
 
   cmd = "%s " % pythonpath
   cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
@@ -208,7 +204,7 @@ def main():
     }
   assert ljs.get(filter=True) == expected_ljs, \
           "Router ID configuration example not loaded correctly"
-  assert ljs.bgp.global_.config.router_id._metadata["inactive"] == True, \
+  assert ljs.bgp.global_.config.router_id._metadata["inactive"] is True, \
           "Metadata for router-id element not set correctly"
 
   if not k:

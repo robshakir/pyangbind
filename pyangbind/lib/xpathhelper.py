@@ -28,7 +28,6 @@ from collections import OrderedDict
 from lxml import etree
 import re
 import uuid
-import sys
 from .yangtypes import safe_name
 from .base import PybindBase
 
@@ -102,6 +101,7 @@ class FakeRoot(PybindBase):
 
   def __init__(self):
     self._pyangbind_elements = OrderedDict()
+
 
 class YANGPathHelper(PybindXpathHelper):
   _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
@@ -331,7 +331,8 @@ class YANGPathHelper(PybindXpathHelper):
 
     list_get_attr = getattr(parent_obj, "_get_%s" % safe_name(object_path[-1]), None)
     if list_get_attr is None:
-      raise exception_to_raise("Element %s does not have an attribute named %s" % ("/".join(object_path[:-1]), object_path[-1]))
+      raise exception_to_raise("Element %s does not have an attribute named %s" %
+        ("/".join(object_path[:-1]), object_path[-1]))
 
     return list_get_attr()
 

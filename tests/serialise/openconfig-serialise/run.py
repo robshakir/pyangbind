@@ -65,8 +65,7 @@ def main():
     wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
     if not os.path.exists(wrpath):
       got = False
-      count = 0
-      for i in range(0,4):
+      for i in range(0, 4):
         response = requests.get(fn[0])
         if response.status_code != 200:
           time.sleep(2)
@@ -95,9 +94,10 @@ def main():
 
   for fn in os.listdir(os.path.join(this_dir, "json")):
     jobj = json.load(open(os.path.join(this_dir, "json", fn), 'r'))
-    parameters = re.sub('interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json', 
-                        '\g<pathhelper>||\g<filter>||\g<mode>', fn).split("||")
-    path_helper,filter,mode = YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2]
+    parameters = re.sub(
+      'interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json',
+      '\g<pathhelper>||\g<filter>||\g<mode>', fn).split("||")
+    path_helper, config_filter, mode = YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2]
 
     if path_helper:
       ph = YANGPathHelper()
@@ -107,7 +107,7 @@ def main():
 
     i.interfaces.interface.add("eth0")
 
-    jstr = json.loads(dumps(i, filter=bool(filter), mode=mode))
+    jstr = json.loads(dumps(i, filter=bool(config_filter), mode=mode))
     sys.stdout.flush()
 
     assert jstr == jobj, "Generated JSON did not match expected object for %s" % fn \
@@ -132,6 +132,7 @@ def main():
         for name in dirs:
           os.rmdir(os.path.join(root, name))
       os.rmdir(dirname)
+
 
 def diff(a, b):
     ja = json.dumps(a, indent=4, sort_keys=True).split("\n")

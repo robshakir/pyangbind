@@ -57,7 +57,7 @@ def main():
         "restricted_string_default"), \
             "restricted_string with default does not exist"
 
-  assert test_instance.string_container.string_leaf._changed() == False, \
+  assert test_instance.string_container.string_leaf._changed() is False, \
         "string_leaf erroneously set to changed (value: %s)" % \
           test_instance.string_container.string_leaf._changed()
 
@@ -71,7 +71,7 @@ def main():
         "string_leaf not set correctly (value: %s)" % \
           test_instance.string_container.string_leaf
 
-  assert test_instance.string_container.string_leaf._changed() == True, \
+  assert test_instance.string_container.string_leaf._changed() is True, \
         "string_leaf did not change to changed (value: %s)" % \
           test_instance.string_container.string_leaf._changed()
 
@@ -95,7 +95,7 @@ def main():
             "value (value: %s)" % \
                 test_instance.string_container.restricted_string_default
 
-  assert test_instance.string_container.string_default_leaf._changed() == \
+  assert test_instance.string_container.string_default_leaf._changed() is \
       False, "string_default_leaf erroneously reports having been changed" + \
           "(value: %s)" % \
               test_instance.string_container.string_default_leaf._changed()
@@ -193,11 +193,10 @@ def main():
     assert passed is tc[1], "dollarAtEnd set " + \
      "incorrectly to %s" % tc[0]
 
-  
-
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

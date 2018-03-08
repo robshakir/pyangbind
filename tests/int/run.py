@@ -39,13 +39,13 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
-  from bindings import int_ as i
+  from bindings import int_ as bindings_int
 
-  u = i()
+  u = bindings_int()
 
   for name in ["eight", "sixteen", "thirtytwo", "sixtyfour"]:
     for subname in ["", "default", "result", "restricted"]:
-      assert hasattr(u.int_container, "%s%s" % (name, subname)) == True, \
+      assert hasattr(u.int_container, "%s%s" % (name, subname)) is True, \
           "missing %s%s from container" % (name, subname)
 
   # tests default and equality
@@ -248,10 +248,10 @@ def main():
         "complex range with equals case was not set correctly " + \
             " (%d -> %s != %s)" % (i[0], passed, i[1])
   bounds = {
-    'eight': (-2**7, 2**7-1),
-    'sixteen': (-2**15, 2**15-1),
-    'thirtytwo': (-2**31, 2**31-1),
-    'sixtyfour': (-2**63, 2**63-1),
+    'eight': (-2**7, 2**7 - 1),
+    'sixteen': (-2**15, 2**15 - 1),
+    'thirtytwo': (-2**31, 2**31 - 1),
+    'sixtyfour': (-2**63, 2**63 - 1),
   }
 
   for elem, vals in bounds.iteritems():
@@ -263,7 +263,7 @@ def main():
         set_attr(vals[0])
       except ValueError:
         passed = False
-      assert passed is True, "Could not set int size %s to %d"  % \
+      assert passed is True, "Could not set int size %s to %d" % \
         (elem, val)
 
     passed = False
@@ -273,7 +273,7 @@ def main():
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
-      (elem, vals[0]-1)
+      (elem, vals[0] - 1)
 
     passed = False
     try:
@@ -282,7 +282,7 @@ def main():
       passed = True
 
     assert passed is True, "Incorrectly set int size %s to %d" % \
-      (elem, vals[1]+1)
+      (elem, vals[1] + 1)
 
   try:
     u.int_container.restricted_ueight_min_alias = -2**7
@@ -290,19 +290,19 @@ def main():
     assert False, "Could not set min..max int8 to the minimum value"
 
   try:
-    u.int_container.restricted_ueight_min_alias = 2**7-1
+    u.int_container.restricted_ueight_min_alias = 2**7 - 1
   except ValueError:
     assert False, "Could not set min..max int8 to the maximum value"
 
   try:
-    u.int_container.restricted_ueight_min_alias = -2**7-1
+    u.int_container.restricted_ueight_min_alias = -2**7 - 1
   except ValueError:
     pass
   else:
     assert False, "Incorrectly set min..max int8 to the min value minus one"
 
   try:
-    u.int_container.restricted_ueight_min_alias = 2**7+1
+    u.int_container.restricted_ueight_min_alias = 2**7 + 1
   except ValueError:
     pass
   else:
@@ -311,6 +311,7 @@ def main():
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()
