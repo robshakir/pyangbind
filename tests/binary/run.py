@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from bitarray import bitarray
 import unittest
 
 from tests.base import PyangBindTestCase
@@ -28,12 +29,12 @@ class BinaryTests(PyangBindTestCase):
           "Could incorrectly set b1 to %s" % value[0])
 
   def test_binary_leaf_default_value(self):
-    default = self.bindings.bitarray("0100")
+    default = bitarray("0100")
     self.assertEqual(self.binary_obj.container.b2._default, default,
       "Default for leaf b2 was not set correctly (%s != %s)" % (self.binary_obj.container.b2._default, default))
 
   def test_binary_leaf_is_empty_bitarray_by_default(self):
-    empty = self.bindings.bitarray()
+    empty = bitarray()
     self.assertEqual(self.binary_obj.container.b2, empty,
       "Value of bitarray was not null when checking b2 (%s != %s)" % (self.binary_obj.container.b2, empty))
 
@@ -42,13 +43,13 @@ class BinaryTests(PyangBindTestCase):
       "Unset bitarray specified changed when was default (%s != False)" % self.binary_obj.container.b2._changed())
 
   def test_set_bitarray_stores_value(self):
-    bits = self.bindings.bitarray("010")
+    bits = bitarray("010")
     self.binary_obj.container.b2 = bits
     self.assertEqual(self.binary_obj.container.b2, bits,
       "Bitarray not successfully set (%s != %s)" % (self.binary_obj.container.b2, bits))
 
   def test_setting_bitarray_set_changed(self):
-    self.binary_obj.container.b2 = self.bindings.bitarray("010")
+    self.binary_obj.container.b2 = bitarray("010")
     self.assertTrue(self.binary_obj.container.b2._changed(),
       "Bitarray value not flagged as changed (%s != True)" % self.binary_obj.container.b2._changed())
 
