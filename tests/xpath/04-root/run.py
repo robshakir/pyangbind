@@ -13,6 +13,7 @@ from tests.base import PyangBindTestCase
 
 class XPathRootTests(PyangBindTestCase):
   yang_files = ['root-tc04-a.yang', 'root-tc04-b.yang']
+  pyang_flags = ['--use-extmethods', '--use-xpathhelper']
 
   def setUp(self):
     self.path_helper = YANGPathHelper()

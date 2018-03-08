@@ -7,6 +7,7 @@ from tests.base import PyangBindTestCase
 
 class XPathStaticPtrTests(PyangBindTestCase):
   yang_files = ['ptr-tc02.yang']
+  pyang_flags = ['--use-xpathhelper']
 
   def setUp(self):
     self.path_helper = YANGPathHelper()

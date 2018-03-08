@@ -7,6 +7,7 @@ from tests.base import PyangBindTestCase
 
 class XPathCurrentTests(PyangBindTestCase):
   yang_files = ['current-tc03.yang']
+  pyang_flags = ['--use-xpathhelper']
 
   def setUp(self):
     self.path_helper = YANGPathHelper()

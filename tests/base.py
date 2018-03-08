@@ -11,6 +11,7 @@ except ImportError:
 
 class PyangBindTestCase(unittest.TestCase):
   yang_files = None
+  pyang_flags = []
 
   @classmethod
   def setUpClass(cls):
@@ -24,8 +25,12 @@ class PyangBindTestCase(unittest.TestCase):
     yang_files = [os.path.join(test_path, filename) for filename in cls.yang_files]
     plugin_dir = os.path.join(base_dir, 'pyangbind', 'plugin')
 
-    pyang_cmd = "{} --plugindir {} -f pybind -p {} --use-extmethods --use-xpathhelper {}".format(
-      pyang_path, plugin_dir, test_path, ' '.join(yang_files)
+    pyang_cmd = "{pyang} --plugindir {plugins} -f pybind -p {test_path} {flags} {yang_files}".format(
+      pyang=pyang_path,
+      plugins=plugin_dir,
+      test_path=test_path,
+      flags=' '.join(cls.pyang_flags),
+      yang_files=' '.join(yang_files)
     )
     bindings_code = subprocess.check_output(
       pyang_cmd, shell=True, stderr=subprocess.STDOUT, env={'PYTHONPATH': base_dir}
