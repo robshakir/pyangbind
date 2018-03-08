@@ -20,7 +20,7 @@ class ChoicesTests(PyangBindTestCase):
         self.assertTrue(hasattr(self.choice_obj.container, container),
           "Object does not have choice container %s" % container)
 
-  def test_class_does_not_have_unknown_choices(self):
+  def test_class_does_not_have_choices_as_attributes(self):
     for choice in ["choice_one", "choice_two", "case_one", "case_two"]:
       with self.subTest(choice=choice):
         self.assertFalse(hasattr(self.choice_obj, choice),
