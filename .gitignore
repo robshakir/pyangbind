@@ -1,4 +1,7 @@
-*.pyc
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
 *.swp
 *.egg-info
 build/*
@@ -9,3 +12,12 @@ tmp/*
 *.PEP8-ERRORS
 /.project
 /.pydevproject
+
+.tox/
+tests/serialise/juniper-json-examples/include
+tests/serialise/juniper-json-examples/ocbind
+tests/serialise/juniper-json-examples/openconfig
+tests/integration/openconfig-bgp/include/
+tests/integration/openconfig-bgp/ocbind/
+tests/integration/openconfig-bgp/openconfig/
+tests/integration/openconfig-interfaces/include/

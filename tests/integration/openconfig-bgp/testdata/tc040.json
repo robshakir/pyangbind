@@ -45,7 +45,7 @@
                         "enabled": false, 
                         "peer-as": 0, 
                         "neighbor-address": "", 
-                        "peer-group": false, 
+                        "peer-group": 0, 
                         "remove-private-as": "", 
                         "auth-password": "", 
                         "dynamically-configured": false, 
@@ -144,7 +144,7 @@
                         "route-flap-damping": false, 
                         "enabled": false, 
                         "peer-as": 5400, 
-                        "peer-group": false, 
+                        "peer-group": 0, 
                         "remove-private-as": "", 
                         "auth-password": "", 
                         "peer-type": ""

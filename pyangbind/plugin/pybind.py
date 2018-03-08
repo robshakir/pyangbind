@@ -298,7 +298,7 @@ def build_pybind(ctx, modules, fd):
   module_d = {}
   for mod in modules:
     module_d[mod.arg] = mod
-  pyang_called_modules = module_d.keys()
+  pyang_called_modules = list(module_d.keys())
 
   # Bail if there are pyang errors, since this certainly means that the
   # pyangbind output will fail - unless these are solely due to imports that
@@ -781,8 +781,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # code that is generated.
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n  YANG Description: %s" % \
-          parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      if six.PY2:
+          parent_descr = "\n\n  YANG Description: %s" % \
+              parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      else:
+          parent_descr = "\n\n  YANG Description: %s" % \
+              parent_descr.arg
     else:
       parent_descr = ""
 
@@ -808,8 +812,8 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # Doing so gives an AttributeError when a user tries to specify something
     # that was not in the model.
     elements_str = "_pyangbind_elements = OrderedDict(["
-    slots_str = "  __slots__ = ('_pybind_generated_by', '_path_helper',"
-    slots_str += " '_yang_name', '_extmethods', "
+    slots_str = "  __slots__ = ('_path_helper',"
+    slots_str += " '_extmethods', "
     for i in elements:
       slots_str += "'__%s'," % i["name"]
       elements_str += "('%s', %s), " % (i["name"], i["name"])
@@ -1050,8 +1054,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n    YANG Description: %s" \
-            % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        if six.PY2:
+            description_str = "\n\n    YANG Description: %s" \
+                % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        else:
+            description_str = "\n\n    YANG Description: %s" \
+                % i["description"]
       nfd.write('''
   def _get_%s(self):
     """

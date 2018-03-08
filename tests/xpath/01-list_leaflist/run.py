@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import sys
 import os
@@ -13,7 +14,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -37,7 +38,7 @@ def main():
   cmd += " -p %s" % this_dir
   cmd += " --use-xpathhelper"
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  print cmd
+  print(cmd)
   os.system(cmd)
 
   from bindings import list_tc01 as ytest
@@ -57,7 +58,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 def t1_leaflist(yobj, tree):

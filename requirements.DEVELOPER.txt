@@ -1,3 +1,5 @@
 flake8
 requests
+tox
 wheel
+-r requirements.txt

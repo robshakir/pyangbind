@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -20,7 +21,7 @@ def setup_test():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
@@ -71,7 +72,7 @@ def setup_test():
         else:
           got = True
           f = open(wrpath, 'w')
-          f.write(response.content)
+          f.write(response.text)
           f.close()
           break
       assert got is True, "Could not get file %s from GitHub (response: %s)" \

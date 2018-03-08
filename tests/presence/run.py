@@ -46,7 +46,6 @@ def setup_test():
 def teardown_test():
   global this_dir
   os.system("/bin/rm %s/bindings.py" % this_dir)
-  os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 class PyangbindPresenceTests(unittest.TestCase):

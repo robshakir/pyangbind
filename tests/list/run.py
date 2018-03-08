@@ -203,7 +203,7 @@ def main():
   assert err is None, "Could not remove entry from list with keyword arguments"
 
   expected = ['value one value two', 'two twenty']
-  assert test_instance.list_container.list_eight.keys() == expected, "Entry remained in list after delete()"
+  assert list(test_instance.list_container.list_eight.keys()) == expected, "Entry remained in list after delete()"
 
   err = False
   try:
@@ -339,7 +339,6 @@ def main():
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

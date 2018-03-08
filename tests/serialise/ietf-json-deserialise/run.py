@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 
 import os
 import sys
@@ -18,7 +19,7 @@ def main():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
   except getopt.GetoptError as e:
-    print str(e)
+    print(str(e))
     sys.exit(127)
 
   k = False
@@ -86,7 +87,7 @@ def main():
             "one-leaf": "hi",
             "typedef-one": "test",
             "boolean": True,
-            "binary": bitarray("111111"),
+            "binary": bitarray("010101"),
             "union": "16",
             "identityref": "idone",
             "enumeration": "one",
@@ -128,6 +129,7 @@ def main():
       }
     }
   }
+
   assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
           "complete object not as expected, got: %s" % \
           dumps(nobj.get(filter=True), indent=4, mode="ietf")
@@ -147,7 +149,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

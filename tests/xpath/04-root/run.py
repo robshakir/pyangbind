@@ -43,7 +43,6 @@ def setup_test():
 
 def teardown_test():
   os.system("/bin/rm %s/bindings.py" % this_dir)
-  os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 class PyangbindXpathRootTC04(unittest.TestCase):
@@ -82,28 +81,33 @@ class PyangbindXpathRootTC04(unittest.TestCase):
   def test_004_serialise(self):
     self.instance_a.root_tc04_a.a = "emigration"
     self.instance_b.root_tc04_b.b = "alpine-fork"
-    expected_json = json.load(open(os.path.join(this_dir, "json", "04-serialise.json")))
+
+    with open(os.path.join(this_dir, "json", "04-serialise.json")) as f:
+        expected_json = json.load(f)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/")))
     self.assertEqual(v, expected_json)
 
-    expected_ietf_json = json.load(open(os.path.join(this_dir, "json", "04b-ietf-serialise.json")))
+    with open(os.path.join(this_dir, "json", "04b-ietf-serialise.json")) as f:
+        expected_ietf_json = json.load(f)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/"), mode="ietf"))
     self.assertEqual(v, expected_ietf_json)
 
   def test_005_deserialise(self):
     root = self.path_helper.get_unique("/")
-    fh = open(os.path.join(this_dir, "json", "05-deserialise.json"), 'r')
-    pybindJSONDecoder.load_json(json.load(fh), None, None, obj=root)
+    with open(os.path.join(this_dir, "json", "05-deserialise.json"), 'r') as fh:
+        pybindJSONDecoder.load_json(json.load(fh), None, None, obj=root)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/")))
-    x = json.load(open(os.path.join(this_dir, "json", "05-deserialise.json"), 'r'))
+    with open(os.path.join(this_dir, "json", "05-deserialise.json"), 'r') as f:
+        x = json.load(f)
     self.assertEqual(v, x)
 
   def test_006_ietf_deserialise(self):
     root = self.path_helper.get_unique("/")
-    fh = open(os.path.join(this_dir, "json", "06-deserialise-ietf.json"), 'r')
-    pybindJSONDecoder.load_ietf_json(json.load(fh), None, None, obj=root)
+    with open(os.path.join(this_dir, "json", "06-deserialise-ietf.json"), 'r') as fh:
+        pybindJSONDecoder.load_ietf_json(json.load(fh), None, None, obj=root)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/"), mode="ietf"))
-    x = json.load(open(os.path.join(this_dir, "json", "06-deserialise-ietf.json"), 'r'))
+    with open(os.path.join(this_dir, "json", "06-deserialise-ietf.json"), 'r') as f:
+        x = json.load(f)
     self.assertEqual(v, x)
 
 

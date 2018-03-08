@@ -80,12 +80,11 @@ def main():
   t.container.case_two_container.user.add("second")
   assert t.container.case_two_container.user["second"].username == "second", \
        "object has the wrong username for user in case two list"
-  assert len(t.container.case_one_container.user.keys()) == 0, \
+  assert len(list(t.container.case_one_container.user.keys())) == 0, \
        "Adding to the second user list did not remove entries from the first"
 
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

@@ -4,6 +4,11 @@ import os
 import sys
 import getopt
 
+import six
+
+if six.PY3:
+    unicode = str
+
 TESTNAME = "union"
 
 
@@ -150,7 +155,6 @@ def main():
 
   if not k:
     os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ from __future__ import unicode_literals
 from decimal import Decimal
 from bitarray import bitarray
 import uuid
-import re
+import regex
 import collections
 import copy
 import six
@@ -32,7 +32,7 @@ import six
 # For Python3
 if six.PY3:
   unicode = str
-
+  basestring = str
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
@@ -139,7 +139,7 @@ def RestrictedClassType(*args, **kwargs):
   # this gives deserialisers some hints as to how to encode/decode this value
   # it must be a list since a restricted class can encapsulate a restricted
   # class
-  current_restricted_class_type = re.sub("<(type|class) '(?P<class>.*)'>",
+  current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>",
                                           "\g<class>", str(base_type))
   if hasattr(base_type, "_restricted_class_base"):
     restricted_class_hint = getattr(base_type, "_restricted_class_base")
@@ -168,7 +168,11 @@ def RestrictedClassType(*args, **kwargs):
         self.__check(args[0])
       except IndexError:
         pass
-      super(RestrictedClass, self).__init__(*args, **kwargs)
+
+      try:
+        super(RestrictedClass, self).__init__(*args, **kwargs)
+      except TypeError:
+        super(RestrictedClass, self).__init__()
 
     def __new__(self, *args, **kwargs):
       self._restriction_dict = restriction_dict
@@ -179,15 +183,15 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
+      range_regex = regex.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
                                 "(?P<high>(\-?[0-9\.]+|max))")
-      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
+      range_single_value_regex = regex.compile("(?P<value>\-?[0-9\.]+)")
 
       def convert_regexp(pattern):
 
         # Some patterns include a $ character in them in some IANA modules, this
         # is not escaped. Do some logic to escape them, whilst leaving one at the
-        # end of the string if it's there.
+        # end of the string if it's theregexp.
         trimmed = False
         if pattern[-1] == "$":
           tmp_pattern = pattern[:-1]
@@ -203,6 +207,7 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "^%s" % pattern
         if not pattern[len(pattern) - 1] == "$":
           pattern = "%s$" % pattern
+
         return pattern
 
       def build_length_range_tuples(range, length=False, multiplier=1):
@@ -253,7 +258,7 @@ def RestrictedClassType(*args, **kwargs):
         def mp_check(value):
           if not isinstance(value, basestring):
             return False
-          if re.match(convert_regexp(regexp), value):
+          if regex.match(convert_regexp(regexp), value):
             return True
           return False
         return mp_check
@@ -273,7 +278,7 @@ def RestrictedClassType(*args, **kwargs):
           raise ValueError("must specify either a restriction dictionary or" +
                             " a type and argument")
 
-      for rtype, rarg in self._restriction_dict.items():
+      for rtype, rarg in six.iteritems(self._restriction_dict):
         if rtype == "pattern":
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
@@ -500,7 +505,7 @@ def YANGListType(*args, **kwargs):
   extensions = kwargs.pop("extensions", None)
 
   class YANGList(object):
-    __slots__ = ('_pybind_generated_by', '_members', '_keyval',
+    __slots__ = ('_members', '_keyval',
                   '_contained_class', '_path_helper', '_yang_keys',
                   '_ordered',)
     _pybind_generated_by = "YANGListType"
@@ -543,10 +548,10 @@ def YANGListType(*args, **kwargs):
       return True
 
     def iteritems(self):
-      return self._members.iteritems()
+      return six.iteritems(self._members)
 
     def itervalues(self):
-      return self._members.itervalues()
+      return six.itervalues(self._members)
 
     def _key_to_native_key_type(self, k):
       if self._keyval is False:
@@ -683,13 +688,13 @@ def YANGListType(*args, **kwargs):
       return len(self._members)
 
     def keys(self):
-      return self._members.keys()
+      return six.iterkeys(self._members)
 
     def items(self):
-      return self._members.items()
+      return six.iteritems(self._members)
 
     def values(self):
-      return self._members.values()
+      return six.itervalues(self._members)
 
     def _generate_key(self, *args, **kwargs):
       keyargs = None
@@ -893,7 +898,11 @@ def YANGDynClass(*args, **kwargs):
   if not base_type:
     raise TypeError("must have a base type")
 
-  if isinstance(base_type, list):
+  if base_type == bitarray:
+      if len(args) == 1:
+          args = (str(args[0]) if isinstance(args[0], unicode) else args[0], )
+
+  elif isinstance(base_type, list):
     # this is a union, we must infer type
     if not len(args):
       # there is no argument to infer the type from
@@ -917,7 +926,7 @@ def YANGDynClass(*args, **kwargs):
   clsslots = ['_default', '_mchanged', '_yang_name', '_choice', '_parent',
                  '_supplied_register_path', '_path_helper', '_base_type',
                  '_is_leaf', '_is_container', '_extensionsd',
-                 '_pybind_base_class', '_extmethods', '_is_keyval',
+                 '_extmethods', '_is_keyval',
                  '_register_paths', '_namespace', '_yang_type',
                  '_defining_module', '_metadata', '_is_config', '_cpresent',
                  '_presence']
@@ -947,11 +956,14 @@ def YANGDynClass(*args, **kwargs):
     if yang_type in ["container", "list"] or is_container == "container":
       __slots__ = tuple(clsslots)
 
-    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+    _pybind_base_class = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
 
     def __new__(self, *args, **kwargs):
-      obj = base_type.__new__(self, *args, **kwargs)
+      try:
+          obj = base_type.__new__(self, *args, **kwargs)
+      except TypeError:
+          obj = base_type.__new__(self)
       return obj
 
     def __init__(self, *args, **kwargs):
@@ -1018,7 +1030,10 @@ def YANGDynClass(*args, **kwargs):
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
+      except TypeError:
+        super(YANGBaseClass, self).__init__()
       except Exception as e:
+        raise
         raise TypeError("couldn't generate dynamic type -> %s -> %s"
                         % (type(e), e))
 
@@ -1211,7 +1226,7 @@ def ReferenceType(*args, **kwargs):
 
           if value is not None:
             set_method(value)
-          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+          self._type = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
 
           self._utype = get_method()._base_type

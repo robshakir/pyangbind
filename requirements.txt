@@ -1,5 +1,6 @@
 pyang
 bitarray
 lxml
+regex
 six
 enum34
