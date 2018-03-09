@@ -13,6 +13,7 @@ inst_reqs = [str(ir.req) for ir in pip_reqs]
 with open(path.join(thisdir, "README.rst"), encoding='utf-8') as readme:
   long_description = readme.read()
 
+
 setup(
     name='pyangbind',
 
@@ -46,4 +47,5 @@ setup(
     packages=find_packages(exclude=['lib']),
     install_requires=inst_reqs,
     zip_safe=False,
+    test_suite='tests.test_suite'
 )
