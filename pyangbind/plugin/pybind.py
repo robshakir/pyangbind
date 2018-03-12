@@ -1133,6 +1133,12 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
   nfd.write("""\n  %s\n""" % elements_str)
   nfd.write("\n")
 
+  try:
+    nfd.flush()
+    os.fsync(nfd.fileno())
+  except OSError:
+    pass
+
   if ctx.opts.split_class_dir:
     nfd.close()
 
