@@ -1,140 +1,133 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "leaflist"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class LeafListTests(PyangBindTestCase):
+  yang_files = ['leaflist.yang']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.leaflist_obj = self.bindings.leaflist()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_container_exists(self):
+    self.assertTrue(hasattr(self.leaflist_obj, "container"), "Base container is missing.")
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_leaflist_exists(self):
+    self.assertTrue(hasattr(self.leaflist_obj.container, "leaflist"), "Leaf-list instance is missing.")
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_leaflist_length_is_zero(self):
+    self.assertEqual(len(self.leaflist_obj.container.leaflist), 0, "Length of leaflist was not zero.")
 
-  from bindings import leaflist
+  def test_append_to_leaflist(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.assertEqual(len(self.leaflist_obj.container.leaflist), 1, "Did not successfully append string to list.")
 
-  leaflist_instance = leaflist()
+  def test_retrieve_leaflist_item_value(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.assertEqual(self.leaflist_obj.container.leaflist[0], "itemOne",
+      "Cannot successfully address an item from the list.")
 
-  assert hasattr(leaflist_instance, "container") is True, \
-    "base container missing"
-
-  assert hasattr(leaflist_instance.container, "leaflist") is True, \
-    "leaf-list instance missing"
-
-  assert len(leaflist_instance.container.leaflist) == 0, \
-    "length of leaflist was not zero"
-
-  leaflist_instance.container.leaflist.append("itemOne")
-
-  assert len(leaflist_instance.container.leaflist) == 1, \
-    "did not succesfully append string to list"
-
-  assert leaflist_instance.container.leaflist[0] == "itemOne", \
-    "cannot successfully address an item from the list"
-
-  try:
-    leaflist_instance.container.leaflist.append(int(1))
-  except ValueError:
-    pass
-
-  assert len(leaflist_instance.container.leaflist) == 1, \
-    "appended an element to the list erroneously (%s, len %d vs. 1)" % \
-      (leaflist_instance.container.leaflist,
-        len(leaflist_instance.container.leaflist))
-
-  leaflist_instance.container.leaflist.append("itemTwo")
-  assert leaflist_instance.container.leaflist[1] == "itemTwo", \
-    "getitem did not return the correct value"
-
-  leaflist_instance.container.leaflist[1] = "indexOne"
-  assert leaflist_instance.container.leaflist[1] == "indexOne", \
-    "setitem did not set the correct node"
-
-  leaflist_instance.container.leaflist.insert(0, "indexZero")
-  assert leaflist_instance.container.leaflist[0] == "indexZero", \
-    "incorrectly set index 0 value"
-  assert len(leaflist_instance.container.leaflist) == 4, \
-    "list item was not added by insert()"
-
-  del leaflist_instance.container.leaflist[0]
-  assert len(leaflist_instance.container.leaflist) == 3, \
-    "list item not succesfully removed by delitem"
-
-  assert leaflist_instance.get() == \
-    {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'],
-        'listtwo': [], 'listthree': []}}, \
-    "get did not correctly return the dictionary"
-
-  try:
-    leaflist_instance.container.leaflist = ["itemOne", "itemTwo"]
-  except ValueError:
-    pass
-
-  assert leaflist_instance.container.leaflist == ["itemOne", "itemTwo"], \
-    "leaflist assignment did not function correctly"
-
-  passed = False
-  try:
-    leaflist_instance.container.leaflist = [1, 2]
-  except ValueError:
-    passed = True
-  assert passed is True, "an erroneous value was assigned to the list"
-
-  leaflist_instance.container.listtwo.append("a-valid-string")
-  assert len(leaflist_instance.container.listtwo) == 1, \
-      "restricted leaflist did not function correctly"
-
-  passed = False
-  try:
-    leaflist_instance.container.listtwo.append("broken-string")
-  except ValueError:
-    passed = True
-  assert passed is True, \
-      "an erroneous value was assigned to the list (restricted type)"
-
-  for i in [(1, True), ("fish", True), ([], False)]:
-    passed = False
+  def test_append_int_to_string_leaflist(self):
+    allowed = True
     try:
-      leaflist_instance.container.listthree.append(i[0])
-      passed = True
+      self.leaflist_obj.container.leaflist.append(1)
     except ValueError:
-      pass
-    assert passed == i[1], \
-        "leaf-list of union type had invalid result (%s != %s for %s)" \
-            % (passed, i[1], i[0])
+      allowed = False
+    self.assertFalse(allowed, "Appended an element to the list erroneously")
 
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+  def test_getitem(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+
+    self.assertEqual(self.leaflist_obj.container.leaflist[1], "itemTwo", "getitem did not return the correct value.")
+
+  def test_setitem(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+    self.leaflist_obj.container.leaflist[1] = "indexOne"
+
+    self.assertEqual(self.leaflist_obj.container.leaflist[1], "indexOne", "setitem did not set the correct node.")
+
+  def test_insert(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+    self.leaflist_obj.container.leaflist[1] = "indexOne"
+    self.leaflist_obj.container.leaflist.insert(0, "indexZero")
+
+    self.assertEqual(self.leaflist_obj.container.leaflist[0], "indexZero", "Incorrectly set index 0 value")
+
+  def test_leaflist_grows_from_various_modification_methods(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+    self.leaflist_obj.container.leaflist[1] = "indexOne"
+    self.leaflist_obj.container.leaflist.insert(0, "indexZero")
+
+    self.assertEqual(len(self.leaflist_obj.container.leaflist), 4, "List item was not added by insert()")
+
+  def test_delete_item_from_leaflist(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+    self.leaflist_obj.container.leaflist[1] = "indexOne"
+    self.leaflist_obj.container.leaflist.insert(0, "indexZero")
+
+    del self.leaflist_obj.container.leaflist[0]
+
+    self.assertEqual(len(self.leaflist_obj.container.leaflist), 3, "List item not successfully removed by delitem")
+
+  def test_get_full_leaflist(self):
+    self.leaflist_obj.container.leaflist.append("itemOne")
+    self.leaflist_obj.container.leaflist.append("itemTwo")
+    self.leaflist_obj.container.leaflist[1] = "indexOne"
+    self.leaflist_obj.container.leaflist.insert(0, "indexZero")
+    del self.leaflist_obj.container.leaflist[0]
+
+    self.assertEqual(
+      self.leaflist_obj.get(),
+      {'container': {'leaflist': ['itemOne', 'indexOne', 'itemTwo'],
+                     'listtwo': [],
+                     'listthree': []}},
+      "get did not correctly return the dictionary"
+    )
+
+  def test_leaflist_assignment(self):
+    self.leaflist_obj.container.leaflist = ["itemOne", "itemTwo"]
+
+    self.assertEqual(self.leaflist_obj.container.leaflist, ["itemOne", "itemTwo"],
+      "Leaflist assignment did not function correctly")
+
+  def test_leaflist_assignment_of_wrong_type(self):
+    allowed = True
+    try:
+      self.leaflist_obj.container.leaflist = [1, 2]
+    except ValueError:
+      allowed = False
+    self.assertFalse(allowed, "An erroneous value was assigned to the list.")
+
+  def test_restricted_string(self):
+    self.leaflist_obj.container.listtwo.append("a-valid-string")
+    self.assertEqual(len(self.leaflist_obj.container.listtwo), 1, "Restricted lefalist did not function correctly.")
+
+  def test_restricted_string_invalid_value(self):
+    allowed = True
+    try:
+      self.leaflist_obj.container.listtwo.append("broken-string")
+    except ValueError:
+      allowed = False
+    self.assertFalse(allowed, "An erroneous value was assigned to the list (restircted type)")
+
+  def test_union_type(self):
+    for pair in [(1, True), ("fish", True), ([], False)]:
+      with self.subTest(pair=pair):
+        allowed = True
+        try:
+          self.leaflist_obj.container.listthree.append(pair[0])
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, pair[1], "leaf-list of union type had invalid result (%s != %s for %s)" %
+          (allowed, pair[1], pair[0]))
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
