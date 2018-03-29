@@ -196,17 +196,17 @@ class IntTests(PyangBindTestCase):
 
   def test_set_int_sizes_below_lower_bounds(self):
     bounds = {
-      'eight': -2**7,
-      'sixteen': -2**15,
-      'thirtytwo': -2**31,
-      'sixtyfour': -2**63,
+      'eight': -2**7 - 1,
+      'sixteen': -2**15 - 1,
+      'thirtytwo': -2**31 - 1,
+      'sixtyfour': -2**63 - 1,
     }
     for leaf, value in bounds.iteritems():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
         try:
-          setter(value - 1)
+          setter(value)
         except ValueError:
           allowed = False
         self.assertFalse(allowed, "Incorrectly set int size %s to %d" % (leaf, value))
@@ -230,17 +230,17 @@ class IntTests(PyangBindTestCase):
 
   def test_set_int_sizes_above_upper_bounds(self):
     bounds = {
-      'eight': 2**7 - 1,
-      'sixteen': 2**15 - 1,
-      'thirtytwo': 2**31 - 1,
-      'sixtyfour': 2**63 - 1,
+      'eight': 2**7,
+      'sixteen': 2**15,
+      'thirtytwo': 2**31,
+      'sixtyfour': 2**63,
     }
     for leaf, value in bounds.iteritems():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
         try:
-          setter(value + 1)
+          setter(value)
         except ValueError:
           allowed = False
         self.assertFalse(allowed, "Incorrectly set int size %s to %d" % (leaf, value))
