@@ -115,7 +115,7 @@ class LeafListTests(PyangBindTestCase):
       self.leaflist_obj.container.listtwo.append("broken-string")
     except ValueError:
       allowed = False
-    self.assertFalse(allowed, "An erroneous value was assigned to the list (restircted type)")
+    self.assertFalse(allowed, "An erroneous value was assigned to the list (restricted type)")
 
   def test_union_type(self):
     for pair in [(1, True), ("fish", True), ([], False)]:
