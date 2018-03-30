@@ -1,159 +1,127 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "openconfig-bgp-juniper"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
-
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
-
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
-
-  this_dir = os.path.dirname(os.path.realpath(__file__))
-
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
-
-  from bindings import openconfig_bgp_juniper
+class OpenconfigBGPJuniperTests(PyangBindTestCase):
+  yang_files = ['openconfig-bgp-juniper.yang']
 
   global_config = {"my_as": 2856}
   peer_group_list = ["groupA", "groupB"]
   peers = [("1.1.1.1", "groupA", 3741), ("1.1.1.2", "groupA", 5400,),
           ("1.1.1.3", "groupA", 29636), ("2.2.2.2", "groupB", 12767)]
 
-  bgp = openconfig_bgp_juniper()
+  def setUp(self):
+    self.bgp_obj = self.bindings.openconfig_bgp_juniper()
 
-  except_thrown = False
-  try:
-    bgp.system = False
-  except AttributeError:
-    except_thrown = True
+    # Pre-populate our data
+    self.bgp_obj.juniper_config.bgp.global_.as_ = self.global_config["my_as"]
+    for peer_group in self.peer_group_list:
+      self.bgp_obj.juniper_config.bgp.peer_group.add(peer_group)
 
-  assert except_thrown is True, \
-    "Trying to set a missing container did not result" + \
-      " in an attribute error (%s != True)" % except_thrown
+    for peer in self.peers:
+      self.bgp_obj.juniper_config.bgp.peer_group[peer[1]].neighbor.add(peer[0])
+      self.bgp_obj.juniper_config.bgp.peer_group[peer[1]].neighbor[peer[0]].peer_as = \
+          peer[2]
 
-  bgp.juniper_config.bgp.global_.as_ = global_config["my_as"]
-  for peer_group in peer_group_list:
-    bgp.juniper_config.bgp.peer_group.add(peer_group)
+  def test_set_unknown_element(self):
+    allowed = True
+    try:
+      self.bgp_obj.system = False
+    except AttributeError:
+      allowed = False
+    self.assertFalse(allowed, "Trying to set a missing container did not result in an attribute error")
 
-  for peer in peers:
-    bgp.juniper_config.bgp.peer_group[peer[1]].neighbor.add(peer[0])
-    bgp.juniper_config.bgp.peer_group[peer[1]].neighbor[peer[0]].peer_as = \
-        peer[2]
-
-  bgp_filter_response = {
-      'juniper-config': {
-          'bgp': {
-              'global': {
-                  'as': '2856'
-              },
-              'peer-group': {
-                  'groupA': {
-                      'group-name': 'groupA',
-                      'neighbor': {
-                          '1.1.1.1': {
-                              'neighbor-name': '1.1.1.1',
-                              'peer-as': '3741'
-                          },
-                          '1.1.1.2': {
-                              'neighbor-name': '1.1.1.2',
-                              'peer-as': '5400'
-                          },
-                          '1.1.1.3': {
-                              'neighbor-name': '1.1.1.3',
-                              'peer-as': '29636'
-                          }
-                      }
+  def test_get(self):
+    self.assertEqual(
+      self.bgp_obj.get(),
+      {
+          'juniper-config': {
+              'bgp': {
+                  'global': {
+                      'as': '2856'
                   },
-                  'groupB': {
-                      'group-name': 'groupB',
-                      'neighbor': {
-                          '2.2.2.2': {
-                              'neighbor-name': '2.2.2.2',
-                              'peer-as': '12767'
+                  'peer-group': {
+                      'groupA': {
+                          'group-name': 'groupA',
+                          'neighbor': {
+                              '1.1.1.1': {
+                                  'neighbor-name': '1.1.1.1',
+                                  'peer-as': '3741'
+                              },
+                              '1.1.1.2': {
+                                  'neighbor-name': '1.1.1.2',
+                                  'peer-as': '5400'
+                              },
+                              '1.1.1.3': {
+                                  'neighbor-name': '1.1.1.3',
+                                  'peer-as': '29636'
+                              }
+                          },
+                          'peer-type': '',
+                      },
+                      'groupB': {
+                          'group-name': 'groupB',
+                          'neighbor': {
+                              '2.2.2.2': {
+                                  'neighbor-name': '2.2.2.2',
+                                  'peer-as': '12767'
+                              }
+                          },
+                          'peer-type': ''
+                      }
+                  }
+              }
+          }
+      },
+      "Unfiltered get response did not match"
+    )
+
+  def test_filtered_get(self):
+    self.assertEqual(
+      self.bgp_obj.get(filter=True),
+      {
+          'juniper-config': {
+              'bgp': {
+                  'global': {
+                      'as': '2856'
+                  },
+                  'peer-group': {
+                      'groupA': {
+                          'group-name': 'groupA',
+                          'neighbor': {
+                              '1.1.1.1': {
+                                  'neighbor-name': '1.1.1.1',
+                                  'peer-as': '3741'
+                              },
+                              '1.1.1.2': {
+                                  'neighbor-name': '1.1.1.2',
+                                  'peer-as': '5400'
+                              },
+                              '1.1.1.3': {
+                                  'neighbor-name': '1.1.1.3',
+                                  'peer-as': '29636'
+                              }
+                          }
+                      },
+                      'groupB': {
+                          'group-name': 'groupB',
+                          'neighbor': {
+                              '2.2.2.2': {
+                                  'neighbor-name': '2.2.2.2',
+                                  'peer-as': '12767'
+                              }
                           }
                       }
                   }
               }
           }
-      }
-  }
-
-  bgp_unfilter_response = {
-      'juniper-config': {
-          'bgp': {
-              'global': {
-                  'as': '2856'
-              },
-              'peer-group': {
-                  'groupA': {
-                      'group-name': 'groupA',
-                      'neighbor': {
-                          '1.1.1.1': {
-                              'neighbor-name': '1.1.1.1',
-                              'peer-as': '3741'
-                          },
-                          '1.1.1.2': {
-                              'neighbor-name': '1.1.1.2',
-                              'peer-as': '5400'
-                          },
-                          '1.1.1.3': {
-                              'neighbor-name': '1.1.1.3',
-                              'peer-as': '29636'
-                          }
-                      },
-                      'peer-type': '',
-                  },
-                  'groupB': {
-                      'group-name': 'groupB',
-                      'neighbor': {
-                          '2.2.2.2': {
-                              'neighbor-name': '2.2.2.2',
-                              'peer-as': '12767'
-                          }
-                      },
-                      'peer-type': ''
-                  }
-              }
-          }
-      }
-  }
-
-  assert bgp.get() == bgp_unfilter_response, "unfiltered get response " + \
-      "did not match"
-  assert bgp.get(filter=True) == bgp_filter_response, \
+      },
       "filtered get response did not match"
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+    )
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
