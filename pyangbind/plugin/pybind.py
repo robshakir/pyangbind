@@ -38,6 +38,8 @@ from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name
 # Python3 support
 if six.PY3:
   long = int
+else:
+  import codecs
 
 DEBUG = True
 if DEBUG:
@@ -308,7 +310,7 @@ def build_pybind(ctx, modules, fd):
         sys.exit(127)
 
   # Build the common set of imports that all pyangbind files needs
-  ctx.pybind_common_hdr = ""
+  ctx.pybind_common_hdr = "# -*- coding: utf-8 -*-"
   ctx.pybind_common_hdr += "\n"
   ctx.pybind_common_hdr += "from operator import attrgetter\n"
   if ctx.opts.use_xpathhelper:
@@ -683,13 +685,19 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       fpath = bpath + "/__init__.py"
     if not os.path.exists(fpath):
       try:
-        nfd = open(fpath, 'w')
+        if six.PY3:
+          nfd = open(fpath, 'w', encoding="utf-8")
+        else:
+          nfd = codecs.open(fpath, 'w', encoding="utf-8")
       except IOError as m:
         raise IOError("could not open pyangbind output file (%s)" % m)
       nfd.write(ctx.pybind_common_hdr)
     else:
       try:
-        nfd = open(fpath, 'a')
+        if six.PY3:
+          nfd = open(fpath, 'a', encoding="utf-8")
+        else:
+          nfd = codecs.open(fpath, 'a', encoding="utf-8")
       except IOError as w:
         raise IOError("could not open pyangbind output file (%s)" % w)
   else:
@@ -776,8 +784,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     # code that is generated.
     parent_descr = parent.search_one('description')
     if parent_descr is not None:
-      parent_descr = "\n\n  YANG Description: %s" % \
-          parent_descr.arg.decode('utf8').encode('ascii', 'ignore')
+      parent_descr = "\n\n  YANG Description: %s" % parent_descr.arg
     else:
       parent_descr = ""
 
