@@ -5,6 +5,7 @@ import os.path
 import unittest
 from decimal import Decimal
 
+import six
 from bitarray import bitarray
 
 from pyangbind.lib.pybindJSON import dumps
@@ -54,7 +55,7 @@ class JSONSerialiseTests(PyangBindTestCase):
     self.serialise_obj.c1.l1[1].typedef_two = 8
     self.serialise_obj.c1.l1[1].one_leaf = "hi"
     for i in range(1, 5):
-      self.serialise_obj.c1.l1[1].ll.append(unicode(i))
+      self.serialise_obj.c1.l1[1].ll.append(six.text_type(i))
     self.serialise_obj.c1.l1[1].next_hop.append("DROP")
     self.serialise_obj.c1.l1[1].next_hop.append("192.0.2.1")
     self.serialise_obj.c1.l1[1].next_hop.append("fish")
