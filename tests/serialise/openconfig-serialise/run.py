@@ -6,9 +6,9 @@ import unittest
 
 import regex
 
-from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.pybindJSON import dumps
 from pyangbind.lib.serialise import pybindIETFJSONEncoder, pybindJSONEncoder
+from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.yangtypes import YANGBool
 from tests.base import PyangBindTestCase
 
