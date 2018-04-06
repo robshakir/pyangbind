@@ -84,12 +84,14 @@ class PyangBindTestCase(unittest.TestCase):
     else:
       sys.path.append(cls._test_path)
       module = importlib.import_module(cls.module_name)
+      sys.path.remove(cls._test_path)
     setattr(cls, cls.module_name, module)
 
   @classmethod
   def tearDownClass(cls):
     delattr(cls, cls.module_name)
     if cls.split_class_dir:
+      del sys.modules[cls.module_name]
       shutil.rmtree(cls._pyang_generated_class_dir)
     if cls.remote_yang_files:
       yang_paths = set([x['local_path'] for x in cls.remote_yang_files])
