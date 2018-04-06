@@ -6,7 +6,7 @@ import getopt
 import json
 import requests
 import time
-import re
+import regex
 import difflib
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
@@ -94,7 +94,7 @@ def main():
 
   for fn in os.listdir(os.path.join(this_dir, "json")):
     jobj = json.load(open(os.path.join(this_dir, "json", fn), 'r'))
-    parameters = re.sub(
+    parameters = regex.sub(
       'interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json',
       '\g<pathhelper>||\g<filter>||\g<mode>', fn).split("||")
     path_helper, config_filter, mode = YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2]
