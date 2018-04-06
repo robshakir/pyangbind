@@ -23,7 +23,8 @@ class PyangBindTestCase(unittest.TestCase):
 
   @classmethod
   def _fetch_remote_yang_files(cls):
-    # [ {'local_path': str, 'remote_prefix': str, 'files': [str, ...]}, ...]
+    # The structure of cls.remote_yang_files is expected to be as follows:
+    #   [ {'local_path': str, 'remote_prefix': str, 'files': [str, ...]}, ...]
     for file_group in cls.remote_yang_files:
       local_path = os.path.join(cls._test_path, file_group['local_path'])
       if not os.path.exists(local_path):
