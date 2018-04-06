@@ -6,7 +6,7 @@ module misc {
     contact "A bug reporter";
 
     description
-        "A test module";
+        "Ä ţêśŧ ɱɵđůŀę";
     revision 2014-01-01 {
         description "april-fools";
         reference "fooled-you";
