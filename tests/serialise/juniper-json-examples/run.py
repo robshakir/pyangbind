@@ -79,7 +79,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    bgp_global_ex = json.load(open(os.path.join(os.path.dirname(__file__), "json", "bgp-global-ex.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-global-ex.json"), 'r') as fp:
+      bgp_global_ex = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       bgp_global_ex['configuration'],
       self.ocbind,
@@ -109,8 +110,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    bgp_neighbor_list = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-neighbor-list-ex.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-neighbor-list-ex.json"), 'r') as fp:
+      bgp_neighbor_list = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       bgp_neighbor_list['configuration'],
       self.ocbind,
@@ -140,9 +141,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    graceful_restart_neighbors = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r')
-    )
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       graceful_restart_neighbors['configuration'],
       self.ocbind,
@@ -152,9 +152,8 @@ class JuniperJSONTests(PyangBindTestCase):
     self.assertEqual(actual_json, expected_json, "Graceful restart example was not loaded correctly.")
 
   def test_load_graceful_restart_metadata(self):
-    graceful_restart_neighbors = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r')
-    )
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
     neighbors_instance = pybindJSONDecoder.load_ietf_json(
       graceful_restart_neighbors['configuration'],
       self.ocbind,
@@ -177,9 +176,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    deactivated = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r')
-    )
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       deactivated['configuration'],
       self.ocbind,
@@ -189,9 +187,8 @@ class JuniperJSONTests(PyangBindTestCase):
     self.assertEqual(actual_json, expected_json, "Router ID configuration example not loaded correctly.")
 
   def test_load_deactivated_metadata(self):
-    deactivated = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r')
-    )
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
     deactivated_instance = pybindJSONDecoder.load_ietf_json(
       deactivated['configuration'],
       self.ocbind,

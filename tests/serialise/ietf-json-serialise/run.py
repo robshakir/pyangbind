@@ -77,7 +77,8 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
       cls=pybindIETFJSONEncoder,
       indent=4
     ))
-    external_json = json.load(open(os.path.join(os.path.dirname(__file__), "json", "obj.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "obj.json"), 'r') as fp:
+      external_json = json.load(fp)
 
     self.assertEqual(pybind_json, external_json, "JSON did not match the expected output.")
 
