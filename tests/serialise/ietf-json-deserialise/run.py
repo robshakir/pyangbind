@@ -19,32 +19,35 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
   def test_multi_key_list_load(self):
     expected_json = {'mkey': {'one 1': {'leaf-two': 1, 'leaf-one': 'one'},
                               'three 2': {'leaf-two': 2, 'leaf-one': 'three'}}}
-    actual_json = pybindJSONDecoder.load_ietf_json(
-      json.load(open(os.path.join(os.path.dirname(__file__), "json", "mkeylist.json"))),
-      self.bindings,
-      "ietf_json_deserialise"
-    ).get(filter=True)
+    with open(os.path.join(os.path.dirname(__file__), "json", "mkeylist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
     self.assertEqual(actual_json, expected_json, "Multikey list load did not return expected JSON")
 
   def test_single_key_list_load(self):
     expected_json = {'skey': {'one': {'leaf-one': 'one'},
                               'three': {'leaf-one': 'three'},
                               'two': {'leaf-one': 'two'}}}
-    actual_json = pybindJSONDecoder.load_ietf_json(
-      json.load(open(os.path.join(os.path.dirname(__file__), "json", "skeylist.json"))),
-      self.bindings,
-      "ietf_json_deserialise"
-    ).get(filter=True)
+    with open(os.path.join(os.path.dirname(__file__), "json", "skeylist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
     self.assertEqual(actual_json, expected_json, "Single key list load did not return expected JSON")
 
   def test_list_with_children_load(self):
     expected_json = {'chlist': {1: {'keyleaf': 1, 'child': {'number': 1, 'string': 'one'}},
                                 2: {'keyleaf': 2, 'child': {'number': 2, 'string': 'two'}}}}
-    actual_json = pybindJSONDecoder.load_ietf_json(
-      json.load(open(os.path.join(os.path.dirname(__file__), "json", "chlist.json"))),
-      self.bindings,
-      "ietf_json_deserialise"
-    ).get(filter=True)
+    with open(os.path.join(os.path.dirname(__file__), "json", "chlist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
     self.assertEqual(actual_json, expected_json, "List with children load did not return expected JSON")
 
   def test_all_the_types(self):
@@ -97,22 +100,24 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
         }
       }
     }
-    actual_json = pybindJSONDecoder.load_ietf_json(
-      json.load(open(os.path.join(os.path.dirname(__file__), "json", "complete-obj.json"))),
-      self.bindings,
-      "ietf_json_deserialise"
-    ).get(filter=True)
+    with open(os.path.join(os.path.dirname(__file__), "json", "complete-obj.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
     self.assertEqual(actual_json, expected_json, "Deserialisation of complete object not as expected.")
 
   def test_skip_unknown_keys(self):
     allowed = True
     try:
-      pybindJSONDecoder.load_ietf_json(
-        json.load(open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json"))),
-        self.bindings,
-        "ietf_json_deserialise",
-        skip_unknown=True
-      )
+      with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
+        pybindJSONDecoder.load_ietf_json(
+          json.load(fp),
+          self.bindings,
+          "ietf_json_deserialise",
+          skip_unknown=True
+        )
     except AttributeError:
       allowed = False
     self.assertTrue(allowed, "Skipping keys that did not exist was not successfully handled.")
@@ -120,12 +125,13 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
   def test_dont_skip_unknown_keys(self):
     allowed = True
     try:
-      pybindJSONDecoder.load_ietf_json(
-        json.load(open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json"))),
-        self.bindings,
-        "ietf_json_deserialise",
-        skip_unknown=False
-      )
+      with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
+        pybindJSONDecoder.load_ietf_json(
+          json.load(fp),
+          self.bindings,
+          "ietf_json_deserialise",
+          skip_unknown=False
+        )
     except AttributeError:
       allowed = False
     self.assertFalse(allowed, "Skipping keys that did not exist was not successfully handled.")

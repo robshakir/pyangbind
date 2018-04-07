@@ -5,8 +5,8 @@ import json
 import os.path
 import unittest
 
-from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
+from pyangbind.lib.xpathhelper import YANGPathHelper
 from tests.base import PyangBindTestCase
 
 
@@ -79,7 +79,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    bgp_global_ex = json.load(open(os.path.join(os.path.dirname(__file__), "json", "bgp-global-ex.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-global-ex.json"), 'r') as fp:
+      bgp_global_ex = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       bgp_global_ex['configuration'],
       self.ocbind,
@@ -109,8 +110,8 @@ class JuniperJSONTests(PyangBindTestCase):
         }
       }
     }
-    bgp_neighbor_list = json.load(
-      open(os.path.join(os.path.dirname(__file__), "json", "bgp-neighbor-list-ex.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-neighbor-list-ex.json"), 'r') as fp:
+      bgp_neighbor_list = json.load(fp)
     actual_json = pybindJSONDecoder.load_ietf_json(
       bgp_neighbor_list['configuration'],
       self.ocbind,
@@ -119,63 +120,85 @@ class JuniperJSONTests(PyangBindTestCase):
     ).get(filter=True)
     self.assertEqual(actual_json, expected_json, "Invalid JSON returned when loading neighbor list")
 
-
-# generate bindings in this folder
-def main():
-  import ocbind
-
-  yh = YANGPathHelper()
-
-  json_dir = os.path.join(this_dir, "json")
-
-  jbgp_gr = json.load(open(os.path.join(json_dir, "bgp-gr-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_gr["configuration"], ocbind,
-        "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
-      {
-         "bgp": {
-            "neighbors": {
-               "neighbor": {
-                  "12.12.12.12": {
-                     "config": {
-                        "peer-group": "g1"
-                     },
-                     "neighbor-address": "12.12.12.12"
-                  },
-                  "13.13.13.13": {
-                     "neighbor-address": "13.13.13.13",
-                     "config": {
-                        "peer-group": "g2"
-                     }
-                  }
-               }
-            }
-         }
+  def test_load_graceful_restart(self):
+    expected_json = {
+      "bgp": {
+        "neighbors": {
+           "neighbor": {
+              "12.12.12.12": {
+                 "config": {
+                    "peer-group": "g1"
+                 },
+                 "neighbor-address": "12.12.12.12"
+              },
+              "13.13.13.13": {
+                 "neighbor-address": "13.13.13.13",
+                 "config": {
+                    "peer-group": "g2"
+                 }
+              }
+           }
+        }
       }
-  assert ljs.get(filter=True) == expected_ljs, \
-            "Graceful restart example was not loaded correctly"
-  assert ljs.bgp.neighbors.neighbor[u"12.12.12.12"]._metadata == \
-            {u"inactive": True}, \
-              "Metadata for GR example was not loaded correctly"
-
-  jbgp_deactivated = json.load(open(os.path.join(json_dir,
-                          "bgp-deactivated-config-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_deactivated["configuration"],
-                ocbind, "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
-    {
-       "bgp": {
-          "global": {
-             "config": {
-                "router-id": "10.10.10.10"
-             }
-          }
-       }
     }
-  assert ljs.get(filter=True) == expected_ljs, \
-          "Router ID configuration example not loaded correctly"
-  assert ljs.bgp.global_.config.router_id._metadata["inactive"] is True, \
-          "Metadata for router-id element not set correctly"
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      graceful_restart_neighbors['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Graceful restart example was not loaded correctly.")
+
+  def test_load_graceful_restart_metadata(self):
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
+    neighbors_instance = pybindJSONDecoder.load_ietf_json(
+      graceful_restart_neighbors['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    )
+    self.assertEqual(
+      neighbors_instance.bgp.neighbors.neighbor["12.12.12.12"]._metadata,
+      {'inactive': True},
+      "Metadata for graceful restart example was not loaded correctly."
+    )
+
+  def test_load_deactivated(self):
+    expected_json = {
+      "bgp": {
+        "global": {
+          "config": {
+            "router-id": "10.10.10.10",
+          }
+        }
+      }
+    }
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      deactivated['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Router ID configuration example not loaded correctly.")
+
+  def test_load_deactivated_metadata(self):
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
+    deactivated_instance = pybindJSONDecoder.load_ietf_json(
+      deactivated['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    )
+    self.assertTrue(
+      deactivated_instance.bgp.global_.config.router_id._metadata['inactive'],
+      "Metadata for router-id element not set correctly."
+    )
 
 
 if __name__ == '__main__':

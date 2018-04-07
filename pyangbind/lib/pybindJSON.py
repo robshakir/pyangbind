@@ -73,7 +73,8 @@ def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
 def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
              overwrite=False):
   try:
-    f = json.load(open(fn, 'r'), object_pairs_hook=OrderedDict)
+    with open(fn, 'r') as fp:
+      f = json.load(fp, object_pairs_hook=OrderedDict)
   except IOError as m:
     raise pybindJSONIOError("could not open file to read: %s" % m)
   return loads(f, parent_pymod, yang_module, path_helper=path_helper,
