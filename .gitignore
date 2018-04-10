@@ -1,14 +1,34 @@
-*.pyc
-*.swp
-*.egg-info
-build/*
-dist/*
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
 tests/pyvirtualenv
-dev/*
-tmp/*
-*.PEP8-ERRORS
+env/
+
+# Editor-specific files
+*.swp
 /.project
 /.pydevproject
+.vscode
+.idea/
 
 # Unit test / coverage reports
 htmlcov/
@@ -22,3 +42,23 @@ coverage-*.xml
 junit-*.xml
 *,cover
 reports/
+*.PEP8-ERRORS
+.python-version
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Integration test files
+tests/integration/openconfig-bgp/include/
+tests/integration/openconfig-bgp/ocbind/
+tests/integration/openconfig-bgp/openconfig/
+tests/integration/openconfig-interfaces/include/
+tests/integration/openconfig-interfaces/ocbind/
+tests/integration/openconfig-interfaces/openconfig/
+tests/serialise/juniper-json-examples/include/
+tests/serialise/juniper-json-examples/ocbind/
+tests/serialise/juniper-json-examples/openconfig/
+tests/serialise/openconfig-serialise/include/
+tests/serialise/openconfig-serialise/ocbind/
+tests/serialise/openconfig-serialise/openconfig/
