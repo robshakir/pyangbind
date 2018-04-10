@@ -65,7 +65,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
 
   def test_001_add_bgp_neighbor(self):
     self.instance.bgp.neighbors.neighbor.add("192.0.2.1")
-    self.assertGreater(len(self.instance.bgp.neighbors.neighbor), 0)
+    self.assertEqual(len(self.instance.bgp.neighbors.neighbor), 1)
 
   def test_010_filtered_json_output(self):
     self.instance.bgp.global_.config.as_ = 2856
