@@ -92,7 +92,12 @@ class PyangBindTestCase(unittest.TestCase):
     delattr(cls, cls.module_name)
     if cls.split_class_dir:
       del sys.modules[cls.module_name]
+      # Remove auto-generated submodules from our system cache
+      for module in sys.modules.keys():
+        if module.startswith('%s.' % cls.module_name):
+          del sys.modules[module]
       shutil.rmtree(cls._pyang_generated_class_dir)
+      del cls._pyang_generated_class_dir
     if cls.remote_yang_files:
       yang_paths = set([x['local_path'] for x in cls.remote_yang_files])
       for yang_path in yang_paths:
