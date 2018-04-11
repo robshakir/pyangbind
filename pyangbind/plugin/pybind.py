@@ -1065,10 +1065,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     if self.__%s is None:
         self.__%s = %s(%s)
     return self.__%s
-      ''' % (i["name"], i["name"],
-             i["name"], i["name"], i["path"], i["origtype"], description_str,
-             i["name"], i["name"], c_str["type"], c_str["arg"],
-             i["name"]))
+      ''' % (safe_name(i["name"]), safe_name(i["name"]),
+             safe_name(i["name"]), safe_name(i["name"]), i["path"], i["origtype"], description_str,
+             safe_name(i["name"]), safe_name(i["name"]), c_str["type"], c_str["arg"],
+             safe_name(i["name"])))
 
       nfd.write('''
   def _set_%s(self, v, load=False):
@@ -1081,10 +1081,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     """
     if self.__%s is None:
         self.__%s = %s(%s)
-    ''' % (i["name"], i["name"], i["path"],
-           i["origtype"], i["name"], i["name"],
+    ''' % (safe_name(i["name"]), safe_name(i["name"]), i["path"],
+           i["origtype"], safe_name(i["name"]), safe_name(i["name"]),
            description_str,
-           i["name"], i["name"], c_str["type"], c_str["arg"],
+           safe_name(i["name"]), safe_name(i["name"]), c_str["type"], c_str["arg"],
           ))
       if keyval and i["yang_name"] in keyval:
         nfd.write("""
