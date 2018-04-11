@@ -1,112 +1,55 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "extensions"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class ExtensionsTests(PyangBindTestCase):
+  yang_files = ['extensions.yang']
+  pyang_flags = ['--interesting-extension=extdef', '--interesting-extension=extdef-two']
+  maxDiff = None
 
-  keep = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      keep = True
+  def setUp(self):
+    self.ext_obj = self.bindings.extensions()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_extensions_get_added_to_container(self):
+    self.assertEqual(self.ext_obj.test._extensions(), {'extdef': {'extension-one': 'version'}},
+      "Did not extract extensions correctly from container object (%s)" % self.ext_obj.test._extensions())
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_extensions_are_not_added_to_leaf_with_none_specified(self):
+    self.assertIsNone(self.ext_obj.test.one._extensions(),
+      "Incorrectly found extensions for a leaf with none specified (%s)" % self.ext_obj.test.one._extensions())
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --interesting-extension=extdef"
-  cmd += " --interesting-extension=extdef-two"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_extensions_are_not_added_to_container_with_none_specified(self):
+    self.assertIsNone(self.ext_obj.test_two._extensions(),
+      "Incorrectly found extensions for a container with none specified (%s)" % self.ext_obj.test_two._extensions())
 
-  from bindings import extensions as e
+  def test_extensions_get_added_to_leaf(self):
+    self.assertEqual(self.ext_obj.test_two.two._extensions(), {'extdef': {'extension-two': 'value'}},
+      "Did not extract extensions correctly for a leaf (%s)" % self.ext_obj.test_two.two._extensions())
 
-  ext = e()
+  def test_extensions_get_added_to_list(self):
+    self.assertEqual(self.ext_obj.l._extensions(), {'extdef': {'extension-two': 'from-list'}},
+      "Did not extract extensions correctly for a list (%s)" % self.ext_obj.l._extensions())
 
-  assert ext.test._extensions() == {'extdef': {'extension-one': 'version'}}, \
-    "Did not extract extensions correctly from container object " + \
-      "was: %s" % ext.test._extensions()
+  def test_extensions_get_added_to_list_member(self):
+    x = self.ext_obj.l.add(1)
+    self.assertEqual(x._extensions(), {'extdef': {'extension-two': 'from-list'}},
+      "Did not extract extensions correctly for list member (%s)" % x._extensions())
 
-  assert ext.test.one._extensions() is None, \
-    "Incorrectly found extensions for a leaf with none specified " + \
-      "was %s" % ext.test.one._extensions()
+  def test_proper_extensions_get_added_to_list_leaf(self):
+    extensions = {
+      'k': {'extdef': {'extension-one': 'from-leaf', 'extension-two': 'from-leaf'}},
+      'q': {'extdef': {'extension-two': 'from-q'}, 'extdef-two': {'extension-three': 'from-q'}}
+    }
+    x = self.ext_obj.l.add(1)
+    for leaf in extensions:
+      with self.subTest(leaf=leaf):
+        leaf_exts = getattr(x, leaf)._extensions()
+        self.assertEqual(leaf_exts, extensions[leaf])
 
-  assert ext.test_two._extensions() is None, \
-    "Incorrectly found extensions for a container with none specified " + \
-      "was: %s" % ext.test_two.extensions()
-
-  assert ext.test_two.two._extensions() == {'extdef': {'extension-two': 'value'}}, \
-    "Did not extract extensions correctly for a leaf (was: %s)" % \
-      ext.test_two.two._extensions()
-
-  assert ext.l._extensions() == {'extdef': {'extension-two': 'from-list'}}, \
-    "Did not extract extensions correctly for a list, was: %s" % \
-      ext.l._extensions()
-
-  x = ext.l.add(1)
-  assert x._extensions() == {'extdef': {'extension-two': 'from-list'}}, \
-    "Did not extract extensions correctly for list member, was: %s" % \
-      x._extensions()
-
-  for k in [('extdef', True, 'extension-one', 'from-leaf'),
-            ('extdef', True, 'extension-two', 'from-leaf'),
-            ('extdef-two', False, None, None),
-            ('extdef-irr', False, None, None)]:
-    assert (k[0] in x.k._extensions()) is k[1], \
-      "Extension module %s in leaf k was expected to be %s was %s" % \
-        (k[0], k[1], k[0] in x.k._extensions())
-
-    if k[1] is True:
-      assert k[2] in x.k._extensions()[k[0]], \
-        "Extension %s was not defined for module %s" % \
-          (k[2], k[0])
-
-      assert x.k._extensions()[k[0]][k[2]] == k[3], \
-        "Extension %s:%s was expected to be %s was %s" % \
-          (k[0], k[2], k[3], x.k._extensions()[k[0]][k[2]])
-
-  for k in [('extdef', True, 'extension-two', 'from-q'),
-            ('extdef-two', True, 'extension-three', 'from-q'),
-            ('extdef-irr', False, None, None)]:
-
-    assert (k[0] in x.q._extensions()) is k[1], \
-      "Extension module %s in leaf k was expected to be %s was %s" % \
-        (k[0], k[1], k[0] in x.q._extensions())
-
-    if k[1] is True:
-      assert k[2] in x.q._extensions()[k[0]], \
-        "Extension %s was not defined for module %s" % \
-          (k[2], k[0])
-
-      assert x.q._extensions()[k[0]][k[2]] == k[3], \
-        "Extension %s:%s was expected to be %s was %s" % \
-          (k[0], k[2], k[3], x.q._extensions()[k[0]][k[2]])
-
-  if not keep:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

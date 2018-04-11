@@ -1,77 +1,45 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "enumeration"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class EnumerationTests(PyangBindTestCase):
+  yang_files = ['enumeration.yang']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.enum_obj = self.bindings.enumeration()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_container_has_all_leafs(self):
+    for leaf in ['e', 'f']:
+      with self.subTest(leaf=leaf):
+        self.assertTrue(hasattr(self.enum_obj.container, leaf),
+          "Container does not contain enumeration %s" % leaf)
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_assign_to_enum(self):
+    self.enum_obj.container.e = "one"
+    self.assertEqual(self.enum_obj.container.e, "one",
+      "Enumeration value was not correctly set (%s)" % self.enum_obj.container.e)
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_enum_does_not_allow_invalid_value(self):
+    allowed = True
+    try:
+      self.enum_obj.container.e = "twentyseven"
+    except ValueError:
+      allowed = False
+    self.assertFalse(allowed,
+      "Erroneous value was not caught by restriction handler (%s)" % self.enum_obj.container.e)
 
-  from bindings import enumeration
-  t = enumeration()
+  def test_enum_default_value(self):
+    self.assertEqual(self.enum_obj.container.f._default, "c",
+      "Erroneous default value for 'f' (%s)" % self.enum_obj.container.f._default)
 
-  for e in ["e", "f"]:
-    assert hasattr(t.container, e), \
-        "container does not contain enumeration %s" % e
+  def test_static_enum_value(self):
+    self.enum_obj.container.e = "two"
+    self.assertEqual(self.enum_obj.container.e.getValue(mapped=True), 42,
+      "Erroneously statically defined value returned (%s)" % self.enum_obj.container.e.getValue(mapped=True))
 
-  t.container.e = "one"
-  assert t.container.e == "one", \
-      "enumeration value was not correctly set (%s)" % \
-          t.container.e
-
-  catch = False
-  try:
-    t.container.e = "twentyseven"
-  except:
-    catch = True
-  assert catch is True, \
-      "erroneous value was not caught by restriction handler (%s)" % \
-        t.container.e
-
-  assert t.container.f._default == "c", \
-      "erroneous default value for 'f' (%s)" % \
-          t.container.f._default
-
-  t.container.e = "two"
-  assert t.container.e.getValue(mapped=True) == 42, \
-      "erroneously statically defined value returned (%s)" % \
-          t.container.e.getValue(mapped=True)
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

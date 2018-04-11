@@ -24,7 +24,7 @@ from __future__ import unicode_literals
 from decimal import Decimal
 from bitarray import bitarray
 import uuid
-import re
+import regex
 import collections
 import copy
 import six
@@ -32,7 +32,7 @@ import six
 # For Python3
 if six.PY3:
   unicode = str
-
+  basestring = str
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
@@ -139,7 +139,7 @@ def RestrictedClassType(*args, **kwargs):
   # this gives deserialisers some hints as to how to encode/decode this value
   # it must be a list since a restricted class can encapsulate a restricted
   # class
-  current_restricted_class_type = re.sub("<(type|class) '(?P<class>.*)'>",
+  current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>",
                                           "\g<class>", str(base_type))
   if hasattr(base_type, "_restricted_class_base"):
     restricted_class_hint = getattr(base_type, "_restricted_class_base")
@@ -153,7 +153,6 @@ def RestrictedClassType(*args, **kwargs):
       input value is validated against before being applied. The function is
       a static method which is assigned to _restricted_test.
     """
-    #__slots__ = ('_restricted_class_base')
     _pybind_generated_by = "RestrictedClassType"
 
     _restricted_class_base = restricted_class_hint
@@ -180,9 +179,9 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-      range_regex = re.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
+      range_regex = regex.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" +
                                 "(?P<high>(\-?[0-9\.]+|max))")
-      range_single_value_regex = re.compile("(?P<value>\-?[0-9\.]+)")
+      range_single_value_regex = regex.compile("(?P<value>\-?[0-9\.]+)")
 
       def convert_regexp(pattern):
 
@@ -204,6 +203,7 @@ def RestrictedClassType(*args, **kwargs):
           pattern = "^%s" % pattern
         if not pattern[len(pattern) - 1] == "$":
           pattern = "%s$" % pattern
+
         return pattern
 
       def build_length_range_tuples(range, length=False, multiplier=1):
@@ -214,15 +214,15 @@ def RestrictedClassType(*args, **kwargs):
             high = base_type(high) if not high == "max" else None
             low = base_type(low) if not low == "min" else None
           else:
-            high = int(high)*multiplier if not high == "max" else None
-            low = int(low)*multiplier if not low == "min" else None
+            high = int(high) * multiplier if not high == "max" else None
+            low = int(low) * multiplier if not low == "min" else None
           return (low, high)
         elif range_single_value_regex.match(range_spec):
           eqval = range_single_value_regex.sub('\g<value>', range_spec)
           if not length:
             eqval = base_type(eqval) if eqval not in ["max", "min"] else None
           else:
-            eqval = int(eqval)*multiplier
+            eqval = int(eqval) * multiplier
           return (eqval,)
         else:
           raise ValueError("Invalid range or length argument specified")
@@ -254,7 +254,7 @@ def RestrictedClassType(*args, **kwargs):
         def mp_check(value):
           if not isinstance(value, basestring):
             return False
-          if re.match(convert_regexp(regexp), value):
+          if regex.match(convert_regexp(regexp), value):
             return True
           return False
         return mp_check
@@ -276,7 +276,6 @@ def RestrictedClassType(*args, **kwargs):
 
       for rtype, rarg in self._restriction_dict.items():
         if rtype == "pattern":
-          tests = []
           self._restriction_tests.append(match_pattern_check(rarg))
         elif rtype == "range":
           ranges = []
@@ -285,9 +284,8 @@ def RestrictedClassType(*args, **kwargs):
           self._restriction_tests.append(in_range_check(ranges))
           if val:
             try:
-              preval = val
               val = base_type(val)
-            except:
+            except Exception:
               raise TypeError("must specify a numeric type for a range " +
                                   "argument")
         elif rtype == "length":
@@ -415,7 +413,7 @@ def TypedListType(*args, **kwargs):
             tmp = unicode(v)
             passed = True
             break
-          elif not i in [unicode, str]:
+          elif i not in [unicode, str]:
             # for anything other than string we try
             # and cast. Using things for string or
             # unicode gives us strange results because we get
@@ -423,7 +421,7 @@ def TypedListType(*args, **kwargs):
             tmp = i(v)
             passed = True
             break
-        except Exception as m:
+        except Exception:
           # we catch all exceptions because we duck-type as
           # much as possible and some types - e.g., decimal do
           # not use builtins.
@@ -491,7 +489,7 @@ def YANGListType(*args, **kwargs):
   try:
     keyname = args[0]
     listclass = args[1]
-  except:
+  except Exception:
     raise TypeError("A YANGList must be specified with a key value and a " +
                       "contained class")
   is_container = kwargs.pop("is_container", False)
@@ -541,7 +539,7 @@ def YANGListType(*args, **kwargs):
           valid = True
         if valid is False:
           return valid
-      except:
+      except Exception:
         return False
       return True
 
@@ -663,7 +661,7 @@ def YANGListType(*args, **kwargs):
               key(keydict[kn], load=True)
 
           if hasattr(k, "_referenced_object") and \
-              k._referenced_object is not None:
+                k._referenced_object is not None:
             k = k._referenced_object
 
           self._members[k] = tmp
@@ -773,12 +771,12 @@ def YANGListType(*args, **kwargs):
           keyargs = k.split(" ")
           key_string = "["
           for key, val in zip(keyparts, keyargs):
-            kv_o = getattr(self._members[k], key)
+            kv_o = getattr(current_item, key)
             key_string += "%s=%s " % (kv_o.yang_name(), val)
           key_string = key_string.rstrip(" ")
           key_string += "]"
         else:
-          kv_o = getattr(self._members[k], self._keyval)
+          kv_o = getattr(current_item, self._keyval)
           key_string = "[@%s=%s]" % (kv_o.yang_name(), k)
 
         obj_path = self._parent._path() + [self._yang_name + key_string]
@@ -844,6 +842,7 @@ class YANGBool(int):
   def __str__(self):
     return str(self.__repr__())
 
+
 def YANGDynClass(*args, **kwargs):
   """
     Wrap an type - specified in the base_type arugment - with
@@ -907,7 +906,7 @@ def YANGDynClass(*args, **kwargs):
         try:
           type_test = candidate_type(args[0])  # does the slipper fit?
           break
-        except Exception as m:
+        except Exception:
           pass  # don't worry, move on, plenty more fish (types) in the sea...
       if type_test is False:
         # we're left alone at midnight -- no types fit the arguments
@@ -949,7 +948,7 @@ def YANGDynClass(*args, **kwargs):
     if yang_type in ["container", "list"] or is_container == "container":
       __slots__ = tuple(clsslots)
 
-    _pybind_base_class = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+    _pybind_base_class = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(base_type))
 
     def __new__(self, *args, **kwargs):
@@ -1017,7 +1016,6 @@ def YANGDynClass(*args, **kwargs):
         kwargs['path_helper'] = self._path_helper
         if load is not None:
           kwargs['load'] = load
-
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
@@ -1100,7 +1098,7 @@ def YANGDynClass(*args, **kwargs):
       self._set()
       if self._path_helper:
         elem_index = super(YANGBaseClass, self).index(*args, **kwargs)
-        item = super(YANGBaseClass, self).__getitem__(elem_index)
+        super(YANGBaseClass, self).__getitem__(elem_index)
       super(YANGBaseClass, self).remove(*args, **kwargs)
 
     def extend(self, *args, **kwargs):
@@ -1214,7 +1212,7 @@ def ReferenceType(*args, **kwargs):
 
           if value is not None:
             set_method(value)
-          self._type = re.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
+          self._type = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>",
                                   str(get_method()._base_type))
 
           self._utype = get_method()._base_type
@@ -1224,7 +1222,6 @@ def ReferenceType(*args, **kwargs):
             self._referenced_object = None
           else:
             found = False
-            lookup_o = []
             path_chk = self._path_helper.get(self._referenced_path,
                                               caller=self._caller)
 

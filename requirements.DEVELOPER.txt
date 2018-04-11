@@ -1,2 +1,5 @@
-wheel
+coverage
+flake8
 requests
+unittest2; python_version < '3.0'
+wheel

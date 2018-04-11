@@ -14,6 +14,7 @@
                 }, 
                 "config": {
                     "enabled": false, 
+                    "loopback-mode": false,
                     "type": "", 
                     "description": "", 
                     "name": "", 
@@ -24,6 +25,7 @@
                     "type": "", 
                     "description": "", 
                     "enabled": false, 
+                    "loopback-mode": false,
                     "admin-status": "", 
                     "mtu": 0, 
                     "ifindex": 0, 

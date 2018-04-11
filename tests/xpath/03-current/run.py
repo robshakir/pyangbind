@@ -1,81 +1,35 @@
 #!/usr/bin/env python
+import unittest
 
-import sys
-import os
-import getopt
-
-TESTNAME = "current-tc03"
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
 
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print str(e)
-    sys.exit(127)
+class XPathCurrentTests(PyangBindTestCase):
+  yang_files = ['current-tc03.yang']
+  pyang_flags = ['--use-xpathhelper']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.path_helper = YANGPathHelper()
+    self.yang_obj = self.bindings.current_tc03(path_helper=self.path_helper)
+    for i in [(1, 2), (3, 4), (5, 6)]:
+      self.yang_obj.src_list.add("%s %s" % i)
+    self.yang_obj.referencing_list.add(1)
+    self.yang_obj.referencing_list[1].source_val = "1"
+    self.yang_obj.referencing_list[1].reference = "2"
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') \
-      is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-      os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_referencing_list_source_val(self):
+    self.assertEqual(self.yang_obj.referencing_list[1].source_val, "1")
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_referencing_list_reference(self):
+    self.assertEqual(str(self.yang_obj.referencing_list[1].reference), "2")
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --use-xpathhelper"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
-  from bindings import current_tc03
-  yhelper = YANGPathHelper()
-  yobj = current_tc03(path_helper=yhelper)
+  def test_src_list_referenced(self):
+    self.assertEqual(self.yang_obj.src_list["1 2"].referenced, "1")
 
-  t1_currentref(yobj, tree=yhelper)
+  def test_src_list_value(self):
+    self.assertEqual(self.yang_obj.src_list["1 2"].value, "2")
 
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
-
-
-def t1_currentref(yobj, tree=False):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-
-  for i in [(1, 2), (3, 4), (5, 6)]:
-    yobj.src_list.add("%s %s" % i)
-
-  yobj.referencing_list.add(1)
-  e = False
-  try:
-    yobj.referencing_list[1].source_val = "1"
-    yobj.referencing_list[1].reference = "2"
-  except ValueError:
-    e = True
-
-  assert e is False, "incorrectly rejected valid reference"
-
-  assert yobj.src_list["1 2"].referenced == "1", \
-      "referenced value was incorrectly set"
-  assert yobj.src_list["1 2"].value == "2", \
-      "referenced value was incorrectly set"
-
-  if del_tree:
-    del yhelper
 
 if __name__ == '__main__':
-  from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
-  main()
+  unittest.main()

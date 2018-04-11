@@ -11,11 +11,12 @@ import json
 
 TESTNAME = "presence"
 
+
 # generate bindings in this folder
 def setup_test():
   try:
     opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
+  except getopt.GetoptError:
     sys.exit(127)
 
   global this_dir
@@ -41,10 +42,12 @@ def setup_test():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
+
 def teardown_test():
   global this_dir
   os.system("/bin/rm %s/bindings.py" % this_dir)
   os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 class PyangbindPresenceTests(unittest.TestCase):
 
@@ -53,11 +56,11 @@ class PyangbindPresenceTests(unittest.TestCase):
 
     err = None
     try:
-      globals()["bindings"] = importlib.import_module("bindings")
+      self.bindings = importlib.import_module("bindings")
     except ImportError as e:
       err = e
     self.assertIs(err, None)
-    self.instance = bindings.presence()
+    self.instance = self.bindings.presence()
 
   def test_001_check_containers(self):
     for attr in ["empty-container", "parent", ["parent", "child"]]:
@@ -133,7 +136,7 @@ class PyangbindPresenceTests(unittest.TestCase):
                   "child": {}
                 }
               }"""
-    x = pbJ.loads(inputJ, bindings, "presence")
+    x = pbJ.loads(inputJ, self.bindings, "presence")
     self.assertIs(x.parent.child._present(), True)
 
   def test_011_presence_deserialise(self):
@@ -143,7 +146,7 @@ class PyangbindPresenceTests(unittest.TestCase):
                   "child": {}
                 }
               }"""
-    x = pbJ.loads_ietf(inputJ, bindings, "presence")
+    x = pbJ.loads_ietf(inputJ, self.bindings, "presence")
     self.assertIs(x.parent.child._present(), True)
 
 

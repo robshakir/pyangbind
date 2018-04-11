@@ -1,152 +1,141 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 
-import os
-import sys
-import getopt
 import json
-from pyangbind.lib.serialise import pybindJSONDecoder
-from pyangbind.lib.pybindJSON import dumps
-from bitarray import bitarray
+import os.path
+import unittest
 from collections import OrderedDict
 from decimal import Decimal
 
-TESTNAME = "ietf-json-deserialise"
+from bitarray import bitarray
+
+from pyangbind.lib.serialise import pybindJSONDecoder
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print str(e)
-    sys.exit(127)
+class IETFJSONDeserialiseTests(PyangBindTestCase):
+  yang_files = ['ietf-json-deserialise.yang']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def test_multi_key_list_load(self):
+    expected_json = {'mkey': {'one 1': {'leaf-two': 1, 'leaf-one': 'one'},
+                              'three 2': {'leaf-two': 2, 'leaf-one': 'three'}}}
+    with open(os.path.join(os.path.dirname(__file__), "json", "mkeylist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Multikey list load did not return expected JSON")
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_single_key_list_load(self):
+    expected_json = {'skey': {'one': {'leaf-one': 'one'},
+                              'three': {'leaf-one': 'three'},
+                              'two': {'leaf-one': 'two'}}}
+    with open(os.path.join(os.path.dirname(__file__), "json", "skeylist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Single key list load did not return expected JSON")
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_list_with_children_load(self):
+    expected_json = {'chlist': {1: {'keyleaf': 1, 'child': {'number': 1, 'string': 'one'}},
+                                2: {'keyleaf': 2, 'child': {'number': 2, 'string': 'two'}}}}
+    with open(os.path.join(os.path.dirname(__file__), "json", "chlist.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "List with children load did not return expected JSON")
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
-
-  import bindings
-  from bindings import ietf_json_deserialise
-
-  pth = os.path.join(this_dir, "json", "mkeylist.json")
-  nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
-            bindings, "ietf_json_deserialise")
-  expected_get = {'mkey': {u'one 1': {'leaf-two': 1, 'leaf-one': u'one'},
-                  u'three 2': {'leaf-two': 2, 'leaf-one': u'three'}}}
-  assert nobj.get(filter=True) == expected_get, \
-          "Multikey list load did not return expected JSON"
-  del nobj
-
-  pth = os.path.join(this_dir, "json", "skeylist.json")
-  nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
-            bindings, "ietf_json_deserialise")
-  expected_get = {'skey': {u'one': {'leaf-one': u'one'}, u'three':
-                  {'leaf-one': u'three'}, u'two': {'leaf-one': u'two'}}}
-  assert nobj.get(filter=True) == expected_get, "Single key list load did " + \
-            "not return expected JSON"
-  del nobj
-
-  pth = os.path.join(this_dir, "json", "chlist.json")
-  nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
-              bindings, "ietf_json_deserialise")
-  expected_get = {'chlist': {1: {'keyleaf': 1, 'child': {'number': 1,
-                    'string': u'one'}}, 2: {'keyleaf': 2,
-                      'child': {'number': 2, 'string': u'two'}}}}
-  assert nobj.get(filter=True) == expected_get, "List with children load " + \
-              "did not return expected JSON"
-
-  pth = os.path.join(this_dir, "json", "complete-obj.json")
-  nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
-                bindings, "ietf_json_deserialise")
-  expected_get = {
-    "c1": {
-      "l1": {
-        1:
-          {
-            "one-leaf": "hi",
-            "typedef-one": "test",
-            "boolean": True,
-            "binary": bitarray("111111"),
-            "union": "16",
-            "identityref": "idone",
-            "enumeration": "one",
-            "k1": 1,
-            "uint16": 1,
-            "union-list": [16, "chicken"],
-            "uint32": 1,
-            "int32": 1,
-            "int16": 1,
-            "string": "bear",
-            "typedef-two": 8,
-            "uint8": 1,
-            "restricted-integer": 6,
-            "leafref": "16",
-            "int8": 1,
-            "uint64": 1,
-            "remote-identityref": "remote:stilton",
-            "int64": 1,
-            "restricted-string": "aardvark",
-            "decimal": Decimal('16.32')
+  def test_all_the_types(self):
+    expected_json = {
+      'c1': {
+        'l1': {
+          1: {
+            'one-leaf': 'hi',
+            'typedef-one': 'test',
+            'boolean': True,
+            'binary': bitarray('111111'),
+            'union': '16',
+            'identityref': 'idone',
+            'enumeration': 'one',
+            'k1': 1,
+            'uint16': 1,
+            'union-list': [16, 'chicken'],
+            'uint32': 1,
+            'int32': 1,
+            'int16': 1,
+            'string': 'bear',
+            'typedef-two': 8,
+            'uint8': 1,
+            'restricted-integer': 6,
+            'leafref': '16',
+            'int8': 1,
+            'uint64': 1,
+            'remote-identityref': 'remote:stilton',
+            'int64': 1,
+            'restricted-string': 'aardvark',
+            'decimal': Decimal('16.32'),
+            'empty': True
           }
-      },
-      "l2": OrderedDict(
-              [
-                (1, {"k1": 1}),
-                (2, {"k1": 2}),
-                (3, {"k1": 3}),
-                (4, {"k1": 4}),
-                (5, {"k1": 5}),
-                (6, {"k1": 6}),
-                (7, {"k1": 7}),
-                (8, {"k1": 8}),
-                (9, {"k1": 9})
-              ]),
-      "t1": {
-          "32": {"target": "32"},
-          "16": {"target": "16"}
+        },
+        'l2': OrderedDict(
+          [
+            (1, {'k1': 1}),
+            (2, {'k1': 2}),
+            (3, {'k1': 3}),
+            (4, {'k1': 4}),
+            (5, {'k1': 5}),
+            (6, {'k1': 6}),
+            (7, {'k1': 7}),
+            (8, {'k1': 8}),
+            (9, {'k1': 9})
+          ]),
+        't1': {
+          '32': {'target': '32'},
+          '16': {'target': '16'}
+        }
       }
     }
-  }
-  assert nobj.get(filter=True) == expected_get, "Deserialisation of " + \
-    "complete object not as expected"
+    with open(os.path.join(os.path.dirname(__file__), "json", "complete-obj.json")) as fp:
+      actual_json = pybindJSONDecoder.load_ietf_json(
+        json.load(fp),
+        self.bindings,
+        "ietf_json_deserialise"
+      ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Deserialisation of complete object not as expected.")
 
-  pth = os.path.join(this_dir, "json", "nonexistkey.json")
-  for i in [True, False]:
-    nobj = None
-    success = True
+  def test_skip_unknown_keys(self):
+    allowed = True
     try:
-      nobj = pybindJSONDecoder.load_ietf_json(json.load(open(pth, 'r')),
-        bindings, "ietf_json_deserialise", skip_unknown=i)
+      with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
+        pybindJSONDecoder.load_ietf_json(
+          json.load(fp),
+          self.bindings,
+          "ietf_json_deserialise",
+          skip_unknown=True
+        )
     except AttributeError:
-      success = False
+      allowed = False
+    self.assertTrue(allowed, "Skipping keys that did not exist was not successfully handled.")
 
-    assert success is i, "Skipping keys that did not exist was not" + \
-      " successfully handled"
+  def test_dont_skip_unknown_keys(self):
+    allowed = True
+    try:
+      with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
+        pybindJSONDecoder.load_ietf_json(
+          json.load(fp),
+          self.bindings,
+          "ietf_json_deserialise",
+          skip_unknown=False
+        )
+    except AttributeError:
+      allowed = False
+    self.assertFalse(allowed, "Skipping keys that did not exist was not successfully handled.")
 
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

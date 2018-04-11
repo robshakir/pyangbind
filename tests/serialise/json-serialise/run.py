@@ -1,110 +1,78 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
 import json
-from pyangbind.lib.serialise import pybindJSONEncoder
-from pyangbind.lib.pybindJSON import dumps
-from pyangbind.lib.xpathhelper import YANGPathHelper
+import os.path
+import unittest
 from decimal import Decimal
 
-TESTNAME = "json-serialise"
+import six
+from bitarray import bitarray
+
+from pyangbind.lib.pybindJSON import dumps
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print str(e)
-    sys.exit(127)
+class JSONSerialiseTests(PyangBindTestCase):
+  yang_files = ['json-serialise.yang']
+  pyang_flags = ['--use-xpathhelper']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.yang_helper = YANGPathHelper()
+    self.serialise_obj = self.bindings.json_serialise(path_helper=self.yang_helper)
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_serialise_container(self):
+    self.serialise_obj.two.string_test = "twenty-two"
+    with open(os.path.join(os.path.dirname(__file__), "json", "container.json"), 'r') as fp:
+      self.assertEqual(
+        json.loads(dumps(self.yang_helper.get("/two")[0])),
+        json.load(fp),
+        "Invalid output returned when serialising a container."
+      )
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_full_serialise(self):
+    self.serialise_obj.c1.l1.add(1)
+    for signed in ["int", "uint"]:
+      for size in [8, 16, 32, 64]:
+        name = "%s%s" % (signed, size)
+        setter = getattr(self.serialise_obj.c1.l1[1], "_set_%s" % name)
+        setter(1)
+    self.serialise_obj.c1.l1[1].restricted_integer = 6
+    self.serialise_obj.c1.l1[1].string = "bear"
+    self.serialise_obj.c1.l1[1].restricted_string = "aardvark"
+    self.serialise_obj.c1.l1[1].union = 16
+    self.serialise_obj.c1.l1[1].union_list.append(16)
+    self.serialise_obj.c1.l1[1].union_list.append("chicken")
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --use-xpathhelper"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+    self.serialise_obj.c1.t1.add(16)
+    self.serialise_obj.c1.t1.add(32)
+    self.serialise_obj.c1.l1[1].leafref = 16
 
-  from bindings import json_serialise
-  from bitarray import bitarray
-  from pyangbind.lib.xpathhelper import YANGPathHelper
+    self.serialise_obj.c1.l1[1].binary = bitarray("010101")
+    self.serialise_obj.c1.l1[1].boolean = True
+    self.serialise_obj.c1.l1[1].enumeration = "one"
+    self.serialise_obj.c1.l1[1].identityref = "idone"
+    self.serialise_obj.c1.l1[1].typedef_one = "test"
+    self.serialise_obj.c1.l1[1].typedef_two = 8
+    self.serialise_obj.c1.l1[1].one_leaf = "hi"
+    for i in range(1, 5):
+      self.serialise_obj.c1.l1[1].ll.append(six.text_type(i))
+    self.serialise_obj.c1.l1[1].next_hop.append("DROP")
+    self.serialise_obj.c1.l1[1].next_hop.append("192.0.2.1")
+    self.serialise_obj.c1.l1[1].next_hop.append("fish")
+    self.serialise_obj.c1.l1[1].typedef_decimal = Decimal("21.21")
+    self.serialise_obj.c1.l1[1].range_decimal = Decimal("4.44443322")
+    self.serialise_obj.c1.l1[1].typedef_decimalrange = Decimal("42.42")
+    self.serialise_obj.c1.l1[1].decleaf = Decimal("42.4422")
 
-  y = YANGPathHelper()
-  js = json_serialise(path_helper=y)
+    for i in range(1, 10):
+      self.serialise_obj.c1.l2.add(i)
 
-  js.c1.l1.add(1)
-  for s in ["int", "uint"]:
-    for l in [8, 16, 32, 64]:
-      name = "%s%s" % (s, l)
-      x = getattr(js.c1.l1[1], "_set_%s" % name)
-      x(1)
-  js.c1.l1[1].restricted_integer = 6
-  js.c1.l1[1].string = "bear"
-  js.c1.l1[1].restricted_string = "aardvark"
-  js.c1.l1[1].union = 16
-  js.c1.l1[1].union_list.append(16)
-  js.c1.l1[1].union_list.append("chicken")
+    pybind_json = json.loads(dumps(self.serialise_obj))
+    with open(os.path.join(os.path.dirname(__file__), "json", "expected-output.json"), 'r') as fp:
+      external_json = json.load(fp)
+    self.assertEqual(pybind_json, external_json, "JSON did not match expected output.")
 
-  js.c1.t1.add(16)
-  js.c1.t1.add(32)
-  js.c1.l1[1].leafref = 16
-
-  js.c1.l1[1].binary = bitarray("010101")
-  js.c1.l1[1].boolean = True
-  js.c1.l1[1].enumeration = "one"
-  js.c1.l1[1].identityref = "idone"
-  js.c1.l1[1].typedef_one = "test"
-  js.c1.l1[1].typedef_two = 8
-  js.c1.l1[1].one_leaf = "hi"
-  for i in range(1, 5):
-    js.c1.l1[1].ll.append(unicode(i))
-  js.c1.l1[1].next_hop.append("DROP")
-  js.c1.l1[1].next_hop.append("192.0.2.1")
-  js.c1.l1[1].next_hop.append("fish")
-  js.c1.l1[1].typedef_decimal = Decimal("21.21")
-  js.c1.l1[1].range_decimal = Decimal("4.44443322")
-  js.c1.l1[1].typedef_decimalrange = Decimal("42.42")
-  js.c1.l1[1].decleaf = Decimal("42.4422")
-
-  for i in range(1, 10):
-    js.c1.l2.add(i)
-
-  pybind_json = json.loads(dumps(js))
-  external_json = json.load(open(os.path.join(this_dir, "json",
-                          "expected-output.json"), 'r'))
-
-  assert pybind_json == external_json, "JSON did not match the expected output"
-
-  yph = YANGPathHelper()
-  new_obj = json_serialise(path_helper=yph)
-  new_obj.two.string_test = "twenty-two"
-  assert json.loads(dumps(yph.get("/two")[0])) == \
-    json.load(open(os.path.join(this_dir, "json", "container.json"), 'r')), \
-      "Invalid output returned when serialising a container"
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

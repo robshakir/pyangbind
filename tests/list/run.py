@@ -4,6 +4,7 @@ import os
 import sys
 import getopt
 
+
 TESTNAME = "list"
 
 
@@ -39,9 +40,9 @@ def main():
   cmd += " %s/%s.yang" % (this_dir, TESTNAME)
   os.system(cmd)
 
-  from bindings import list_ as l
+  from bindings import list_ as bindings_list
 
-  test_instance = l()
+  test_instance = bindings_list()
 
   assert hasattr(test_instance, "list_container"), \
     "list_container does not exist"
@@ -67,7 +68,7 @@ def main():
     passed = True
     try:
       test_instance.list_container.list_element[i]
-    except:
+    except Exception:
       passed = False
     assert passed is True, "could not look up a list element using the " + \
         " type it was cast to"
@@ -176,7 +177,7 @@ def main():
     "a key-less list did not have the correct value set (%s %d != 10)" % \
       (x, test_instance.list_container.list_six[x].val)
 
-  y = test_instance.list_container.list_eight.add(val="value one",
+  test_instance.list_container.list_eight.add(val="value one",
           additional="value two")
   assert \
     test_instance.list_container.list_eight["value one value two"].val == \
@@ -215,14 +216,12 @@ def main():
   leight.val = "three"
   leight.additional = "forty-two"
   leight.numeric = -42
-  passed = True
   try:
     test_instance.list_container.list_eight.add(val=leight.val,
           additional=leight.additional, _v=leight)
   except Exception as e:
-    passed = False
-  assert passed is True, "list add with a specified value was not " + \
-    "successful, exception raised was: %s" % e
+    raise AssertionError("list add with a specified value was not "
+      "successful, exception raised was: %s" % e)
 
   passed = True
   try:
@@ -264,7 +263,6 @@ def main():
   assert passed is True, "Set the key inside an instantiated list without " +\
     "this being a load operation, error"
 
-
   keys = []
   for v in [(13, "thirteen"), (u"fourteen", "14")]:
     item = test_instance.list_nine._new_item()
@@ -278,7 +276,7 @@ def main():
 
   passed = True
   for k in keys:
-    if not k in test_instance.list_nine.keys():
+    if k not in test_instance.list_nine.keys():
       passed = False
 
   assert passed is True, "List keys using " + \
@@ -301,7 +299,7 @@ def main():
 
   passed = True
   for k in keys:
-    if not k in test_instance.list_ten.keys():
+    if k not in test_instance.list_ten.keys():
       passed = False
 
   assert passed is True, "List keys using new item, append and a compound" + \
@@ -342,6 +340,7 @@ def main():
   if not keepfiles:
     os.system("/bin/rm %s/bindings.py" % this_dir)
     os.system("/bin/rm %s/bindings.pyc" % this_dir)
+
 
 if __name__ == '__main__':
   main()

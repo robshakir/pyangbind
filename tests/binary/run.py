@@ -1,130 +1,108 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+from bitarray import bitarray
+import unittest
 
-TESTNAME = "binary"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class BinaryTests(PyangBindTestCase):
+  yang_files = ['binary.yang']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.binary_obj = self.bindings.binary()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_binary_leafs_exist(self):
+    for leaf in ["b1", "b2", "b3"]:
+      with self.subTest(leaf=leaf):
+        self.assertTrue(hasattr(self.binary_obj.container, leaf), "Element did not exist in container (%s)" % leaf)
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_set_bitarray_from_different_datatypes(self):
+    for value in [("01110", True), ({"42": 42}, True), (-42, False), ("Arthur Dent", False)]:
+      with self.subTest(value=value):
+        allowed = True
+        try:
+          self.binary_obj.container.b1 = value[0]
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, value[1],
+          "Could incorrectly set b1 to %s" % value[0])
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_binary_leaf_default_value(self):
+    default = bitarray("0100")
+    self.assertEqual(self.binary_obj.container.b2._default, default,
+      "Default for leaf b2 was not set correctly (%s != %s)" % (self.binary_obj.container.b2._default, default))
 
-  from bindings import binary as b
-  from bitarray import bitarray
-  t = b()
+  def test_binary_leaf_is_empty_bitarray_by_default(self):
+    empty = bitarray()
+    self.assertEqual(self.binary_obj.container.b2, empty,
+      "Value of bitarray was not null when checking b2 (%s != %s)" % (self.binary_obj.container.b2, empty))
 
-  for i in ["b1", "b2", "b3"]:
-    assert hasattr(t.container, i), \
-        "element did not exist in container (%s)" % i
+  def test_binary_leaf_is_not_changed_by_default(self):
+    self.assertFalse(self.binary_obj.container.b2._changed(),
+      "Unset bitarray specified changed when was default (%s != False)" % self.binary_obj.container.b2._changed())
 
-  for value in [
-      ("01110", True, [False, True, True, True, False],),
-          ({"42": 42}, True, [True])]:
-    passed = True
-    try:
-      t.container.b1 = value[0]
-    except:
-      passed = False
-    assert passed == value[1], "could incorrectly set b1 to %s" % value[0]
+  def test_set_bitarray_stores_value(self):
+    bits = bitarray("010")
+    self.binary_obj.container.b2 = bits
+    self.assertEqual(self.binary_obj.container.b2, bits,
+      "Bitarray not successfully set (%s != %s)" % (self.binary_obj.container.b2, bits))
 
-  assert t.container.b2._default == bitarray("0100"), \
-    "Default for leaf b2 was not set correctly (%s != %s)" \
-       % (t.container.b2._default, bitarray("0100"))
+  def test_setting_bitarray_set_changed(self):
+    self.binary_obj.container.b2 = bitarray("010")
+    self.assertTrue(self.binary_obj.container.b2._changed(),
+      "Bitarray value not flagged as changed (%s != True)" % self.binary_obj.container.b2._changed())
 
-  assert t.container.b2 == bitarray(), \
-    "Value of bitarray was not null when checking b2 (%s != %s)" \
-        % (t.container.b2, bitarray())
+  def test_set_specific_length_bitarray(self):
+    for bits in [("0", False), ("1000000011110000", True), ("111111110000000011111111", False)]:
+      with self.subTest(bits=bits):
+        allowed = True
+        try:
+          self.binary_obj.container.b3 = bits[0]
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, bits[1],
+          "limited length binary incorrectly set to %s (%s != %s)" % (bits[0], bits[1], allowed))
 
-  assert t.container.b2._changed() == False, \
-    "Unset bitarray specified changed when was default (%s != False)" \
-        % (t.container.b2._changed())
+  def test_set_bitarray_with_length_range(self):
+    for bits in [("0", False), ("1111111100000000", True),
+                 ("111111110000000011111111", True),
+                 ("1111111100000000111111110000000011110000", False)]:
+      with self.subTest(bits=bits):
+        allowed = True
+        try:
+          self.binary_obj.container.b4 = bits[0]
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, bits[1],
+          "Limited length binary with range incorrectly set to %s (%s != %s)" %
+          (bits[0], bits[1], allowed))
 
-  t.container.b2 = bitarray("010")
-  assert t.container.b2 == bitarray('010'), \
-    "Bitarray not successfuly set (%s != %s)" % \
-        (t.container.b2, bitarray('010'))
+  def test_set_bitarray_with_complex_length(self):
+    for bits in [("0", False), ("1111000011110000", True),
+                 ("111100001111000011110000", True),
+                 ("1111000011110000111100001111000011110000", False),
+                 ("111100001111000011110000111100001111000011110000", True),
+                 ("111100001111000011110000111100001111000011110000"
+                  "11110000111100001111000011110000", True),
+                 ("111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "111100001111000011110000111100001111000011110000"
+                  "1010101010101010", False)]:
+      with self.subTest(bits=bits):
+        allowed = True
+        try:
+          self.binary_obj.container.b5 = bits[0]
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, bits[1],
+          "Limited length binary with complex length incorrectly set to %s (%s != %s)" %
+          (bits[0], bits[1], allowed))
 
-  assert t.container.b2._changed() == True, \
-    "Bitarray value not flagged as changed (%s != %s)" % \
-        (t.container.b2._changed(), True)
-
-  for v in [("0", False), ("1000000011110000", True), 
-              ("111111110000000011111111", False)]:
-    try:
-      t.container.b3 = v[0]
-      passed = True
-    except ValueError:
-      passed = False
-    assert passed == v[1], \
-        "limited length binary incorrectly set to %s (%s != %s)" \
-          % (v[0], v[1], passed)
-
-  for v in [("0", False), ("1111111100000000", True), 
-            ("111111110000000011111111", True), 
-            ("1111111100000000111111110000000011110000", False)]:
-    try:
-      t.container.b4 = v[0]
-      passed = True
-    except ValueError:
-      passed = False
-    assert passed == v[1], "limited length binary with range incorrectly " + \
-      "set to %s (%s != %s)" % (v[0], v[1], passed)
-
-  for v in [("0", False), ("1111000011110000", True), 
-            ("111100001111000011110000", True), 
-            ("1111000011110000111100001111000011110000", False),
-            ("111100001111000011110000111100001111000011110000", True), 
-            ("111100001111000011110000111100001111000011110000" +
-              "11110000111100001111000011110000", True),
-            ("111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "111100001111000011110000111100001111000011110000" +
-              "1010101010101010", False)]:
-    try:
-      t.container.b5 = v[0]
-      passed = True
-    except:
-      passed = False
-    assert passed == v[1], "limited length binary with complex length " + \
-        "argument incorrectly set to %s (%s != %s)" % (v[0], v[1], passed)
-
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

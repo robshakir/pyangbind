@@ -19,6 +19,8 @@ limitations under the License.
 """
 from __future__ import unicode_literals
 
+from collections import OrderedDict
+
 from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
 from pyangbind.lib.serialise import pybindIETFJSONEncoder
 import json
@@ -54,7 +56,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
   # that if the user really did give us a string, we're happy with that
   # without breaking other code.
   if isinstance(d, unicode) or isinstance(d, str):
-    d = json.loads(d)
+    d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
@@ -63,7 +65,7 @@ def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
                 extmethods=None, overwrite=False):
   # Same as above, to allow for load_ietf to work the same way
   if isinstance(d, unicode) or isinstance(d, str):
-    d = json.loads(d)
+    d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_ietf_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
@@ -71,7 +73,8 @@ def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
 def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
              overwrite=False):
   try:
-    f = json.load(open(fn, 'r'))
+    with open(fn, 'r') as fp:
+      f = json.load(fp, object_pairs_hook=OrderedDict)
   except IOError as m:
     raise pybindJSONIOError("could not open file to read: %s" % m)
   return loads(f, parent_pymod, yang_module, path_helper=path_helper,
@@ -81,7 +84,7 @@ def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None,
 def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
               extmethods=None, overwrite=False):
   try:
-    f = json.load(open(fn, 'r'))
+    f = json.load(open(fn, 'r'), object_pairs_hook=OrderedDict)
   except IOError as m:
     raise pybindJSONIOError("Could not open file to read: %s" % m)
   return loads_ietf(f, parent_pymod, yang_module, path_helper,
@@ -89,7 +92,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None,
 
 
 def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
-            mode="default"):
+            mode="default", with_defaults=None):
   def lookup_subdict(dictionary, key):
     if not isinstance(key, list):
       raise AttributeError('keys should be a list')
@@ -109,7 +112,8 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
   if not isinstance(skip_subtrees, list):
     raise AttributeError('the subtrees to be skipped should be a list')
   if mode == 'ietf':
-    tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter)
+    tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter,
+                                                  with_defaults=with_defaults)
   else:
     tree = obj.get(filter=filter)
   for p in skip_subtrees:

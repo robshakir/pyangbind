@@ -1,5 +1,5 @@
 """
-Copyright 2015, Rob Shakir 
+Copyright 2015, Rob Shakir
 Modifications copyright 2016, Google Inc.
 
 Author: robjs@google.com
@@ -16,16 +16,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import sys
+
 
 def module_import_prefixes(ctx):
   mod_ref_prefixes = {}
   for mod in ctx.modules:
     m = ctx.search_module(0, mod[0])
     for importstmt in m.search('import'):
-      if not importstmt.arg in mod_ref_prefixes:
+      if importstmt.arg not in mod_ref_prefixes:
         mod_ref_prefixes[importstmt.arg] = []
       mod_ref_prefixes[importstmt.arg].append(importstmt.search_one('prefix').arg)
   return mod_ref_prefixes
+
 
 def find_child_definitions(obj, defn, prefix, definitions):
   for i in obj.search(defn):

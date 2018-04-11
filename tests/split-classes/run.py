@@ -80,5 +80,6 @@ def main():
   if not keepfiles:
     os.system("/bin/rm -rf %s/bindings" % this_dir)
 
+
 if __name__ == '__main__':
   main()

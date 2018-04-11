@@ -23,11 +23,11 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+from collections import OrderedDict
 
 from lxml import etree
-import re
+import regex
 import uuid
-import sys
 from .yangtypes import safe_name
 from .base import PybindBase
 
@@ -100,14 +100,15 @@ class FakeRoot(PybindBase):
   _pybind_generated_by = "FakeRoot"
 
   def __init__(self):
-    self._pyangbind_elements = {}
+    self._pyangbind_elements = OrderedDict()
+
 
 class YANGPathHelper(PybindXpathHelper):
-  _attr_re = re.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
-  _arg_re = re.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?" +
+  _attr_re = regex.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
+  _arg_re = regex.compile("^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?" +
                        "=([ ]+)?[\'\"]?(?P<arg>[^ ^\'^\"]+)([\'\"])?([ ]+)?" +
                        "(?P<remainder>.*)")
-  _relative_path_re = re.compile("^(\.|\.\.)")
+  _relative_path_re = regex.compile("^(\.|\.\.)")
 
   def __init__(self):
     # Initialise an empty library and a new FakeRoot class to act as the
@@ -173,7 +174,7 @@ class YANGPathHelper(PybindXpathHelper):
         for k, v in attributes.iteritems():
           # handling for rfc6020 current() specification
           if "current()" in v:
-            remaining_path = re.sub("current\(\)(?P<remaining>.*)",
+            remaining_path = regex.sub("current\(\)(?P<remaining>.*)",
                                       '\g<remaining>', v).split("/")
             # since the calling leaf may not exist, we need to do a
             # lookup on a path that will do, which is the parent
@@ -226,7 +227,7 @@ class YANGPathHelper(PybindXpathHelper):
     if isinstance(object_path, str):
       raise XPathError("not meant to receive strings as input to register()")
 
-    if re.match('^\.\.', object_path[0]):
+    if regex.match('^\.\.', object_path[0]):
       raise XPathError("unhandled relative path in register()")
 
     # This is a hack to register anything that is a top-level object,
@@ -278,7 +279,7 @@ class YANGPathHelper(PybindXpathHelper):
   def unregister(self, object_path, caller=False):
     if isinstance(object_path, str):
       raise XPathError("should not receive paths as a str in unregister()")
-    if re.match("^(\.|\.\.|\/)", object_path[0]):
+    if regex.match("^(\.|\.\.|\/)", object_path[0]):
       raise XPathError("unhandled relative path in unregister()")
 
     existing_objs = self._get_etree(object_path)
@@ -330,7 +331,8 @@ class YANGPathHelper(PybindXpathHelper):
 
     list_get_attr = getattr(parent_obj, "_get_%s" % safe_name(object_path[-1]), None)
     if list_get_attr is None:
-      raise exception_to_raise("Element %s does not have an attribute named %s" % ("/".join(object_path[:-1]), object_path[-1]))
+      raise exception_to_raise("Element %s does not have an attribute named %s" %
+        ("/".join(object_path[:-1]), object_path[-1]))
 
     return list_get_attr()
 

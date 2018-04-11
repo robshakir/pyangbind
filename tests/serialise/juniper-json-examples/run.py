@@ -1,120 +1,69 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 
-import os
-import sys
-import getopt
 import json
-import requests
-import time
+import os.path
+import unittest
 
-from pyangbind.lib.xpathhelper import YANGPathHelper
 from pyangbind.lib.serialise import pybindJSONDecoder
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
-TESTNAME = "json-serialise"
 
+class JuniperJSONTests(PyangBindTestCase):
+  pyang_flags = ['-p %s' % os.path.join(os.path.dirname(__file__), "include")]
+  yang_files = [os.path.join('openconfig', 'openconfig-bgp.yang')]
+  split_class_dir = True
+  module_name = 'ocbind'
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print str(e)
-    sys.exit(127)
-
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
-
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
-
-  OC = "https://raw.githubusercontent.com/openconfig/" + \
-            "public/master/release/models/"
-  RFC = "https://raw.githubusercontent.com/robshakir/" + \
-            "yang/master/standard/ietf/RFC/"
-  FETCH_FILES = [
-                  (OC + "bgp/openconfig-bgp-common-multiprotocol.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-common-structure.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-common.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-global.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-neighbor.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-peer-group.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-policy.yang", "openconfig"),
-                  (OC + "bgp/openconfig-bgp-errors.yang", "openconfig"),
-                  (OC + "types/openconfig-inet-types.yang", "include"),
-                  (OC + "types/openconfig-yang-types.yang", "include"),
-                  (OC + "bgp/openconfig-bgp-types.yang", "include"),
-                  (OC + "bgp/openconfig-bgp.yang", "openconfig"),
-                  (OC + "policy/openconfig-routing-policy.yang", "openconfig"),
-                  (OC + "policy/openconfig-policy-types.yang", "include"),
-                  (OC + "openconfig-extensions.yang", "include"),
-                  (OC + "openconfig-types.yang", "include"),
-                  (OC + "interfaces/openconfig-interfaces.yang", "openconfig"),
-                  (OC + "types/openconfig-yang-types.yang", "openconfig"),
-                  (OC + "types/openconfig-inet-types.yang", "openconfig"),
-                  (RFC + "ietf-inet-types.yang", "include"),
-                  (RFC + "ietf-yang-types.yang", "include"),
-                  (RFC + "ietf-interfaces.yang", "include")
-                ]
-
-  this_dir = os.path.dirname(os.path.realpath(__file__))
-  del_dirs = []
-  for fn in FETCH_FILES:
-    wrdir = os.path.join(this_dir, fn[1])
-    if not os.path.exists(wrdir):
-      os.mkdir(wrdir)
-    if wrdir not in del_dirs:
-      del_dirs.append(wrdir)
-    wrpath = os.path.join(this_dir, fn[1], fn[0].split("/")[-1])
-    if not os.path.exists(wrpath):
-      got = False
-      count = 0
-      for i in range(0,4):
-        response = requests.get(fn[0])
-        if response.status_code != 200:
-          time.sleep(2)
-        else:
-          got = True
-          f = open(wrpath, 'w')
-          f.write(response.content)
-          f.close()
-          break
-      assert got is True, "Could not get file %s from GitHub (response: %s)" \
-                % (response.status_code, fn[0])
-
-  files_str = " ".join([os.path.join(this_dir, "openconfig", i) for i in
-                        os.listdir(os.path.join(this_dir, "openconfig"))])
-
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind --split-class-dir %s/ocbind" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " -p %s" % os.path.join(this_dir, "include")
-  cmd += " %s" % os.path.join(this_dir, "openconfig", "openconfig-bgp.yang")
-  # NB: use-xpathhelper is NOT specified here, so we don't try and do anything
-  # with leafrefs
-  os.system(cmd)
-
-  import ocbind
-
-  yh = YANGPathHelper()
-
-  json_dir = os.path.join(this_dir, "json")
-
-  jbgp_global_ex = json.load(
-                open(os.path.join(json_dir, "bgp-global-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_global_ex["configuration"],
-            ocbind, "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
+  remote_yang_files = [
     {
+      'local_path': 'include',
+      'remote_prefix': 'https://raw.githubusercontent.com/robshakir/yang/master/standard/ietf/RFC/',
+      'files': [
+        'ietf-inet-types.yang',
+        'ietf-yang-types.yang',
+        'ietf-interfaces.yang',
+      ]
+    },
+    {
+      'local_path': 'include',
+      'remote_prefix': 'https://raw.githubusercontent.com/openconfig/public/master/release/models/',
+      'files': [
+        'policy/openconfig-policy-types.yang',
+        'openconfig-extensions.yang',
+        'types/openconfig-types.yang',
+        'types/openconfig-inet-types.yang',
+        'types/openconfig-yang-types.yang',
+        'bgp/openconfig-bgp-types.yang',
+      ]
+    },
+    {
+      'local_path': 'openconfig',
+      'remote_prefix': 'https://raw.githubusercontent.com/openconfig/public/master/release/models/',
+      'files': [
+        'bgp/openconfig-bgp-common-multiprotocol.yang',
+        'bgp/openconfig-bgp-common-structure.yang',
+        'bgp/openconfig-bgp-common.yang',
+        'bgp/openconfig-bgp-global.yang',
+        'bgp/openconfig-bgp-neighbor.yang',
+        'bgp/openconfig-bgp-peer-group.yang',
+        'bgp/openconfig-bgp-policy.yang',
+        'bgp/openconfig-bgp-errors.yang',
+        'bgp/openconfig-bgp.yang',
+        'policy/openconfig-routing-policy.yang',
+        'interfaces/openconfig-interfaces.yang',
+        'types/openconfig-yang-types.yang',
+        'types/openconfig-inet-types.yang',
+      ]
+    }
+  ]
+
+  def setUp(self):
+    self.yang_helper = YANGPathHelper()
+
+  def test_load_global_config(self):
+    expected_json = {
       "bgp": {
         "global": {
            "confederation": {
@@ -130,97 +79,127 @@ def main():
         }
       }
     }
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-global-ex.json"), 'r') as fp:
+      bgp_global_ex = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      bgp_global_ex['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Invalid JSON loaded for global config")
 
-  assert ljs.get(filter=True) == expected_ljs, \
-    "Invalid JSON loaded for global config"
-
-  jbgp_neigh_list = json.load(open(os.path.join(json_dir,
-                          "bgp-neighbor-list-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_neigh_list["configuration"],
-            ocbind, "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
-    {
-       "bgp": {
-          "neighbors": {
-             "neighbor": {
-                "13.13.13.13": {
-                   "neighbor-address": "13.13.13.13",
-                   "config": {
-                      "peer-group": "g1"
-                   }
-                },
-                "12.12.12.12": {
-                   "neighbor-address": "12.12.12.12",
-                   "config": {
-                      "peer-group": "g1"
-                   }
-                }
-             }
-          }
-       }
-    }
-  assert ljs.get(filter=True) == expected_ljs, \
-    "Invalid JSON returned when loading neighbor list"
-
-  jbgp_gr = json.load(open(os.path.join(json_dir, "bgp-gr-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_gr["configuration"], ocbind,
-        "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
-      {
-         "bgp": {
-            "neighbors": {
-               "neighbor": {
-                  "12.12.12.12": {
-                     "config": {
-                        "peer-group": "g1"
-                     },
-                     "neighbor-address": "12.12.12.12"
-                  },
-                  "13.13.13.13": {
-                     "neighbor-address": "13.13.13.13",
-                     "config": {
-                        "peer-group": "g2"
-                     }
-                  }
-               }
-            }
-         }
+  def test_load_neighbor_list(self):
+    expected_json = {
+      "bgp": {
+        "neighbors": {
+           "neighbor": {
+              "13.13.13.13": {
+                 "neighbor-address": "13.13.13.13",
+                 "config": {
+                    "peer-group": "g1"
+                 }
+              },
+              "12.12.12.12": {
+                 "neighbor-address": "12.12.12.12",
+                 "config": {
+                    "peer-group": "g1"
+                 }
+              }
+           }
+        }
       }
-  assert ljs.get(filter=True) == expected_ljs, \
-            "Graceful restart example was not loaded correctly"
-  assert ljs.bgp.neighbors.neighbor[u"12.12.12.12"]._metadata == \
-            {u"inactive": True}, \
-              "Metadata for GR example was not loaded correctly"
-
-  jbgp_deactivated = json.load(open(os.path.join(json_dir,
-                          "bgp-deactivated-config-ex.json"), 'r'))
-  ljs = pybindJSONDecoder.load_ietf_json(jbgp_deactivated["configuration"],
-                ocbind, "openconfig_bgp", path_helper=yh)
-  expected_ljs = \
-    {
-       "bgp": {
-          "global": {
-             "config": {
-                "router-id": "10.10.10.10"
-             }
-          }
-       }
     }
-  assert ljs.get(filter=True) == expected_ljs, \
-          "Router ID configuration example not loaded correctly"
-  assert ljs.bgp.global_.config.router_id._metadata["inactive"] == True, \
-          "Metadata for router-id element not set correctly"
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-neighbor-list-ex.json"), 'r') as fp:
+      bgp_neighbor_list = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      bgp_neighbor_list['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Invalid JSON returned when loading neighbor list")
 
-  if not k:
-    del_dirs.append(os.path.join(this_dir, "ocbind"))
-    for dirname in del_dirs:
-      for root, dirs, files in os.walk(os.path.join(dirname), topdown=False):
-        for name in files:
-          os.remove(os.path.join(root, name))
-        for name in dirs:
-          os.rmdir(os.path.join(root, name))
-      os.rmdir(dirname)
+  def test_load_graceful_restart(self):
+    expected_json = {
+      "bgp": {
+        "neighbors": {
+           "neighbor": {
+              "12.12.12.12": {
+                 "config": {
+                    "peer-group": "g1"
+                 },
+                 "neighbor-address": "12.12.12.12"
+              },
+              "13.13.13.13": {
+                 "neighbor-address": "13.13.13.13",
+                 "config": {
+                    "peer-group": "g2"
+                 }
+              }
+           }
+        }
+      }
+    }
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      graceful_restart_neighbors['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Graceful restart example was not loaded correctly.")
+
+  def test_load_graceful_restart_metadata(self):
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-gr-ex.json"), 'r') as fp:
+      graceful_restart_neighbors = json.load(fp)
+    neighbors_instance = pybindJSONDecoder.load_ietf_json(
+      graceful_restart_neighbors['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    )
+    self.assertEqual(
+      neighbors_instance.bgp.neighbors.neighbor["12.12.12.12"]._metadata,
+      {'inactive': True},
+      "Metadata for graceful restart example was not loaded correctly."
+    )
+
+  def test_load_deactivated(self):
+    expected_json = {
+      "bgp": {
+        "global": {
+          "config": {
+            "router-id": "10.10.10.10",
+          }
+        }
+      }
+    }
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
+    actual_json = pybindJSONDecoder.load_ietf_json(
+      deactivated['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    ).get(filter=True)
+    self.assertEqual(actual_json, expected_json, "Router ID configuration example not loaded correctly.")
+
+  def test_load_deactivated_metadata(self):
+    with open(os.path.join(os.path.dirname(__file__), "json", "bgp-deactivated-config-ex.json"), 'r') as fp:
+      deactivated = json.load(fp)
+    deactivated_instance = pybindJSONDecoder.load_ietf_json(
+      deactivated['configuration'],
+      self.ocbind,
+      'openconfig_bgp',
+      path_helper=self.yang_helper
+    )
+    self.assertTrue(
+      deactivated_instance.bgp.global_.config.router_id._metadata['inactive'],
+      "Metadata for router-id element not set correctly."
+    )
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-import sys
-import os
-
 
 def main():
   # check we can store and retrieve a basic object
@@ -27,7 +24,7 @@ class TestObject(object):
     return self._name
 
 
-def t1_add_retr_object_plain(tree=False):
+def t1_add_retr_object_plain(tree=None):
   del_tree = False
   if not tree:
     del_tree = True
@@ -45,7 +42,7 @@ def t1_add_retr_object_plain(tree=False):
     del tree
 
 
-def t2_add_retr_object_with_attr(tree=False):
+def t2_add_retr_object_with_attr(tree=None):
   del_tree = False
   if not tree:
     del_tree = True
@@ -71,7 +68,7 @@ def t2_add_retr_object_with_attr(tree=False):
     del tree
 
 
-def t3_add_retr_object_hierarchy(tree=False):
+def t3_add_retr_object_hierarchy(tree=None):
   del_tree = False
   if not tree:
     del_tree = True
@@ -91,9 +88,11 @@ def t3_add_retr_object_hierarchy(tree=False):
           (path, len(retr_obj)))
     assert retr_obj[0].name() == j, ("retrieved object did not " +
               "have a valid name (%s != %s)" % (j, retr_obj.name()))
+  if del_tree:
+    del tree
 
 
-def t4_retr_obj_error(tree=False):
+def t4_retr_obj_error(tree=None):
   del_tree = False
   if not tree:
     del_tree = True
@@ -111,6 +110,9 @@ def t4_retr_obj_error(tree=False):
     passed = True
   assert passed is True, ("setting an invalid path did not throw " +
         "an XPathError")
+  if del_tree:
+    del tree
+
 
 if __name__ == '__main__':
   from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
