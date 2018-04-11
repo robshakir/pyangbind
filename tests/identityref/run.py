@@ -1,166 +1,125 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "identityref"
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class IdentityRefTests(PyangBindTestCase):
+  yang_files = ['identityref.yang', 'remote-two.yang']
 
-  keepfiles = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      keepfiles = True
+  def setUp(self):
+    self.instance = self.bindings.identityref()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_identityref_leafs_get_created(self):
+    for leaf in ['id1', 'idr1']:
+      with self.subTest(leaf=leaf):
+        self.assertTrue(hasattr(self.instance.test_container, leaf))
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  cmd += " %s/remote-two.yang" % (this_dir)
-  os.system(cmd)
+  def test_cant_assign_string_to_identityref(self):
+    with self.assertRaises(ValueError):
+      self.instance.test_container.id1 = "hello"
 
-  from bindings import identityref
+  def test_identityref_leafs_are_blank_by_default(self):
+    for leaf in ['id1', 'idr1']:
+      with self.subTest(leaf=leaf):
+        self.assertEqual(getattr(self.instance.test_container, leaf), "")
 
-  i = identityref()
+  def test_identityref_accepts_valid_identity_values(self):
+    for identity in ['option-one', 'option-two']:
+      with self.subTest(identity=identity):
+        allowed = True
+        try:
+          self.instance.test_container.id1 = identity
+        except ValueError:
+          allowed = False
+        self.assertTrue(allowed)
 
-  for j in ["id1", "idr1"]:
-    assert hasattr(i.test_container, j), \
-        "%s leaf does not exist in the container" % i
+  def test_remote_identityref_accepts_valid_identity_values(self):
+    for identity in ['remote-one', 'remote-two']:
+      with self.subTest(identity=identity):
+        allowed = True
+        try:
+          self.instance.test_container.idr1 = identity
+        except ValueError:
+          allowed = False
+        self.assertTrue(allowed)
 
-  assert i.test_container.id1 == "", \
-      "id1 leaf had an unexpected value (%s)" % i.test_container.id1
-  assert i.test_container.idr1 == "", \
-      "idr1 leaf had an unexpected value (%s)" % i.test_container.idr1
+  def test_set_ancestral_identities_one(self):
+    for (identity, valid) in [('father', True), ('son', True), ('foo:father', True), ('foo:son', True),
+                              ('elephant', False), ('hamster', False)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.test_container.id2 = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-  passed = True
-  try:
-    i.test_container.id1 = "hello"
-  except ValueError:
-    passed = False
-  assert passed is False, "id1 leaf set to invalid value"
+  def test_set_ancestral_identities_two(self):
+    for (identity, valid) in [('grandmother', True), ('mother', True), ('niece', False), ('aunt', True),
+                              ('cousin', True), ('daughter', True), ('son', False), ('father', False),
+                              ('grandfather', False)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.test_container.id3 = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-  for k in ["option-one", "option-two"]:
-    passed = True
-    i.test_container.id1 = k
-    try:
-      i.test_container.id1 = k
-    except ValueError:
-      passed = False
-    assert passed is True, \
-        "id1 leaf was set to an invalid value (%s, %s)" % (passed, k)
+  def test_set_ancestral_identities_three(self):
+    for (identity, valid) in [('daughter', True), ('cousin', False), ('aunt', False)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.test_container.id4 = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-  # checks that the namespaces are right
-  for k in ["remote-one", "remote-two"]:
-    passed = True
-    try:
-      i.test_container.idr1 = k
-    except ValueError:
-      passed = False
-    assert passed is True, "idr1 leaf was set to an invalid value (%s)" % k
+  def test_set_ancestral_identities_four(self):
+    for (identity, valid) in [('daughter', True), ('cousin', True), ('mother', True), ('aunt', True),
+                              ('greatgrandmother', False)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.test_container.id5 = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-  for k in [("father", True), ("son", True), ("foo:father", True),
-              ("foo:son", True), ("elephant", False), ("hamster", False)]:
-    passed = True
-    try:
-      i.test_container.id2 = k[0]
-    except ValueError:
-      passed = False
-    assert passed is k[1], \
-        "id2 leaf was set incorrectly (%s: %s != %s)" % \
-            (k[0], k[1], passed)
+  def test_grouping_identity_inheritance(self):
+    for (address_type, valid) in [('source-dest', True), ('lcaf', True), ('unknown', False)]:
+      with self.subTest(address_type=address_type, valid=valid):
+        allowed = True
+        try:
+          self.instance.ak.address_type = address_type
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-  for k in [("grandmother", True), ("mother", True), ("niece", False),
-              ("aunt", True), ("cousin", True), ("daughter", True),
-                ("son", False), ("father", False), ("grandfather", False)]:
-    passed = True
-    try:
-      i.test_container.id3 = k[0]
-    except ValueError:
-      passed = False
+  def test_set_identityref_from_imported_module(self):
+    for (identity, valid) in [('remote:remote-one', True), ('fordprefect:remote-one', False),
+                              ('remote:remote-two', True)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.test_container.idr1 = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
-    assert passed is k[1], \
-      "id3 leaf was set incorrectly (%s: %s != %s)" % \
-          (k[0], k[1], passed)
-
-  for k in [("daughter", True), ("cousin", False), ("aunt", False)]:
-    passed = True
-    try:
-      i.test_container.id4 = k[0]
-    except ValueError:
-      passed = False
-
-    assert passed is k[1], \
-      "id4 leaf was set incorrectly (%s: %s != %s)" % \
-        (k[0], k[1], passed)
-
-  for k in [("daughter", True), ("cousin", True), ("mother", True),
-            ("aunt", True), ("greatgrandmother", False)]:
-    passed = True
-    try:
-      i.test_container.id5 = k[0]
-    except ValueError:
-      passed = False
-
-    assert passed is k[1], \
-      "id5 leaf was set incorrectly (%s: %S != %s)" % \
-        (k[0], k[1], passed)
-
-  for atype in [("source-dest", True), ("lcaf", True), ("unknown", False)]:
-    passed = True
-    try:
-      i.ak.address_type = atype[0]
-    except ValueError:
-      passed = False
-    assert passed is atype[1], "AK identity inheritance test failed - " + \
-      "%s: %s != %s" % (atype[0], atype[1], passed)
-
-  for k in [("remote:remote-one", True), ("nottherightmodulename:remote-one", False),
-            ("remote:remote-two", True)]:
-    passed = True
-    try:
-      i.test_container.idr1 = k[0]
-    except ValueError:
-      passed = False
-
-    assert passed == k[1], "Did not set an identityref " + \
-      "based on the module-name:value format correctly:" + \
-      "  %s != %s for %s" % (k[1], passed, k[0])
-
-  for tc in [("remote-id", True), ("remote-two:remote-id", True),
-             ("invalid", False)]:
-    passed = True
-    try:
-      i.ietfint.ref = tc[0]
-    except ValueError:
-      passed = False
-
-    assert passed == tc[1], "setting ietfint.ref to %s incorrect " + \
-      "%s != %s" % (tc[0], tc[1], passed)
-
-  if not keepfiles:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+  def test_set_identityref_from_imported_module_referencing_local(self):
+    for (identity, valid) in [('remote-id', True), ('remote-two:remote-id', True), ('invalid', False)]:
+      with self.subTest(identity=identity, valid=valid):
+        allowed = True
+        try:
+          self.instance.ietfint.ref = identity
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
