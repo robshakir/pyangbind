@@ -16,7 +16,7 @@ class IdentityRefTests(PyangBindTestCase):
       with self.subTest(leaf=leaf):
         self.assertTrue(hasattr(self.instance.test_container, leaf))
 
-  def test_cant_assign_string_to_identityref(self):
+  def test_cant_assign_invalid_string_to_identityref(self):
     with self.assertRaises(ValueError):
       self.instance.test_container.id1 = "hello"
 
