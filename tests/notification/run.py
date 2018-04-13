@@ -17,7 +17,7 @@ class NotificationTests(PyangBindTestCase):
   # Note that these tests need to import from the filesystem rather than using
   #  the bound module, so that they can directly reference the sub-modules
   def test_set_leaf_inside_notification(self):
-    from .bindings.notification_notification.alert_one import alert_one
+    from bindings.notification_notification.alert_one import alert_one
     instance = alert_one(path_helper=self.path_helper)
     allowed = True
     try:
@@ -27,7 +27,7 @@ class NotificationTests(PyangBindTestCase):
     self.assertTrue(allowed)
 
   def test_set_multiple_leafs_inside_notification(self):
-    from .bindings.notification_notification.alert_two import alert_two
+    from bindings.notification_notification.alert_two import alert_two
     instance = alert_two(path_helper=self.path_helper)
     allowed = True
     try:
@@ -38,7 +38,7 @@ class NotificationTests(PyangBindTestCase):
     self.assertTrue(allowed)
 
   def test_set_leafs_on_a_container_inside_a_notification(self):
-    from .bindings.notification_notification.alert_three import alert_three
+    from bindings.notification_notification.alert_three import alert_three
     instance = alert_three(path_helper=self.path_helper)
     allowed = True
     try:
@@ -49,7 +49,7 @@ class NotificationTests(PyangBindTestCase):
     self.assertTrue(allowed)
 
   def test_set_leafs_on_multiple_containers_inside_a_notification(self):
-    from .bindings.notification_notification.alert_four import alert_four
+    from bindings.notification_notification.alert_four import alert_four
     instance = alert_four(path_helper=self.path_helper)
     allowed = True
     try:
@@ -60,8 +60,8 @@ class NotificationTests(PyangBindTestCase):
     self.assertTrue(allowed)
 
   def test_set_leafref_inside_notification(self):
-    from .bindings import notification
-    from .bindings.notification_notification.alert_five import alert_five
+    from bindings import notification
+    from bindings.notification_notification.alert_five import alert_five
 
     instance = alert_five(path_helper=self.path_helper)
     parent = notification(path_helper=self.path_helper)
