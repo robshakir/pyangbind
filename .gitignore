@@ -56,6 +56,7 @@ tests/integration/openconfig-bgp/openconfig/
 tests/integration/openconfig-interfaces/include/
 tests/integration/openconfig-interfaces/ocbind/
 tests/integration/openconfig-interfaces/openconfig/
+tests/notification/bindings/
 tests/serialise/juniper-json-examples/include/
 tests/serialise/juniper-json-examples/ocbind/
 tests/serialise/juniper-json-examples/openconfig/

@@ -1,174 +1,82 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "notification"
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class NotificationTests(PyangBindTestCase):
+  yang_files = ['notification.yang']
+  split_class_dir = True
+  pyang_flags = ['--use-xpathhelper', '--build-notifications']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.path_helper = YANGPathHelper()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  # Note that these tests need to import from the filesystem rather than using
+  #  the bound module, so that they can directly reference the sub-modules
+  def test_set_leaf_inside_notification(self):
+    from .bindings.notification_notification.alert_one import alert_one
+    instance = alert_one(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.argument = "test"
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+  def test_set_multiple_leafs_inside_notification(self):
+    from .bindings.notification_notification.alert_two import alert_two
+    instance = alert_two(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.arg_one = 10
+      instance.arg_two = 20
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind "
-  cmd += " --split-class-dir=%s/bindings" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --use-xpathhelper --build-notifications"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_set_leafs_on_a_container_inside_a_notification(self):
+    from .bindings.notification_notification.alert_three import alert_three
+    instance = alert_three(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.arguments.arg_one = "test string"
+      instance.arguments.arg_two = "test string"
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  from pyangbind.lib.xpathhelper import YANGPathHelper
-  ph = YANGPathHelper()
+  def test_set_leafs_on_multiple_containers_inside_a_notification(self):
+    from .bindings.notification_notification.alert_four import alert_four
+    instance = alert_four(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.arguments_one.arg_one = "test string"
+      instance.arguments_two.arg_two = "test string"
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  import_error = None
-  set_argument_error = None
-  try:
-    from bindings.notification_notification import alert_one
-    ch = alert_one.alert_one(path_helper=ph)
-    ch.argument = "test"
-  except ImportError as m:
-    import_error = m
-  except ValueError as m:
-    set_argument_error = m
+  def test_set_leafref_inside_notification(self):
+    from .bindings import notification
+    from .bindings.notification_notification.alert_five import alert_five
 
-  assert import_error is None, "Could not import alert_one notification: %s" \
-            % (import_error)
-  assert set_argument_error is None, "Could not set argument to string: %s" \
-            % (set_argument_error)
+    instance = alert_five(path_helper=self.path_helper)
+    parent = notification(path_helper=self.path_helper)
 
-  import_error = None
-  instantiation_error = None
-  try:
-    from bindings.notification_notification import alert_two
-    ch = alert_two.alert_two(path_helper=ph)
-  except ImportError as m:
-    import_error = m
-  except TypeError as m:
-    instantiation_error = m
+    parent.test.reference_target.append('five')
 
-  assert import_error is None, "Could not import alert_two notification: %s" \
-            % (import_error)
-  assert instantiation_error is None, "Could not instantiate alert_two: %s" \
-            % (instantiation_error)
-
-  try:
-    ch.arg_one = 10
-    ch.arg_two = 20
-  except ValueError as m:
-    raise AssertionError("Could not set leaf arguments directly: %s" % (m))
-
-  from bindings.notification_notification import alert_three, alert_four, alert_five
-
-  ch3 = alert_three.alert_three(path_helper=ph)
-  ch4 = alert_four.alert_four(path_helper=ph)
-  ch5 = alert_five.alert_five(path_helper=ph)
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch3.arguments.arg_one = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch3 did not exist" \
-          + " (arg-one): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch3" \
-          + " (arg-one): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch3.arguments.arg_two = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch3 did not exist" \
-          + " (arg-two): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch3" \
-          + " (arg-two): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch4.arguments_one.arg_one = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch4 did not exist" \
-          + " (arg-one): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch4" \
-          + " (arg-one): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch4.arguments_two.arg_two = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch4 did not exist" \
-          + " (arg-two): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch4" \
-          + " (arg-two): %s" % value_err
-
-  from bindings import notification
-
-  r = notification(path_helper=ph)
-  r.test.reference_target.append('five')
-
-  set_v = True
-  try:
-    ch5.argument = 'five'
-  except ValueError:
-    set_v = False
-
-  assert set_v is True, "Could not set value of a leafref in a notification to a" + \
-          "known good value: %s != True (ch.argument -> five)" % (set_v)
-
-  set_v = True
-  try:
-    ch5.argument = 'fish'
-  except ValueError:
-    set_v = False
-
-  assert set_v is False, "Set value of a leafref in a notification to a" + \
-          "known bad value: %s != False (ch.argument -> fish)" % (set_v)
-
-  if not k:
-    os.system("/bin/rm -rf %s/bindings" % this_dir)
+    for (value, valid) in [('five', True), ('fish', False)]:
+      with self.subTest(value=value, valid=valid):
+        allowed = True
+        try:
+          instance.argument = value
+        except ValueError:
+          allowed = False
+        self.assertEqual(allowed, valid)
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
