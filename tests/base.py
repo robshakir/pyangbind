@@ -16,10 +16,11 @@ except ImportError:
 
 class PyangBindTestCase(unittest.TestCase):
   yang_files = None
-  pyang_flags = []
+  pyang_flags = None
   split_class_dir = False
   module_name = 'bindings'
   remote_yang_files = None
+  _pyang_generated_class_dir = None
 
   @classmethod
   def _fetch_remote_yang_files(cls):
@@ -63,16 +64,16 @@ class PyangBindTestCase(unittest.TestCase):
     yang_files = [os.path.join(cls._test_path, filename) for filename in cls.yang_files]
     plugin_dir = os.path.join(base_dir, 'pyangbind', 'plugin')
 
-    pyang_flags = cls.pyang_flags
+    flags = cls.pyang_flags or []
     if cls.split_class_dir is True:
       cls._pyang_generated_class_dir = os.path.join(cls._test_path, cls.module_name)
-      pyang_flags.append('--split-class-dir {}'.format(cls._pyang_generated_class_dir))
+      flags.append('--split-class-dir {}'.format(cls._pyang_generated_class_dir))
 
     pyang_cmd = "{pyang} --plugindir {plugins} -f pybind -p {test_path} {flags} {yang_files}".format(
       pyang=pyang_path,
       plugins=plugin_dir,
       test_path=cls._test_path,
-      flags=' '.join(cls.pyang_flags),
+      flags=' '.join(flags),
       yang_files=' '.join(yang_files)
     )
     bindings_code = subprocess.check_output(

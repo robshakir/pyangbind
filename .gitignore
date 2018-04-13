@@ -49,16 +49,18 @@ reports/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Integration test files
+# Integration/split-class test files
 tests/integration/openconfig-bgp/include/
 tests/integration/openconfig-bgp/ocbind/
 tests/integration/openconfig-bgp/openconfig/
 tests/integration/openconfig-interfaces/include/
 tests/integration/openconfig-interfaces/ocbind/
 tests/integration/openconfig-interfaces/openconfig/
+tests/notification/bindings/
 tests/serialise/juniper-json-examples/include/
 tests/serialise/juniper-json-examples/ocbind/
 tests/serialise/juniper-json-examples/openconfig/
 tests/serialise/openconfig-serialise/include/
 tests/serialise/openconfig-serialise/ocbind/
 tests/serialise/openconfig-serialise/openconfig/
+tests/split-classes/bindings/
