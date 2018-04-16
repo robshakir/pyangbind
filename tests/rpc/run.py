@@ -1,206 +1,106 @@
 #!/usr/bin/env python
 
-import os
-import sys
-import getopt
+import unittest
 
-TESTNAME = "rpc"
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
 
-# generate bindings in this folder
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print(str(e))
-    sys.exit(127)
+class RPCTests(PyangBindTestCase):
+  yang_files = ['rpc.yang']
+  split_class_dir = True
+  pyang_flags = ['--use-xpathhelper', '--build-rpc']
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def setUp(self):
+    self.path_helper = YANGPathHelper()
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if \
-                os.environ.get('PYANGPATH') is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-                os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_set_input_argument(self):
+    from bindings.rpc_rpc.check import check
+    instance = check(path_helper=self.path_helper)
 
-  this_dir = os.path.dirname(os.path.realpath(__file__))
+    allowed = True
+    try:
+      instance.input.argument = 'test'
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind "
-  cmd += " --split-class-dir=%s/bindings" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --use-xpathhelper --build-rpc"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  os.system(cmd)
+  def test_set_output_arguments(self):
+    from bindings.rpc_rpc.check_two import output
+    instance = output.output(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.arg_one = 10
+      instance.arg_two = 20
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  from pyangbind.lib.xpathhelper import YANGPathHelper
-  ph = YANGPathHelper()
+  def test_set_input_arguments_inside_container(self):
+    from bindings.rpc_rpc.check_three import check_three
+    instance = check_three(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.input.arguments.arg_one = "test string"
+      instance.input.arguments.arg_two = "another test string"
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  import_error = None
-  set_argument_error = None
-  try:
-    from bindings.rpc_rpc import check
-    ch = check.check(path_helper=ph)
-    ch.input.argument = "test"
-  except ImportError as m:
-    import_error = m
-  except ValueError as m:
-    set_argument_error = m
+  def test_set_output_arguments_with_multiple_containers(self):
+    from bindings.rpc_rpc.check_four import check_four
+    instance = check_four(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.output.arguments.arg_one = "test string"
+      instance.output.arguments_two.arg_two = "another test string"
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  assert import_error is None, "Could not import check RPC: %s" \
-            % (import_error)
-  assert set_argument_error is None, "Could not set argument to string: %s" \
-            % (set_argument_error)
+  def set_input_and_output_arguments_on_a_single_rpc_check(self):
+    from bindings.rpc_rpc.check_five import check_five
+    instance = check_five(path_helper=self.path_helper)
+    allowed = True
+    try:
+      instance.input.arguments.arg_one = "test string"
+      instance.output.return_values.return_val = 10
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  import_error = None
-  instantiation_error = None
-  try:
-    from bindings.rpc_rpc.check_two import output as chktwo_output
-    ch = chktwo_output.output(path_helper=ph)
-  except ImportError as m:
-    import_error = m
-  except TypeError as m:
-    instantiation_error = m
+  def test_rpc_attributes_do_not_register_in_path_helper(self):
+    from bindings.rpc_rpc.check import check
+    instance = check(path_helper=self.path_helper)
+    instance.input.argument = "test string"
+    self.assertEqual(dict(self.path_helper.get_unique('/')), {})
 
-  assert import_error is None, "Could not import check_two RPC output: %s" \
-            % (import_error)
-  assert instantiation_error is None, "Could not instantiate check_two " + \
-            + "output: %s" % (instantiation_error)
+  def test_set_input_argument_to_valid_leafref(self):
+    from bindings import rpc
+    from bindings.rpc_rpc.check_six import check_six
 
-  try:
-    ch.arg_one = 10
-    ch.arg_two = 20
-  except ValueError as m:
-    raise AssertionError("Could not set output leaf arguments directly: %s" % (m))
+    base_instance = rpc(path_helper=self.path_helper)
+    instance = check_six(path_helper=self.path_helper)
 
-  from bindings.rpc_rpc import check_three, check_four, check_five, check_six
+    base_instance.test.reference_target.append('six')
+    allowed = True
+    try:
+      instance.input.argument = 'six'
+    except ValueError:
+      allowed = False
+    self.assertTrue(allowed)
 
-  ch3 = check_three.check_three(path_helper=ph)
-  ch4 = check_four.check_four(path_helper=ph)
-  ch5 = check_five.check_five(path_helper=ph)
-  ch6 = check_six.check_six(path_helper=ph)
+  def test_set_input_argument_to_invalid_leafref(self):
+    from bindings import rpc
+    from bindings.rpc_rpc.check_six import check_six
 
-  attribute_err = None
-  value_err = None
-  try:
-    ch3.input.arguments.arg_one = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
+    base_instance = rpc(path_helper=self.path_helper)
+    instance = check_six(path_helper=self.path_helper)
 
-  assert attribute_err is None, "Expected attribute for ch3 did not exist" \
-          + " (arg-one): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch3" \
-          + " (arg-one): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch3.input.arguments.arg_two = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch3 did not exist" \
-          + " (arg-two): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch3" \
-          + " (arg-two): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch4.output.arguments.arg_one = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch4 did not exist" \
-          + " (arg-one): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch4" \
-          + " (arg-one): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch4.output.arguments_two.arg_two = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch4 did not exist" \
-          + " (arg-two): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch4" \
-          + " (arg-two): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch5.input.arguments.arg_one = "test string"
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch5 did not exist" \
-          + " (arg-one): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch5" \
-          + " (arg-one): %s" % value_err
-
-  attribute_err = None
-  value_err = None
-  try:
-    ch5.output.return_values.return_val = 10
-  except AttributeError as m:
-    attribute_err = m
-  except ValueError as m:
-    value_err = m
-
-  assert attribute_err is None, "Expected attribute for ch4 did not exist" \
-          + " (arg-two): %s" % attribute_err
-  assert value_err is None, "Expected value could not be set for ch5" \
-          + " (arg-two): %s" % value_err
-
-  assert ph.get_unique("/").get() == {}, "Attributes within an RPC registered" + \
-        " in the path helper erroneously"
-
-  from bindings import rpc
-
-  r = rpc(path_helper=ph)
-  r.test.reference_target.append('six')
-
-  set_v = True
-  try:
-    ch6.input.argument = 'six'
-  except ValueError as m:
-    set_v = False
-
-  assert set_v is True, "Could not set value of a leafref in an RPC to a" + \
-          "known good value: %s != True (ch.input.argument -> six)" % (set_v)
-
-  set_v = True
-  try:
-    ch6.input.argument = 'fish'
-  except ValueError as m:
-    set_v = False
-
-  assert set_v is False, "Set value of a leafref in an RPC to a" + \
-          "known bad value: %s != False (ch.input.argument -> fish)" % (set_v)
-
-  if not k:
-    os.system("/bin/rm -rf %s/bindings" % this_dir)
+    base_instance.test.reference_target.append('six')
+    with self.assertRaises(ValueError):
+      instance.input.argument = 'fish'
 
 
 if __name__ == '__main__':
-  main()
+  unittest.main()
