@@ -1,19 +1,12 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 
-def main():
-  # check we can store and retrieve a basic object
-  t1_add_retr_object_plain()
-  # check we can store and retrieve an object with an attribute
-  t2_add_retr_object_with_attr()
-  # check we can store and retrieve objects in a hierarchy
-  t3_add_retr_object_hierarchy()
-  # check we get the right errors back when an object doesn't exist
-  t4_retr_obj_error()
-
-
-class TestContainer(object):
-  pass
+from pyangbind.lib.xpathhelper import XPathError, YANGPathHelper
+try:
+  import unittest2 as unittest
+except ImportError:
+  import unittest
 
 
 class TestObject(object):
@@ -24,96 +17,84 @@ class TestObject(object):
     return self._name
 
 
-def t1_add_retr_object_plain(tree=None):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-  obj_one = TestObject("t1_ObjOneTest")
-  tree.register(["obj_one"], obj_one)
-  retr_obj = tree.get(["obj_one"])
-  assert len(retr_obj) == 1, ("retrieved path matched the wrong number " +
-        "of objects (%d != 1)" % (len(retr_obj)))
-  assert isinstance(retr_obj[0], TestObject), ("retrieved object was not " +
-            "the correct class")
-  assert retr_obj[0].name() == "t1_ObjOneTest", ("retrieved object had an " +
-            "invalid name specified (%s != t1_ObjOneTest)" % retr_obj.name())
-  if del_tree:
-    del tree
+class PathHelperBaseTests(unittest.TestCase):
 
+  def setUp(self):
+    self.tree = YANGPathHelper()
 
-def t2_add_retr_object_with_attr(tree=None):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-  for p in [["container"], ["container", "deeper"]]:
-    tree.register(p, TestObject("container"))
-    for q_style in ["'", '"', ""]:
-      for i in range(0, 5):
-        tree.register(p + ["foo[id=%s%d%s]" % (q_style, i, q_style,)],
-              TestObject("t2_ObjTest%d" % i))
-      for q_style in ["'", '"', ""]:
-        for j in range(0, 5):
-          retr_obj = tree.get("%s/foo[id=%s%d%s]" %
-                ("/" + "/".join(p), q_style, j, q_style,))
-          assert len(retr_obj) == 1, ("retrieved the wrong number of " +
-                "objects (%d != 1)" % len(retr_obj))
-          assert isinstance(retr_obj[0], TestObject), ("retrieved object " +
-                    "was not the correct class")
-          assert retr_obj[0].name() == "t2_ObjTest%d" % j, \
-              ("retrieved object had an invalid name specified (%s != " +
-                  "t2_ObjTest%d, q_style=%s)" % (retr_obj.name(), j, q_style))
-  if del_tree:
-    del tree
+  def test_get_returns_same_number_of_objects_as_registered(self):
+    obj = TestObject('testobj')
+    self.tree.register(['obj_one'], obj)
+    self.assertEqual(len(self.tree.get(['obj_one'])), 1)
 
+  def test_get_returns_objects_of_same_class_as_registered(self):
+    obj = TestObject('testobj')
+    self.tree.register(['obj_one'], obj)
+    self.assertIsInstance(self.tree.get(['obj_one'])[0], TestObject)
 
-def t3_add_retr_object_hierarchy(tree=None):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
-  path = []
-  obj = {}
-  for i in range(0, 10):
-    path += ["node%d" % i]
-    obj[i] = TestObject(i)
-    tree.register(path, obj[i])
-  path = ""
-  for j in range(0, 10):
-    path += "/node%d" % j
-    retr_obj = tree.get(path)
-    assert len(retr_obj) == 1, \
-      ("incorrect number of objects retrieved for %s (%d != 1)" %
-          (path, len(retr_obj)))
-    assert retr_obj[0].name() == j, ("retrieved object did not " +
-              "have a valid name (%s != %s)" % (j, retr_obj.name()))
-  if del_tree:
-    del tree
+  def test_get_returns_objects_with_same_attributes_as_registered(self):
+    obj = TestObject('testobj')
+    self.tree.register(['obj_one'], obj)
+    self.assertEqual(self.tree.get(['obj_one'])[0].name(), 'testobj')
 
+  def test_get_non_existent_path_returns_nothing(self):
+    self.assertEqual(len(self.tree.get('/a/non-existent/path')), 0)
 
-def t4_retr_obj_error(tree=None):
-  del_tree = False
-  if not tree:
-    del_tree = True
-    tree = YANGPathHelper()
+  def test_register_invalid_path_raises_exception(self):
+    with self.assertRaises(XPathError):
+      self.tree.register('an-invalid-path-name', TestObject('invalid'))
 
-  retr = tree.get("/a/non-existant/path")
+  def test_retrieve_object_at_bottom_of_hierarchy_returns_single_object(self):
+    self.tree.register(['node0'], TestObject(0))
+    self.tree.register(['node0', 'node1'], TestObject(1))
+    self.tree.register(['node0', 'node1', 'node2'], TestObject(2))
+    self.assertEqual(len(self.tree.get('/node0/node1/node2')), 1)
 
-  assert len(retr) == 0, ("getting a non-existant path returned the wrong " +
-            "number of objects (%d != 0)" % (len(retr)))
+  def test_retrieve_object_at_bottom_of_hierarchy_has_proper_name(self):
+    self.tree.register(['node0'], TestObject(0))
+    self.tree.register(['node0', 'node1'], TestObject(1))
+    self.tree.register(['node0', 'node1', 'node2'], TestObject(2))
+    self.assertEqual(self.tree.get('/node0/node1/node2')[0].name(), 2)
 
-  passed = False
-  try:
-    tree.register("an-invalid-path-name", TestObject("invalid"))
-  except XPathError:
-    passed = True
-  assert passed is True, ("setting an invalid path did not throw " +
-        "an XPathError")
-  if del_tree:
-    del tree
+  def test_register_object_with_attribute(self):
+    self.tree.register(['container'], TestObject('container'))
+    allowed = True
+    try:
+      self.tree.register(['container', 'foo[id=0]'], TestObject('bar'))
+    except Exception:
+      allowed = False
+    self.assertTrue(allowed)
+
+  def test_retrieve_object_by_attribute_returns_single_object(self):
+    self.tree.register(['container'], TestObject('container'))
+    self.tree.register(['container', 'foo[id=0]'], TestObject('bar0'))
+    self.tree.register(['container', 'foo[id=1]'], TestObject('bar1'))
+    self.assertEqual(len(self.tree.get('/container/foo[id=0]')), 1)
+
+  def test_get_object_by_attribute_returns_object_of_same_class(self):
+    self.tree.register(['container'], TestObject('container'))
+    self.tree.register(['container', 'foo[id=0]'], TestObject('bar0'))
+    self.assertIsInstance(self.tree.get('/container/foo[id=0]')[0], TestObject)
+
+  def test_register_object_with_attribute_various_quoting_styles(self):
+    self.tree.register(['container'], TestObject('container'))
+    for style in ['"', "'", '']:
+      with self.subTest(style=style):
+        allowed = True
+        try:
+          self.tree.register(['container', 'foo[id={0}42{0}]'.format(style)], TestObject(42))
+        except Exception:
+          allowed = False
+        self.assertTrue(allowed)
+
+  def test_get_object_with_attribute_various_quoting_styles(self):
+    self.tree.register(['container'], TestObject('container'))
+    self.tree.register(['container', 'foo[id=42]'], TestObject('bar42'))
+    for style in ['"', "'", '']:
+      with self.subTest(style=style):
+        obj = self.tree.get('/container/foo[id={0}42{0}]'.format(style))[0]
+        self.assertEqual(obj.name(), 'bar42')
 
 
 if __name__ == '__main__':
-  from pyangbind.lib.xpathhelper import YANGPathHelper, XPathError
-  main()
+  unittest.main()
