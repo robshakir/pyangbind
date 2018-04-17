@@ -3,7 +3,7 @@ language: python
 cache: pip
 python:
   - 2.7
-  - pypy2.7
+  - pypy
 martix:
   include:
   - python: 2.7
