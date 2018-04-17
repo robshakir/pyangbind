@@ -33,7 +33,7 @@ Development of **PyangBind** has been motivated by consuming the  [OpenConfig](h
 
 ## Getting Started <a name="getting-started"></a>
 
-**PyangBind** is distributed through [PyPI](http://pypi.python.org), it can be installed by simply running:
+**PyangBind** is distributed through [PyPI](https://pypi.org/), it can be installed by simply running:
 
 ```
 $ pip install pyangbind
