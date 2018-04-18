@@ -1,5 +1,13 @@
 ![#PyangBind](http://rob.sh/img/pyblogo_gh.png)
 
+
+![Travis](https://img.shields.io/travis/robshakir/pyangbind.svg)
+![Codecov](https://img.shields.io/codecov/c/github/robshakir/pyangbind.svg)
+![PyPI](https://img.shields.io/pypi/v/pyangbind.svg)
+![PyPI - License](https://img.shields.io/pypi/l/pyangbind.svg)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyangbind.svg)
+
+
 **PyangBind** is a plugin for [Pyang](https://github.com/mbj4668/pyang) that generates a Python class hierarchy from a YANG data model. The resulting classes can be directly interacted with in Python. Particularly, **PyangBind** will allow you to:
 
  * Create new data instances - through setting values in the Python class hierarchy.
@@ -25,7 +33,7 @@ Development of **PyangBind** has been motivated by consuming the  [OpenConfig](h
 
 ## Getting Started <a name="getting-started"></a>
 
-**PyangBind** is distributed through [PyPI](http://pypi.python.org), it can be installed by simply running:
+**PyangBind** is distributed through [PyPI](https://pypi.org/), it can be installed by simply running:
 
 ```
 $ pip install pyangbind
@@ -331,7 +339,3 @@ limitations under the License.
 * Ongoing development and support for this project is supported by [Jive Communications, Inc](www.jive.com).
 * Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
 * Thanks to folks from Juniper Networks for their views on Python mapping, and examples that are included as part of the PyangBind unit tests.
-
-## Test Status <a name="tests"></a>
-
-[![Build Status](https://travis-ci.org/robshakir/pyangbind.svg?branch=master)](https://travis-ci.org/robshakir/pyangbind)

@@ -1,8 +1,17 @@
-language:   python
+sudo: false
+language: python
+cache: pip
 python:
-            - "2.7"
-script:
-            - "./tests/run.sh"
+  - 2.7
+  - pypy
+matrix:
+  include:
+  - python: 2.7
+    env: TOXENV=flake8
+install:
+  - pip install tox tox-travis codecov
+script: tox
+after_success: codecov
 branches:
-        only:
-            - master
+  only:
+    - master
