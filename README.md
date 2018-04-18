@@ -340,7 +340,7 @@ limitations under the License.
 ## Acknowledgements <a name="acks"></a>
 * This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
 * Additional development efforts were supported by [Jive Communications, Inc](http://www.jive.com).
-* Current maintenance is supported by (Google)[http://www.google.com].
+* Current maintenance is supported by [Google](http://www.google.com).
 * Key contributions have been made to this project by the following developers, and companies. Many thanks
   are extended to them:
   * GoDaddy, particularly Joey Wilhelm's herculean efforts to refactor test code to use the `unittest` framework.
