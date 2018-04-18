@@ -316,10 +316,13 @@ Further information as to the implementation and usage of PyangBind can be found
 ## Licensing <a name="licensing"></a>
 ```
 Copyright 2015, Rob Shakir (rjs@rob.sh)
+Modifications copyright, the Pyangbind contributors.
 
 This project has been supported by:
           * Jive Communications, Inc.
           * BT plc.
+          * Google, Inc.
+          * GoDaddy, LLC.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -336,6 +339,12 @@ limitations under the License.
 
 ## Acknowledgements <a name="acks"></a>
 * This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
-* Ongoing development and support for this project is supported by [Jive Communications, Inc](www.jive.com).
-* Members of the [OpenConfig](http://www.openconfig.net) working group have assisted greatly in debugging, and designing a number of the approaches used in PyangBind.
-* Thanks to folks from Juniper Networks for their views on Python mapping, and examples that are included as part of the PyangBind unit tests.
+* Additional development efforts were supported by [Jive Communications, Inc](http://www.jive.com).
+* Current maintenance is supported by (Google)[http://www.google.com].
+* Key contributions have been made to this project by the following developers, and companies. Many thanks
+  are extended to them:
+  * GoDaddy, particularly Joey Wilhelm's herculean efforts to refactor test code to use the `unittest` framework.
+  * David Barroso, who initiated efforts to address Python 3 compatibility, and a number of other enhancements.
+* Design, debugging, example code, and ideas have been contributed by:
+  * Members of the [OpenConfig](http://www.openconfig.net) working group.
+  * The managability team at Juniper Networks.
