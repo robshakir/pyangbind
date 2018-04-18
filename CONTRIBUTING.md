@@ -25,7 +25,10 @@ Contributions to PyangBind are very welcome, either directly via pull requests, 
 
 ### Other Issues
 
- * If you have an issue with generated code/odd errors during build -- please do just e-mail this over or open an issue. If you can't share the YANG itself, then anonymised YANG is very welcome.
- * If you'd like to discuss the best design for a feature, or don't get how a feature fits in, please open an issue, send an e-mail, or join us on our NetworkToCode Slack channel.
+ * If you have an issue with generated code/odd errors during build -- please do just e-mail this over or open an issue.
+   If you can't share the YANG itself, then anonymised YANG is very welcome.
+ * If you'd like to discuss the best design for a feature, or don't get how a feature fits in, please open an issue,
+   send an e-mail, or join us in the #pyangbind channel on the
+   [NetworkToCode Slack](https://networktocode.slack.com/).
 
 And most of all, thanks for contributions :-)
