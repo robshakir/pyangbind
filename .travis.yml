@@ -4,7 +4,7 @@ cache: pip
 python:
   - 2.7
   - pypy
-martix:
+matrix:
   include:
   - python: 2.7
     env: TOXENV=flake8
