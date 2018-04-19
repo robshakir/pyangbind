@@ -249,7 +249,7 @@ def RestrictedClassType(*args, **kwargs):
 
       def match_pattern_check(regexp):
         def mp_check(value):
-          if not isinstance(value, six.string_types + six.text_type):
+          if not isinstance(value, six.string_types + (six.text_type,)):
             return False
           if regex.match(convert_regexp(regexp), value):
             return True
@@ -406,11 +406,11 @@ def TypedListType(*args, **kwargs):
               tmp = i(v)
               passed = True
               break
-          elif i == six.text_type and isinstance(v, six.string_types + six.text_type):
+          elif i == six.text_type and isinstance(v, six.string_types + (six.text_type,)):
             tmp = six.text_type(v)
             passed = True
             break
-          elif i not in six.string_types + six.text_type:
+          elif i not in six.string_types + (six.text_type,):
             # for anything other than string we try
             # and cast. Using things for string or
             # unicode gives us strange results because we get

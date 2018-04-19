@@ -151,7 +151,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       for k, v in obj.iteritems():
         ndict[k] = self.default(v, mode=mode)
       return ndict
-    elif isinstance(obj, six.string_types):
+    elif isinstance(obj, six.string_types + (six.text_type,)):
       return six.text_type(obj)
     elif isinstance(obj, six.integer_types):
       return int(obj)

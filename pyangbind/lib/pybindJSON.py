@@ -52,7 +52,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
   # that this really expected a dict, so this check simply makes sure
   # that if the user really did give us a string, we're happy with that
   # without breaking other code.
-  if isinstance(d, six.string_types):
+  if isinstance(d, six.string_types + (six.text_type,)):
     d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
@@ -61,7 +61,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
 def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
                 extmethods=None, overwrite=False):
   # Same as above, to allow for load_ietf to work the same way
-  if isinstance(d, six.string_types):
+  if isinstance(d, six.string_types + (six.text_type,)):
     d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_ietf_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
