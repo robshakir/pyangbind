@@ -21,18 +21,15 @@ limitations under the License.
 """
 from __future__ import unicode_literals
 
-from decimal import Decimal
-from bitarray import bitarray
-import uuid
-import regex
 import collections
 import copy
-import six
+import uuid
+from decimal import Decimal
 
-# For Python3
-if six.PY3:
-  unicode = str
-  basestring = str
+import regex
+import six
+from bitarray import bitarray
+
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
 # not complete, but will probably continue to grow.
@@ -130,7 +127,7 @@ def RestrictedClassType(*args, **kwargs):
     type of restriction placed on the class, and the restriction_arg gives
     any input data that this function needs.
   """
-  base_type = kwargs.pop("base_type", unicode)
+  base_type = kwargs.pop("base_type", six.text_type)
   restriction_type = kwargs.pop("restriction_type", None)
   restriction_arg = kwargs.pop("restriction_arg", None)
   restriction_dict = kwargs.pop("restriction_dict", None)
@@ -140,7 +137,7 @@ def RestrictedClassType(*args, **kwargs):
   # it must be a list since a restricted class can encapsulate a restricted
   # class
   current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>",
-                                          "\g<class>", str(base_type))
+                                          "\g<class>", six.text_type(base_type))
   if hasattr(base_type, "_restricted_class_base"):
     restricted_class_hint = getattr(base_type, "_restricted_class_base")
     restricted_class_hint.append(current_restricted_class_type)
@@ -252,7 +249,7 @@ def RestrictedClassType(*args, **kwargs):
 
       def match_pattern_check(regexp):
         def mp_check(value):
-          if not isinstance(value, basestring):
+          if not isinstance(value, six.string_types + six.text_type):
             return False
           if regex.match(convert_regexp(regexp), value):
             return True
@@ -260,7 +257,7 @@ def RestrictedClassType(*args, **kwargs):
         return mp_check
 
       def in_dictionary_check(dictionary):
-        return lambda i: unicode(i) in dictionary
+        return lambda i: six.text_type(i) in dictionary
 
       val = False
       try:
@@ -365,7 +362,7 @@ def TypedListType(*args, **kwargs):
     certain types (specified by allowed_type kwarg to the function)
     can be added to the list.
   """
-  allowed_type = kwargs.pop("allowed_type", unicode)
+  allowed_type = kwargs.pop("allowed_type", six.text_type)
   if not isinstance(allowed_type, list):
     allowed_type = [allowed_type]
 
@@ -409,11 +406,11 @@ def TypedListType(*args, **kwargs):
               tmp = i(v)
               passed = True
               break
-          elif i == unicode and isinstance(v, str):
-            tmp = unicode(v)
+          elif i == six.text_type and isinstance(v, six.string_types + six.text_type):
+            tmp = six.text_type(v)
             passed = True
             break
-          elif i not in [unicode, str]:
+          elif i not in six.string_types + six.text_type:
             # for anything other than string we try
             # and cast. Using things for string or
             # unicode gives us strange results because we get
@@ -584,7 +581,7 @@ def YANGListType(*args, **kwargs):
         # this is a list that does not have a key specified, and hence
         # we generate a uuid that is used as the key, the method then
         # returns the uuid for the upstream process to use
-        k = str(uuid.uuid1())
+        k = six.text_type(uuid.uuid1())
 
       update = False
       if v is not None:
@@ -714,12 +711,12 @@ def YANGListType(*args, **kwargs):
     def _extract_key(self, obj):
       kp = self._keyval.split(" ")
       if len(kp) > 1:
-        ks = unicode()
+        ks = ''
         for k in kp:
           kv = getattr(obj, "_get_%s" % safe_name(k), None)
           if kv is None:
             raise KeyError("Invalid key attribute specified for object")
-          ks += "%s " % unicode(kv())
+          ks += "%s " % six.text_type(kv())
         return ks.rstrip(" ")
       else:
         kv = getattr(obj, "_get_%s" % safe_name(self._keyval), None)
@@ -1176,7 +1173,7 @@ def ReferenceType(*args, **kwargs):
       self._ptr = False
       self._require_instance = require_instance
       self._type = "unicode"
-      self._utype = unicode
+      self._utype = six.text_type
 
       if len(args):
         value = args[0]
@@ -1228,7 +1225,7 @@ def ReferenceType(*args, **kwargs):
             if len(path_chk) == 1 and is_yang_leaflist(path_chk[0]):
               index = 0
               for i in path_chk[0]:
-                if unicode(i) == unicode(value):
+                if six.text_type(i) == six.text_type(value):
                   found = True
                   self._referenced_object = path_chk[0][index]
                   break
@@ -1236,7 +1233,7 @@ def ReferenceType(*args, **kwargs):
             else:
               found = False
               for i in path_chk:
-                if unicode(i) == unicode(value):
+                if six.text_type(i) == six.text_type(value):
                   found = True
                   self._referenced_object = i
 
