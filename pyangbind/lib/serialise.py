@@ -27,8 +27,11 @@ serialise:
 import json
 from collections import OrderedDict
 from decimal import Decimal
+
+import six
 from enum import IntEnum
-from pyangbind.lib.yangtypes import safe_name, YANGBool
+
+from pyangbind.lib.yangtypes import YANGBool, safe_name
 
 
 class WithDefaults(IntEnum):
@@ -96,10 +99,9 @@ class pybindJSONEncoder(json.JSONEncoder):
 
     # Map based on YANG type
     if orig_yangt in ["leafref"]:
-      return self.default(obj._get()) if hasattr(obj, "_get") \
-                                                  else unicode(obj)
+      return self.default(obj._get()) if hasattr(obj, "_get") else six.text_type(obj)
     elif orig_yangt in ["int64", "uint64"]:
-      return unicode(obj) if mode == "ietf" else int(obj)
+      return six.text_type(obj) if mode == "ietf" else int(obj)
     elif orig_yangt in ["identityref"]:
       if mode == "ietf":
         try:
@@ -108,20 +110,20 @@ class pybindJSONEncoder(json.JSONEncoder):
             return "%s:%s" % (obj._enumeration_dict[obj]["@module"], obj)
         except KeyError:
           pass
-        return unicode(obj)
+        return six.text_type(obj)
     elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
       return int(obj)
     elif orig_yangt in ["int64" "uint64"]:
       if mode == "ietf":
-        return unicode(obj)
+        return six.text_type(obj)
       else:
         return int(obj)
     elif orig_yangt in ["string", "enumeration"]:
-      return unicode(obj)
+      return six.text_type(obj)
     elif orig_yangt in ["binary"]:
       return obj.to01()
     elif orig_yangt in ["decimal64"]:
-      return unicode(obj) if mode == "ietf" else float(obj)
+      return six.text_type(obj) if mode == "ietf" else float(obj)
     elif orig_yangt in ["bool"]:
       return True if obj else False
     elif orig_yangt in ["empty"]:
@@ -149,14 +151,14 @@ class pybindJSONEncoder(json.JSONEncoder):
       for k, v in obj.iteritems():
         ndict[k] = self.default(v, mode=mode)
       return ndict
-    elif type(obj) in [str, unicode]:
-      return unicode(obj)
-    elif type(obj) in [int, long]:
+    elif isinstance(obj, six.string_types):
+      return six.text_type(obj)
+    elif isinstance(obj, six.integer_types):
       return int(obj)
-    elif type(obj) in [YANGBool, bool]:
+    elif isinstance(obj, (YANGBool, bool)):
       return bool(obj)
-    elif type(obj) in [Decimal]:
-      return unicode(obj) if mode == "ietf" else float(obj)
+    elif isinstance(obj, Decimal):
+      return six.text_type(obj) if mode == "ietf" else float(obj)
 
     raise AttributeError("Unmapped type: %s, %s, %s, %s, %s, %s" %
                                   (elem_name, orig_yangt, pybc, pyc,
@@ -171,12 +173,12 @@ class pybindJSONEncoder(json.JSONEncoder):
       return self.default(obj._get(), mode=mode)
     elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal", "RestrictedPrecisionDecimal"]:
       if mode == "ietf":
-        return unicode(obj)
+        return six.text_type(obj)
       return float(obj)
     elif map_val in ["bitarray.bitarray"]:
       return obj.to01()
     elif map_val in ["unicode"]:
-      return unicode(obj)
+      return six.text_type(obj)
     elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
       if original_yang_type == "empty" and mode == "ietf":
         if obj:
@@ -193,12 +195,12 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["long"]:
       int_size = getattr(obj, "_restricted_int_size", None)
       if mode == "ietf" and int_size == 64:
-        return unicode(obj)
+        return six.text_type(obj)
       return int(obj)
     elif map_val in ["container"]:
       return self._preprocess_element(obj.get(), mode=mode)
     elif map_val in ["decimal.Decimal"]:
-      return unicode(obj) if mode == "ietf" else float(obj)
+      return six.text_type(obj) if mode == "ietf" else float(obj)
 
 
 class pybindJSONDecoder(object):
@@ -333,7 +335,7 @@ class pybindJSONDecoder(object):
 
   @staticmethod
   def check_metadata_add(key, data, obj):
-    keys = [unicode(k) for k in data]
+    keys = [six.text_type(k) for k in data]
     if ("@" + key) in keys:
       for k, v in data["@" + key].iteritems():
         obj._add_metadata(k, v)
