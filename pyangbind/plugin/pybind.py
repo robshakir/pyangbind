@@ -21,27 +21,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import optparse
-import sys
-import decimal
 import copy
+import decimal
+import optparse
 import os
-from bitarray import bitarray
+import sys
+
 import six
+from bitarray import bitarray
+from pyang import plugin, statements, util
 
-from pyangbind.lib.yangtypes import safe_name, YANGBool, \
-                                  RestrictedClassType
-from pyangbind.helpers.identity import IdentityStore
 import pyangbind.helpers.misc as misc_help
-
-from pyang import plugin
-from pyang import statements
-from pyang import util
+from pyangbind.helpers.identity import IdentityStore
+from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name
 
 # Python3 support
 if six.PY3:
   long = int
-  unicode = str
 
 DEBUG = True
 if DEBUG:
@@ -146,7 +142,7 @@ class_map = {
         "native_type": "unicode",
         "base_type": True,
         "quote_arg": True,
-        "pytype": unicode
+        "pytype": six.text_type
     },
     'decimal64': {
         "native_type": "Decimal",
@@ -334,7 +330,6 @@ def build_pybind(ctx, modules, fd):
 if six.PY3:
   import builtins as __builtin__
   long = int
-  unicode = str
 elif six.PY2:
   import __builtin__
 
@@ -472,7 +467,7 @@ def build_identities(ctx, defnd):
   # Add entries to the class_map such that this identity can be referenced by
   # elements that use this identity ref.
   for i in identity_dict:
-    id_type = {"native_type": """RestrictedClassType(base_type=unicode, """ +
+    id_type = {"native_type": """RestrictedClassType(base_type=six.text_type, """ +
                               """restriction_type="dict_key", """ +
                               """restriction_arg=%s,)""" % identity_dict[i],
                 "restriction_argument": identity_dict[i],
@@ -1211,11 +1206,11 @@ def build_elemtype(ctx, et, prefix=False):
     if et.arg == "enumeration":
       enumeration_dict = {}
       for enum in et.search('enum'):
-        enumeration_dict[unicode(enum.arg)] = {}
+        enumeration_dict[six.text_type(enum.arg)] = {}
         val = enum.search_one('value')
         if val is not None:
-          enumeration_dict[unicode(enum.arg)]["value"] = int(val.arg)
-      elemtype = {"native_type": """RestrictedClassType(base_type=unicode, \
+          enumeration_dict[six.text_type(enum.arg)]["value"] = int(val.arg)
+      elemtype = {"native_type": """RestrictedClassType(base_type=six.text_type, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)""" %
                                     (enumeration_dict),
