@@ -19,16 +19,13 @@ limitations under the License.
 """
 from __future__ import unicode_literals
 
+import copy
+import json
 from collections import OrderedDict
 
-from pyangbind.lib.serialise import pybindJSONEncoder, pybindJSONDecoder, pybindJSONIOError
-from pyangbind.lib.serialise import pybindIETFJSONEncoder
-import json
-import copy
 import six
 
-if six.PY3:
-  unicode = str
+from pyangbind.lib.serialise import pybindIETFJSONEncoder, pybindJSONDecoder, pybindJSONEncoder, pybindJSONIOError
 
 
 def remove_path(tree, path):
@@ -55,7 +52,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
   # that this really expected a dict, so this check simply makes sure
   # that if the user really did give us a string, we're happy with that
   # without breaking other code.
-  if isinstance(d, unicode) or isinstance(d, str):
+  if isinstance(d, six.string_types):
     d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
@@ -64,7 +61,7 @@ def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None,
 def loads_ietf(d, parent_pymod, yang_base, path_helper=None,
                 extmethods=None, overwrite=False):
   # Same as above, to allow for load_ietf to work the same way
-  if isinstance(d, unicode) or isinstance(d, str):
+  if isinstance(d, six.string_types):
     d = json.loads(d, object_pairs_hook=OrderedDict)
   return pybindJSONDecoder.load_ietf_json(d, parent_pymod, yang_base,
           path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
@@ -141,14 +138,13 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False,
     for t in tree:
       keep = True
       for k, v in select.iteritems():
+        v = six.text_type(v)
         if mode == 'default' or isinstance(tree, dict):
-          if keep and not \
-                unicode(lookup_subdict(tree[t], k.split("."))) == unicode(v):
+          if (keep and not six.text_type(lookup_subdict(tree[t], k.split("."))) == v):
             keep = False
         else:
           # handle ietf case where we have a list and might have namespaces
-          if keep and not \
-                unicode(lookup_subdict(t, k.split("."))) == unicode(v):
+          if (keep and not six.text_type(lookup_subdict(t, k.split("."))) == v):
             keep = False
       if not keep:
         key_del.append(t)
