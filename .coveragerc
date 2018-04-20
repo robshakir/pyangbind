@@ -6,7 +6,7 @@ omit =
     */.virtualenvs/*
     */tests/*
     */env/*
-source = .
+source = pyangbind
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -25,5 +25,8 @@ exclude_lines =
     # Don't complain if non-runnable code isn't run:
     if 0:
     if __name__ == .__main__.:
+
+    # Don't complain about Py3 compatibility shims
+    if six.PY3:
 
 ignore_errors = True

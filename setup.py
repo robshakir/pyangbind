@@ -1,16 +1,17 @@
+import os
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
 from codecs import open
-from os import path
 
 import pyangbind
 
-thisdir = path.abspath(path.dirname(__file__))
-pip_reqs = parse_requirements(path.join(thisdir, "requirements.txt"), session=False)
-inst_reqs = [str(ir.req) for ir in pip_reqs]
 
+# allow setup.py to be run from any path
+os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
-with open(path.join(thisdir, "README.rst"), encoding='utf-8') as readme:
+with open('requirements.txt', 'r') as fp:
+  reqs = [r for r in fp.read().splitlines() if (len(r) > 0 and not r.startswith("#"))]
+
+with open('README.rst') as readme:
   long_description = readme.read()
 
 
@@ -41,11 +42,13 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 2 :: Only'
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy'
     ],
     include_package_data=True,
     keywords="yang pyang",
     packages=find_packages(exclude=['lib']),
-    install_requires=inst_reqs,
+    install_requires=reqs,
     zip_safe=False,
     test_suite='tests.test_suite'
 )

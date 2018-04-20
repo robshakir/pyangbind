@@ -1,287 +1,203 @@
 #!/usr/bin/env python
 
-import sys
-import os
-import getopt
+try:
+  import unittest2 as unittest
+except ImportError:
+  import unittest
+
+from pyangbind.lib.xpathhelper import YANGPathHelper
+from tests.base import PyangBindTestCase
 
 
-TESTNAME = "list-tc01"
-this_dir = os.path.dirname(os.path.realpath(__file__))
+class XPathListLeaflistTests(PyangBindTestCase):
+  yang_files = ['list-tc01.yang']
+  pyang_flags = ['--use-xpathhelper']
 
+  def setUp(self):
+    self.path_helper = YANGPathHelper()
+    self.instance = self.bindings.list_tc01(path_helper=self.path_helper)
 
-def main():
-  try:
-    opts, args = getopt.getopt(sys.argv[1:], "k", ["keepfiles"])
-  except getopt.GetoptError as e:
-    print str(e)
-    sys.exit(127)
+  def test_leaflist_leafref_with_require_instance_true(self):
+    for fish in ['mackerel', 'trout', 'haddock', 'flounder']:
+      self.instance.container.t1.append(fish)
+    for (fish, valid) in [('mackerel', True), ('haddock', True), ('minnow', False)]:
+      with self.subTest(fish=fish, valid=valid):
+        allowed = True
+        try:
+          self.instance.reference.t1_ptr = fish
+        except ValueError:
+          allowed = False
+        self.assertEqual(valid, allowed)
 
-  k = False
-  for o, a in opts:
-    if o in ["-k", "--keepfiles"]:
-      k = True
+  def test_leaflist_leafref_with_require_instance_false(self):
+    for fish in ['mackerel', 'trout', 'haddock', 'flounder']:
+      self.instance.container.t1.append(fish)
+    for (fish, exists) in [('flounder', True), ('minnow', False)]:
+      with self.subTest(fish=fish, exists=exists):
+        allowed = True
+        try:
+          self.instance.reference.t1_ptr_noexist = fish
+        except ValueError:
+          allowed = False
+        self.assertTrue(allowed)
 
-  pythonpath = os.environ.get("PATH_TO_PYBIND_TEST_PYTHON") if \
-                os.environ.get('PATH_TO_PYBIND_TEST_PYTHON') is not None \
-                  else sys.executable
-  pyangpath = os.environ.get('PYANGPATH') if os.environ.get('PYANGPATH') \
-      is not None else False
-  pyangbindpath = os.environ.get('PYANGBINDPATH') if \
-      os.environ.get('PYANGBINDPATH') is not None else False
-  assert pyangpath is not False, "could not find path to pyang"
-  assert pyangbindpath is not False, "could not resolve pyangbind directory"
+  def test_list_leafref_with_require_instance_true(self):
+    for animal in ['kangaroo', 'wallaby', 'koala', 'dingo']:
+      self.instance.container.t2.add(animal)
 
-  cmd = "%s " % pythonpath
-  cmd += "%s --plugindir %s/pyangbind/plugin" % (pyangpath, pyangbindpath)
-  cmd += " -f pybind -o %s/bindings.py" % this_dir
-  cmd += " -p %s" % this_dir
-  cmd += " --use-xpathhelper"
-  cmd += " %s/%s.yang" % (this_dir, TESTNAME)
-  print cmd
-  os.system(cmd)
+    for (animal, valid) in [('kangaroo', True), ('koala', True), ('wombat', False)]:
+      with self.subTest(animal=animal, valid=valid):
+        allowed = True
+        try:
+          self.instance.reference.t2_ptr = animal
+        except ValueError:
+          allowed = False
+        self.assertEqual(valid, allowed)
 
-  from bindings import list_tc01 as ytest
+  def test_get_leaflist_with_xpath_helper_returns_single_element(self):
+    for beer in ['oatmeal-stout', 'amber-ale', 'pale-ale', 'pils', 'ipa', 'session-ipa']:
+      self.instance.container.t3.append(beer)
 
-  yhelper = YANGPathHelper()
-  yobj = ytest(path_helper=yhelper)
+    self.assertEqual(len(self.path_helper.get('/container/t3')), 1)
 
-  t1_leaflist(yobj, yhelper)
-  t2_list(yobj, yhelper)
-  t3_leaflist_remove(yobj, yhelper)
-  t4_list_remove(yobj, yhelper)
-  t5_typedef_leaflist_add_del(yobj, yhelper)
-  t6_typedef_list_add(yobj, yhelper)
-  t7_leaflist_of_leafrefs(yobj, yhelper)
-  t8_standalone_leaflist_check(yobj, yhelper)
-  t9_get_list(yobj, yhelper)
+  def test_find_elements_of_leaflist(self):
+    for beer in ['oatmeal-stout', 'amber-ale', 'pale-ale', 'pils', 'ipa', 'session-ipa']:
+      self.instance.container.t3.append(beer)
 
-  if not k:
-    os.system("/bin/rm %s/bindings.py" % this_dir)
-    os.system("/bin/rm %s/bindings.pyc" % this_dir)
+    leaflist = self.path_helper.get('/container/t3')[0]
+    for (beer, valid) in [('session-ipa', True), ('amber-ale', True), ('moose-drool', False)]:
+      with self.subTest(beer=beer, valid=valid):
+        found = True
+        try:
+          leaflist.index(beer)
+        except ValueError:
+          found = False
+        self.assertEqual(valid, found)
 
+  def test_remove_elements_from_leaflist(self):
+    for beer in ['oatmeal-stout', 'amber-ale', 'pale-ale', 'pils', 'ipa', 'session-ipa']:
+      self.instance.container.t3.append(beer)
 
-def t1_leaflist(yobj, tree):
-  for a in ["mackerel", "trout", "haddock", "flounder"]:
-    yobj.container.t1.append(a)
+    for (beer, valid) in [('session-ipa', True), ('amber-ale', True), ('moose-drool', False)]:
+      with self.subTest(beer=beer, valid=valid):
+        removed = True
+        try:
+          self.instance.container.t3.remove(beer)
+        except ValueError:
+          removed = False
+        self.assertEqual(removed, valid)
 
-  for tc in [("mackerel", True), ("haddock", True), ("minnow", False)]:
-    validref = False
-    try:
-      yobj.reference.t1_ptr = tc[0]
-      validref = True
-    except ValueError:
-      pass
-    assert validref == tc[1], "Reference was incorrectly set for a" + \
-        " leaflist (%s not in %s -> %s != %s)" % (tc[0],
-            str(yobj.container.t1), validref, tc[1])
+  def test_xpath_helper_gets_updated_leaflist_after_removing_items(self):
+    for beer in ['oatmeal-stout', 'amber-ale', 'pale-ale', 'pils', 'ipa', 'session-ipa']:
+      self.instance.container.t3.append(beer)
+    retr = self.path_helper.get('/container/t3')  # Retrieve before to get the old value
 
-  for tc in [("flounder", "exists"), ("minnow", "does not exist")]:
-    validref = False
-    try:
-      yobj.reference.t1_ptr_noexist = tc[0]
-      validref = True
-    except ValueError:
-      pass
-    assert validref is True, "Reference was incorrectly set for a " + \
-      " leaflist with require_instance set to false " + \
-        "(%s threw error, but it %s)" % tc[1]
+    for beer in ['session-ipa', 'amber-ale']:
+      self.instance.container.t3.remove(beer)
+    retr = self.path_helper.get('/container/t3')
 
+    for beer in ['session-ipa', 'amber-ale', 'moose-drool']:
+      with self.subTest(beer=beer), self.assertRaises(ValueError):
+        retr[0].index(beer)
 
-def t2_list(yobj, tree):
+  def test_get_list_item_with_xpath_helper_returns_single_element(self):
+    for beer in ['steam', 'liberty', 'california-lager', 'porter', 'ipa', 'foghorn']:
+      self.instance.container.t4.add(beer)
 
-  for o in ["kangaroo", "wallaby", "koala", "dingo"]:
-    yobj.container.t2.add(o)
+    for (beer, exists) in [('steam', 1), ('liberty', 1), ('pygmy-owl', 0)]:
+      with self.subTest(beer=beer, exists=exists):
+        retr = self.path_helper.get('/container/t4[keyval=%s]' % beer)
+        self.assertEqual(len(retr), exists)
 
-  for tc in [("kangaroo", True), ("koala", True), ("wombat", False)]:
-    validref = False
-    try:
-      yobj.reference.t2_ptr = tc[0]
-      validref = True
-    except ValueError:
-      pass
-    assert validref == tc[1], "Reference was incorrectly set for a list" + \
-      " (%s not in %s -> %s != %s)" % (tc[0], yobj.container.t2.keys(),
-            validref, tc[1])
+  def test_remove_elements_from_list(self):
+    for beer in ['steam', 'liberty', 'california-lager', 'porter', 'ipa', 'foghorn']:
+      self.instance.container.t4.add(beer)
 
+    for (beer, valid) in [('steam', True), ('liberty', True), ('pygmy-owl', False)]:
+      with self.subTest(beer=beer, valid=valid):
+        removed = True
+        try:
+          self.instance.container.t4.delete(beer)
+        except KeyError:
+          removed = False
+        self.assertEqual(removed, valid)
 
-def t3_leaflist_remove(yobj, tree):
-  for b in ["oatmeal-stout", "amber-ale", "pale-ale", "pils",
-            "ipa", "session-ipa"]:
-    yobj.container.t3.append(b)
+  def test_xpath_helper_gets_updated_list_after_removing_items(self):
+    for beer in ['steam', 'liberty', 'california-lager', 'porter', 'ipa', 'foghorn']:
+      self.instance.container.t4.add(beer)
 
-  for b in [("session-ipa", 1), ("amber-ale", 1), ("moose-drool", 0)]:
-    path = "/container/t3"
-    retr = tree.get(path)
-    assert len(retr) == 1, \
-        "Looking up a leaf-list element returned multiple elements " + \
-            "erroneously (%s -> %d elements (%s))" % (b[0], len(retr), retr)
+    for beer in ['steam', 'liberty', 'pygmy-owl']:
+      with self.subTest(beer=beer):
+        path = '/container/t4[keyval=%s]'
+        retr = self.path_helper.get(path)
+        try:
+          self.instance.container.t4.delete(beer)
+        except KeyError:
+          pass
+        retr = self.path_helper.get(path)
 
-    found = False
-    try:
-      retr[0].index(b[0])
-      found = 1
-    except ValueError:
-      found = 0
+        self.assertEqual(len(retr), 0)
 
-    assert found == b[1], \
-        "When retrieving a leaf-list element, a known value was not in " + \
-            " the list (%s -> %s (%s))" % (b[0], b[1], retr[0])
+  def test_typedef_leaflist_with_require_instance_true(self):
+    for city in ['quebec-city', 'montreal', 'laval', 'gatineau']:
+      self.instance.container.t5.append(city)
 
-    rem = False
-    try:
-      yobj.container.t3.remove(b[0])
-      rem = True
-    except ValueError:
-      pass
-    assert rem == bool(b[1]), "Removal of a leaflist element did not " + \
-        "return expected result (%s -> %s != %s)" % (b[0], rem, bool(b[1]))
-    new_retr = tree.get(path)
+    for (city, valid) in [('quebec-city', True), ('montreal', True), ('dallas', False)]:
+      with self.subTest(city=city, valid=valid):
+        allowed = True
+        try:
+          self.instance.reference.t5_ptr = city
+        except ValueError:
+          allowed = False
+        self.assertEqual(valid, allowed)
 
-    found = False
-    try:
-      new_retr[0].index(b[0])
-      found = 1
-    except ValueError:
-      found = 0
-    assert found == 0, "An element was not correctly removed from the " + \
-        "leaf-list (%s -> %s [%s])" % (b[0], path, new_retr[0])
+  def test_typedef_list_with_require_instance_true(self):
+    for beer in ['la-ciboire', 'la-chipie', 'la-joufflue', 'la-matante']:
+      self.instance.container.t6.add(beer)
 
+    for (beer, valid) in [('la-ciboire', True), ('la-matante', True), ('heiniken', False)]:
+      with self.subTest(beer=beer, valid=valid):
+        allowed = True
+        try:
+          self.instance.reference.t6_ptr = beer
+        except ValueError:
+          allowed = False
+        self.assertEqual(valid, allowed)
 
-def t4_list_remove(yobj, tree):
+  def test_leaflist_of_leafrefs_with_require_instance_true(self):
+    for beer in ['snapshot', 'ranger']:
+      self.instance.container.t7.append(beer)
 
-  for b in ["steam", "liberty", "california-lager", "porter", "ipa",
-            "foghorn"]:
-    yobj.container.t4.add(b)
+    for (beer, valid) in [('snapshot', True), ('ranger', True), ('trout-slayer', False)]:
+      with self.subTest(beer=beer, valid=valid):
+        allowed = True
+        try:
+          self.instance.reference.t7_ptr.append(beer)
+        except ValueError:
+          allowed = False
+        self.assertEqual(valid, allowed)
 
-  for b in [("steam", 1), ("liberty", 1), ("pygmy-owl", 0)]:
-    path = "/container/t4[keyval=%s]" % b[0]
-    retr = tree.get(path)
-    assert len(retr) == b[1], \
-        "Retreive of a list element returned the wrong number of elements " + \
-            "(%s -> %d != %d)" % (b[0], len(retr), b[1])
-    rem = False
-    try:
-      yobj.container.t4.delete(b[0])
-      rem = True
-    except KeyError:
-      pass
-    assert rem == bool(b[1]), "Removal of a list element did not return " + \
-        "expected result (%s -> %s != %s)" % (b[0], rem, bool(b[1]))
-    new_retr = tree.get(path)
-    assert len(new_retr) == 0, "An element was not correctly removed from " + \
-        "the list (%s -> len(%s) = %d)" % (b[0], path, len(new_retr))
+  def test_standalone_leaflist(self):
+    self.instance.standalone.ll.append(1)
+    retr = self.path_helper.get('/standalone/ll')
+    self.assertEqual(retr[0][0], 1)
 
+  def test_standlone_list(self):
+    self.instance.standalone.l.add(1)
+    retr = self.path_helper.get('/standalone/l')
+    self.assertEqual(retr[0].x, 1)
 
-def t5_typedef_leaflist_add_del(yobj, tree=False):
+  def test_standalone_ref(self):
+    self.instance.standalone.l.add(1)
+    self.instance.standalone.ref = 1
+    self.assertEqual(self.instance.standalone.ref._referenced_object, 1)
 
-  for a in ["quebec-city", "montreal", "laval", "gatineau"]:
-    yobj.container.t5.append(a)
+  def test_get_list_retrieves_correct_attribute(self):
+    self.assertEqual(self.path_helper.get_list('/standalone/l')._yang_name, 'l')
 
-  for tc in [("quebec-city", True), ("montreal", True), ("dallas", False)]:
-    validref = False
-    try:
-      yobj.reference.t5_ptr = tc[0]
-      validref = True
-    except ValueError:
-      pass
-    assert validref == tc[1], "Reference was incorrectly set for a " + \
-        " leaflist (%s not in %s -> %s != %s)" % (tc[0],
-            str(yobj.container.t5), validref, tc[1])
-
-  for a in ["vancouver", "burnaby", "surrey", "richmond"]:
-    yobj.container.t5.append(a)
-
-  for tc in [("vancouver", True), ("burnaby", True), ("san-francisco", False),
-             ("surrey", True), ("richmond", True)]:
-    path = "/container/t5"
-    retr = tree.get(path)
-    assert (tc[0] in retr[0]) == tc[1], "Retrieve of a leaf-list element " + \
-        "did not return expected result (%s->%s %s)" % (tc[0], tc[1],
-              (retr[0]))
-    rem = False
-    try:
-      retr[0].remove(tc[0])
-      rem = True
-    except ValueError:
-      pass
-    new_retr = tree.get(path)
-    assert rem == bool(tc[1]), "An element was not correctly removed from " + \
-        "a leaf-list (%s -> len(%s) = %d)" % (tc[0], path, len(new_retr))
-
-  for tc in [("gatineau", True), ("laval", True), ("new-york-city", False),
-             ("quebec-city", True)]:
-    path = "/container/t5"
-    retr = tree.get(path)
-    assert (tc[0] in retr[0]) == tc[1], "Retrieve of a leaf-list element " + \
-        "did not return expected result (%s->%s %s)" % (tc[0], tc[1],
-            (retr[0]))
-    popped_obj = retr[0].pop()
-    if popped_obj == tc[0]:
-      expected_obj = True
-    else:
-      expected_obj = False
-    assert expected_obj == bool(tc[1]), "Popped object was not the " + \
-        "object that was expected (%s != %s)" % (tc[0], popped_obj)
-    new_retr = tree.get(path)
-    assert (tc[0] in new_retr[0]) is False, "Retrieve of a leaf-list " + \
-        "element did not return expected result (%s->%s %s)" % (tc[0], tc[1],
-              (new_retr[0]))
-
-
-def t6_typedef_list_add(yobj, tree):
-  for o in ["la-ciboire", "la-chipie", "la-joufflue", "la-matante"]:
-    yobj.container.t6.add(o)
-
-  for tc in [("la-ciboire", True), ("la-matante", True), ("heiniken", False)]:
-    validref = False
-    try:
-      yobj.reference.t6_ptr = tc[0]
-      validref = True
-    except ValueError:
-      pass
-    assert validref == tc[1], "Reference was incorrectly set for a list" + \
-      " (%s not in %s -> %s != %s)" % (tc[0], yobj.container.t6.keys(),
-            validref, tc[1])
-
-
-def t7_leaflist_of_leafrefs(yobj, tree):
-  test_list = [("snapshot", True), ("ranger", True), ("trout-slayer", False)]
-  for b in test_list:
-    if b[1]:
-      yobj.container.t7.append(b[0])
-
-  for b in test_list:
-    passed = False
-    try:
-      yobj.reference.t7_ptr.append(b[0])
-      passed = True
-    except Exception:
-      pass
-
-    assert passed == b[1], "A reference to a leaf-list of leafrefs " + \
-        "was not correctly set (%s -> %s, expected %s)" % (b[0], passed, b[1])
-
-
-def t8_standalone_leaflist_check(yobj, tree):
-  yobj.standalone.ll.append(1)
-
-  x = tree.get("/standalone/ll")
-  assert x[0][0] == 1, "leaf-list was not as expected"
-
-  yobj.standalone.l.add(1)
-  x = tree.get("/standalone/l")
-  assert x[0].x == 1, "list key was not as expected"
-
-  yobj.standalone.ref = 1
-  assert yobj.standalone.ref._referenced_object == 1, "reference was not correct"
-
-
-def t9_get_list(yobj, tree):
-  list_l = tree.get_list("/standalone/l")
-  assert list_l._yang_name == "l", "Did not retrieve correct attribute for list"
-  assert list_l._is_container == "list", "Did not retrieve a list for the list"
+  def test_get_list_returns_correct_type(self):
+    self.assertEqual(self.path_helper.get_list('/standalone/l')._is_container, 'list')
 
 
 if __name__ == '__main__':
-  from pyangbind.lib.xpathhelper import YANGPathHelper
-  main()
+  unittest.main()

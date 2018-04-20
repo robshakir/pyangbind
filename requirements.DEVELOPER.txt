@@ -1,5 +1,6 @@
 coverage
 flake8
 requests
+tox
 unittest2; python_version < '3.0'
 wheel
