@@ -141,7 +141,7 @@ class_map = {
                     int_size=64)
     },
     'string': {
-        "native_type": "unicode",
+        "native_type": "six.text_type",
         "base_type": True,
         "quote_arg": True,
         "pytype": six.text_type
@@ -1052,8 +1052,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
       c_str = classes[i["name"]]
       description_str = ""
       if i["description"]:
-        description_str = "\n\n    YANG Description: %s" \
-            % i["description"].decode('utf-8').encode('ascii', 'ignore')
+        description_str = "\n\n    YANG Description: %s" % i['description']
       nfd.write('''
   def _get_%s(self):
     """
@@ -1267,7 +1266,7 @@ def build_elemtype(ctx, et, prefix=False):
         cls = "leafref"
       else:
         elemtype = {
-            "native_type": "unicode",
+            "native_type": "six.text_type",
             "parent_type": "string",
             "base_type": False,
         }
