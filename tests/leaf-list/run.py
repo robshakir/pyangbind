@@ -1,8 +1,12 @@
 #!/usr/bin/env python
-
-import unittest
+from __future__ import unicode_literals
 
 from tests.base import PyangBindTestCase
+
+try:
+  import unittest2 as unittest
+except ImportError:
+  import unittest
 
 
 class LeafListTests(PyangBindTestCase):
@@ -30,12 +34,8 @@ class LeafListTests(PyangBindTestCase):
       "Cannot successfully address an item from the list.")
 
   def test_append_int_to_string_leaflist(self):
-    allowed = True
-    try:
+    with self.assertRaises(ValueError):
       self.leaflist_obj.container.leaflist.append(1)
-    except ValueError:
-      allowed = False
-    self.assertFalse(allowed, "Appended an element to the list erroneously")
 
   def test_getitem(self):
     self.leaflist_obj.container.leaflist.append("itemOne")
@@ -98,24 +98,16 @@ class LeafListTests(PyangBindTestCase):
       "Leaflist assignment did not function correctly")
 
   def test_leaflist_assignment_of_wrong_type(self):
-    allowed = True
-    try:
+    with self.assertRaises(ValueError):
       self.leaflist_obj.container.leaflist = [1, 2]
-    except ValueError:
-      allowed = False
-    self.assertFalse(allowed, "An erroneous value was assigned to the list.")
 
   def test_restricted_string(self):
     self.leaflist_obj.container.listtwo.append("a-valid-string")
     self.assertEqual(len(self.leaflist_obj.container.listtwo), 1, "Restricted lefalist did not function correctly.")
 
   def test_restricted_string_invalid_value(self):
-    allowed = True
-    try:
+    with self.assertRaises(ValueError):
       self.leaflist_obj.container.listtwo.append("broken-string")
-    except ValueError:
-      allowed = False
-    self.assertFalse(allowed, "An erroneous value was assigned to the list (restricted type)")
 
   def test_union_type(self):
     for pair in [(1, True), ("fish", True), ([], False)]:

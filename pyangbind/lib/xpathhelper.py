@@ -23,13 +23,17 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+from __future__ import unicode_literals
+
+import uuid
 from collections import OrderedDict
 
-from lxml import etree
 import regex
-import uuid
-from .yangtypes import safe_name
+import six
+from lxml import etree
+
 from .base import PybindBase
+from .yangtypes import safe_name
 
 
 class YANGPathHelperException(Exception):
@@ -304,7 +308,7 @@ class YANGPathHelper(PybindXpathHelper):
     return retr_obj
 
   def get(self, object_path, caller=False):
-    if isinstance(object_path, str) or isinstance(object_path, unicode):
+    if isinstance(object_path, six.string_types + (six.text_type,)):
       object_path = self._path_parts(object_path)
 
     return [self._library[i.get("obj_ptr")]
@@ -323,7 +327,7 @@ class YANGPathHelper(PybindXpathHelper):
 
   def get_list(self, object_path, caller=False,
                 exception_to_raise=YANGPathHelperException):
-    if isinstance(object_path, str) or isinstance(object_path, unicode):
+    if isinstance(object_path, six.string_types + (six.text_type,)):
       object_path = self._path_parts(object_path)
 
     parent_obj = self.get_unique(object_path[:-1], caller=caller,
