@@ -899,6 +899,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         class_str["type"] = "YANGDynClass"
         class_str["arg"] = "base=%s" % i["type"]
         class_str["arg"] += "(referenced_path='%s'" % i["referenced_path"]
+        class_str["referenced_path"] = i["referenced_path"]
         class_str["arg"] += ", caller=self._path() + ['%s'], " \
                                 % (i["yang_name"])
         class_str["arg"] += "path_helper=self._path_helper, "
@@ -913,6 +914,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         class_str["arg"] += "(allowed_type=%s(referenced_path='%s'," \
                               % (i["type"]["native_type"][1]["native_type"],
                                 i["type"]["native_type"][1]["referenced_path"])
+        class_str["referenced_path"] = i["type"]["native_type"][1]["referenced_path"]
         class_str["arg"] += "caller=self._path() + ['%s'], " % i["yang_name"]
         class_str["arg"] += "path_helper=self._path_helper, "
         class_str["arg"] += "require_instance=%s))" % \
@@ -1070,6 +1072,17 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
              safe_name(i["name"]), safe_name(i["name"]), c_str["type"], c_str["arg"],
              safe_name(i["name"])))
 
+      init_code = ""
+      if "referenced_path" in c_str:
+         if c_str["referenced_path"].startswith(".."):
+           referenced_path = []
+           for p in c_str["referenced_path"].split("/")[1:]:
+             if p == "..":
+               referenced_path.append("_parent")
+             else:
+              referenced_path.append(safe_name(p))
+           init_code = "self." + ".".join(referenced_path)
+
       nfd.write('''
   def _set_%s(self, v, load=False):
     """
@@ -1081,11 +1094,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
     """
     if self.__%s is None:
         self.__%s = %s(%s)
+    %s
     ''' % (safe_name(i["name"]), safe_name(i["name"]), i["path"],
            i["origtype"], safe_name(i["name"]), safe_name(i["name"]),
            description_str,
            safe_name(i["name"]), safe_name(i["name"]), c_str["type"], c_str["arg"],
-          ))
+           init_code,
+           ))
       if keyval and i["yang_name"] in keyval:
         nfd.write("""
     parent = getattr(self, "_parent", None)
