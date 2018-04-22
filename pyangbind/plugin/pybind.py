@@ -230,60 +230,58 @@ class PyangBindClass(plugin.PyangPlugin):
       #     preferable when one has large trees being compiled.
       #   * extensions - support for YANG extensions that pyangbind should look
       #     for, and add as a dictionary with each element.
-      optlist = [
-          optparse.make_option("--use-xpathhelper",
-                               dest="use_xpathhelper",
-                               action="store_true",
-                               help="""Use the xpathhelper module to
-                                       resolve leafrefs"""),
-          optparse.make_option("--split-class-dir",
-                               metavar="DIR",
-                               dest="split_class_dir",
-                               help="""Split the code output into
-                                       multiple directories"""),
-          optparse.make_option("--interesting-extension",
-                              metavar="EXTENSION-MODULE",
-                              default=[],
-                              action="append",
-                              type=str,
-                              dest="pybind_interested_exts",
-                              help="""A set of extensions that
-                                      are interesting and should be
-                                      stored with the class. They
-                                      can be accessed through the
-                                      "extension_dict()" argument.
-                                      Multiple arguments can be
-                                      specified."""),
-          optparse.make_option("--use-extmethods",
-                              dest="use_extmethods",
-                              action="store_true",
-                              help="""Allow a path-keyed dictionary
-                                      to be used to specify methods
-                                      related to a particular class"""),
-          optparse.make_option("--build-rpcs",
-                              dest="build_rpcs",
-                              action="store_true",
-                              help="""Generate class bindings for
-                                      the input and output of RPCs
-                                      defined in each module. These
-                                      are placed at the root of
-                                      each module"""),
-          optparse.make_option("--presence",
-                                dest="generate_presence",
-                                action="store_true",
-                                help="""Capture whether the presence
-                                        keyword is used in the generated
-                                        code."""),
-          optparse.make_option("--build-notifications",
-                              dest="build_notifications",
-                              action="store_true",
-                              help="""Generate class bindings for
-                                      notifications defined in each
-                                      module. These are placed at
-                                      the root of each module"""),
-      ]
-      g = optparser.add_option_group("pyangbind output specific options")
-      g.add_options(optlist)
+      option_group = optparse.OptionGroup(optparser, "pyangbind output specific options")
+      option_group.add_option("--use-xpathhelper",
+                           dest="use_xpathhelper",
+                           action="store_true",
+                           help="""Use the xpathhelper module to
+                                   resolve leafrefs"""),
+      option_group.add_option("--split-class-dir",
+                           metavar="DIR",
+                           dest="split_class_dir",
+                           help="""Split the code output into
+                                   multiple directories"""),
+      option_group.add_option("--interesting-extension",
+                          metavar="EXTENSION-MODULE",
+                          default=[],
+                          action="append",
+                          type=str,
+                          dest="pybind_interested_exts",
+                          help="""A set of extensions that
+                                  are interesting and should be
+                                  stored with the class. They
+                                  can be accessed through the
+                                  "extension_dict()" argument.
+                                  Multiple arguments can be
+                                  specified."""),
+      option_group.add_option("--use-extmethods",
+                          dest="use_extmethods",
+                          action="store_true",
+                          help="""Allow a path-keyed dictionary
+                                  to be used to specify methods
+                                  related to a particular class"""),
+      option_group.add_option("--build-rpcs",
+                          dest="build_rpcs",
+                          action="store_true",
+                          help="""Generate class bindings for
+                                  the input and output of RPCs
+                                  defined in each module. These
+                                  are placed at the root of
+                                  each module"""),
+      option_group.add_option("--presence",
+                            dest="generate_presence",
+                            action="store_true",
+                            help="""Capture whether the presence
+                                    keyword is used in the generated
+                                    code."""),
+      option_group.add_option("--build-notifications",
+                          dest="build_notifications",
+                          action="store_true",
+                          help="""Generate class bindings for
+                                  notifications defined in each
+                                  module. These are placed at
+                                  the root of each module"""),
+      optparser.add_option_group(option_group)
 
 
 # Core function to build the pyangbind output - starting with building the
