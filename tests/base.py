@@ -42,7 +42,7 @@ class PyangBindTestCase(unittest.TestCase):
               time.sleep(2)
             else:
               downloaded = True
-              with open(local_file_path, 'w') as fhandle:
+              with open(local_file_path, 'wb') as fhandle:
                 fhandle.write(response.content)
               break
           if not downloaded:
