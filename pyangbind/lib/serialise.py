@@ -274,7 +274,7 @@ class pybindJSONDecoder(object):
           # Put keys in order:
           okeys = []
           kdict = {}
-          for k, v in d[key].iteritems():  # YANGListType.iteritems
+          for k, v in six.iteritems(d[key]):
             if "__yang_order" not in v:
               # Element is not specified in terms of order, so
               # push to a list that keeps this order
@@ -337,7 +337,7 @@ class pybindJSONDecoder(object):
   def check_metadata_add(key, data, obj):
     keys = [six.text_type(k) for k in data]
     if ("@" + key) in keys:
-      for k, v in data["@" + key].iteritems():  # YANGListType.iteritems
+      for k, v in six.iteritems(data["@" + key]):
         obj._add_metadata(k, v)
 
   @staticmethod
@@ -379,7 +379,7 @@ class pybindJSONDecoder(object):
 
       if key == "@":
         # Handle whole container metadata object
-        for k, v in d[key].iteritems():  # YANGListType.iteritems
+        for k, v in six.iteritems(d[key]):
           obj._add_metadata(k, v)
         continue
       elif "@" in key:
