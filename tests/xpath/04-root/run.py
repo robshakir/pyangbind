@@ -56,7 +56,8 @@ class XPathRootTests(PyangBindTestCase):
     with open(os.path.join(os.path.dirname(__file__), "json", "05-deserialise.json"), 'r') as fp:
       pybindJSONDecoder.load_json(json.load(fp), None, None, obj=root)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/")))
-    x = json.load(open(os.path.join(os.path.dirname(__file__), "json", "05-deserialise.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "05-deserialise.json"), 'r') as fp:
+      x = json.load(fp)
     self.assertEqual(v, x)
 
   def test_006_ietf_deserialise(self):
@@ -64,7 +65,8 @@ class XPathRootTests(PyangBindTestCase):
     with open(os.path.join(os.path.dirname(__file__), "json", "06-deserialise-ietf.json"), 'r') as fp:
       pybindJSONDecoder.load_ietf_json(json.load(fp), None, None, obj=root)
     v = json.loads(pbJ.dumps(self.path_helper.get_unique("/"), mode="ietf"))
-    x = json.load(open(os.path.join(os.path.dirname(__file__), "json", "06-deserialise-ietf.json"), 'r'))
+    with open(os.path.join(os.path.dirname(__file__), "json", "06-deserialise-ietf.json"), 'r') as fp:
+      x = json.load(fp)
     self.assertEqual(v, x)
 
 

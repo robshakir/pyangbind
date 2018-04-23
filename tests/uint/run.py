@@ -110,7 +110,7 @@ class UIntTests(PyangBindTestCase):
       'sixtyfour': 2**64
     }
     for size, value in bounds.items():
-      with self.assertRaises(ValueError), self.subTest(size=size, value=value):
+      with self.subTest(size=size, value=value), self.assertRaises(ValueError):
         setter = getattr(self.instance.uint_container, "_set_%s" % size)
         setter(value)
 

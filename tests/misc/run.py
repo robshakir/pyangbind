@@ -36,7 +36,7 @@ class MiscTests(PyangBindTestCase):
     b.bar = "stringvaltwo"
 
     self.instance.b.append(b)
-    self.assertIsInstance(self.instance.b.keys()[0], six.text_type)
+    self.assertIsInstance(list(self.instance.b.keys())[0], six.text_type)
 
   def test_003_checklistkeytype(self):
     import bindings.c as miscc
@@ -44,7 +44,7 @@ class MiscTests(PyangBindTestCase):
     c.one = 42
 
     self.instance.c.append(c)
-    self.assertIsInstance(self.instance.c.keys()[0], int)
+    self.assertIsInstance(list(self.instance.c.keys())[0], int)
 
 
 if __name__ == '__main__':
