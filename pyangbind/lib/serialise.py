@@ -88,7 +88,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return [self.default(i, mode=mode) for i in obj]
     # Expand dictionaries
     elif isinstance(obj, dict):
-      return {k: self.default(v, mode=mode) for k, v in obj.iteritems()}
+      return {k: self.default(v, mode=mode) for k, v in six.iteritems(obj)}
 
     if pybc is not None:
       # Special cases where the wrapper has an underlying class
@@ -148,7 +148,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return nlist
     elif isinstance(obj, dict):
       ndict = {}
-      for k, v in obj.iteritems():
+      for k, v in six.iteritems(obj):
         ndict[k] = self.default(v, mode=mode)
       return ndict
     elif isinstance(obj, six.string_types + (six.text_type,)):
@@ -274,7 +274,7 @@ class pybindJSONDecoder(object):
           # Put keys in order:
           okeys = []
           kdict = {}
-          for k, v in d[key].iteritems():
+          for k, v in d[key].iteritems():  # YANGListType.iteritems
             if "__yang_order" not in v:
               # Element is not specified in terms of order, so
               # push to a list that keeps this order
@@ -337,7 +337,7 @@ class pybindJSONDecoder(object):
   def check_metadata_add(key, data, obj):
     keys = [six.text_type(k) for k in data]
     if ("@" + key) in keys:
-      for k, v in data["@" + key].iteritems():
+      for k, v in data["@" + key].iteritems():  # YANGListType.iteritems
         obj._add_metadata(k, v)
 
   @staticmethod
@@ -379,7 +379,7 @@ class pybindJSONDecoder(object):
 
       if key == "@":
         # Handle whole container metadata object
-        for k, v in d[key].iteritems():
+        for k, v in d[key].iteritems():  # YANGListType.iteritems
           obj._add_metadata(k, v)
         continue
       elif "@" in key:
@@ -530,7 +530,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         d[yname] = [pybindIETFJSONEncoder.generate_element(i,
                       parent_namespace=element._namespace, flt=flt,
                       with_defaults=with_defaults)
-                        for i in element._members.itervalues()]
+                        for i in element.itervalues()]
         if not len(d[yname]):
           del d[yname]
       else:
