@@ -184,7 +184,7 @@ class IntTests(PyangBindTestCase):
       'thirtytwo': -2**31,
       'sixtyfour': -2**63,
     }
-    for leaf, value in bounds.iteritems():
+    for leaf, value in bounds.items():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
@@ -201,7 +201,7 @@ class IntTests(PyangBindTestCase):
       'thirtytwo': -2**31 - 1,
       'sixtyfour': -2**63 - 1,
     }
-    for leaf, value in bounds.iteritems():
+    for leaf, value in bounds.items():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
@@ -218,7 +218,7 @@ class IntTests(PyangBindTestCase):
       'thirtytwo': 2**31 - 1,
       'sixtyfour': 2**63 - 1,
     }
-    for leaf, value in bounds.iteritems():
+    for leaf, value in bounds.items():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
@@ -235,7 +235,7 @@ class IntTests(PyangBindTestCase):
       'thirtytwo': 2**31,
       'sixtyfour': 2**63,
     }
-    for leaf, value in bounds.iteritems():
+    for leaf, value in bounds.items():
       with self.subTest(leaf=leaf):
         setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
         allowed = True
