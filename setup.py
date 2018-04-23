@@ -1,5 +1,5 @@
 import os
-from setuptools import setup, find_packages
+from setuptools import setup
 from codecs import open
 
 import pyangbind
@@ -47,7 +47,7 @@ setup(
     ],
     include_package_data=True,
     keywords="yang pyang",
-    packages=find_packages(exclude=['lib']),
+    packages=['pyangbind'],
     install_requires=reqs,
     zip_safe=False,
     test_suite='tests.test_suite'
