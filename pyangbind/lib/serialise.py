@@ -23,6 +23,7 @@ serialise:
   * module containing methods to serialise pyangbind class hierarchie
     to various data encodings. XML and/or JSON as the primary examples.
 """
+from __future__ import unicode_literals
 
 import json
 from collections import OrderedDict
@@ -101,7 +102,12 @@ class pybindJSONEncoder(json.JSONEncoder):
     if orig_yangt in ["leafref"]:
       return self.default(obj._get()) if hasattr(obj, "_get") else six.text_type(obj)
     elif orig_yangt in ["int64", "uint64"]:
-      return six.text_type(obj) if mode == "ietf" else int(obj)
+      if mode == "ietf":
+        return six.text_type(obj)
+      elif six.PY3:
+        return int(obj)
+      else:
+        return long(obj)
     elif orig_yangt in ["identityref"]:
       if mode == "ietf":
         try:
@@ -113,11 +119,6 @@ class pybindJSONEncoder(json.JSONEncoder):
         return six.text_type(obj)
     elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
       return int(obj)
-    elif orig_yangt in ["int64" "uint64"]:
-      if mode == "ietf":
-        return six.text_type(obj)
-      else:
-        return int(obj)
     elif orig_yangt in ["string", "enumeration"]:
       return six.text_type(obj)
     elif orig_yangt in ["binary"]:
@@ -191,12 +192,18 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
     elif map_val in ["int"]:
+      int_size = getattr(obj, "_restricted_int_size", None)
+      if mode == "ietf" and int_size == 64:
+        return six.text_type(obj)
       return int(obj)
     elif map_val in ["long"]:
       int_size = getattr(obj, "_restricted_int_size", None)
       if mode == "ietf" and int_size == 64:
         return six.text_type(obj)
-      return int(obj)
+      elif six.PY3:
+        return int(obj)
+      else:
+        return long(obj)
     elif map_val in ["container"]:
       return self._preprocess_element(obj.get(), mode=mode)
     elif map_val in ["decimal.Decimal"]:
