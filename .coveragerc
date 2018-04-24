@@ -6,6 +6,8 @@ omit =
     */.virtualenvs/*
     */tests/*
     */env/*
+    # We don't currently have a way to track code coverage of the plugin itself.
+    pyangbind/plugin/*
 source = pyangbind
 
 [report]
