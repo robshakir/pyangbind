@@ -17,6 +17,7 @@ from tests.base import PyangBindTestCase
 
 class JSONDeserialiseTests(PyangBindTestCase):
   yang_files = ['json-deserialise.yang']
+  maxDiff = None
 
   def setUp(self):
     self.yang_helper = YANGPathHelper()
@@ -59,7 +60,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
             'one-leaf': 'hi',
             'typedef-one': 'test',
             'boolean': True,
-            'binary': bitarray('111111'),
+            'binary': bitarray('010101'),
             'union': '16',
             'identityref': 'idone',
             'enumeration': 'one',

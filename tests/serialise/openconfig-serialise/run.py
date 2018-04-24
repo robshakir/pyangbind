@@ -16,6 +16,7 @@ TESTNAME = "json-serialise"
 
 
 class OpenconfigSerialiseTests(PyangBindTestCase):
+  maxDiff = None
   split_class_dir = True
   module_name = 'ocbind'
   yang_files = [os.path.join(os.path.dirname(__file__), 'openconfig', 'openconfig-interfaces.yang')]
