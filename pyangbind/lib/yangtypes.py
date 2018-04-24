@@ -1027,7 +1027,7 @@ def YANGDynClass(*args, **kwargs):
         super(YANGBaseClass, self).__init__(*args, **kwargs)
       except TypeError:
         super(YANGBaseClass, self).__init__()
-      except Exception as e:
+      except Exception:
         six.reraise()
 
     def _changed(self):
