@@ -15,6 +15,7 @@ from tests.base import PyangBindTestCase
 
 class IETFJSONDeserialiseTests(PyangBindTestCase):
   yang_files = ['ietf-json-deserialise.yang']
+  maxDiff = None
 
   def test_multi_key_list_load(self):
     expected_json = {'mkey': {'one 1': {'leaf-two': 1, 'leaf-one': 'one'},
@@ -58,7 +59,7 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
             'one-leaf': 'hi',
             'typedef-one': 'test',
             'boolean': True,
-            'binary': bitarray('111111'),
+            'binary': bitarray('010101'),
             'union': '16',
             'identityref': 'idone',
             'enumeration': 'one',

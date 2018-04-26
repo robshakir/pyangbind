@@ -30,17 +30,17 @@ class SplitClassesTests(PyangBindTestCase):
 
   def test_add_entry_to_case_one_container(self):
     self.instance.choices.case_one_container.user.add('first')
-    self.assertEqual(self.instance.choices.case_one_container.user.keys(), ['first'])
+    self.assertEqual(list(self.instance.choices.case_one_container.user.keys()), ['first'])
 
   def test_adding_entry_to_other_case_after_first_case(self):
     self.instance.choices.case_one_container.user.add('first')
     self.instance.choices.case_two_container.user.add('second')
-    self.assertEqual(self.instance.choices.case_two_container.user.keys(), ['second'])
+    self.assertEqual(list(self.instance.choices.case_two_container.user.keys()), ['second'])
 
   def test_adding_entry_to_other_case_clears_first_case(self):
     self.instance.choices.case_one_container.user.add('first')
     self.instance.choices.case_two_container.user.add('second')
-    self.assertEqual(self.instance.choices.case_one_container.user.keys(), [])
+    self.assertEqual(list(self.instance.choices.case_one_container.user.keys()), [])
 
 
 if __name__ == '__main__':

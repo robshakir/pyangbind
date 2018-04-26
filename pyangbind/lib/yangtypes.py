@@ -165,7 +165,10 @@ def RestrictedClassType(*args, **kwargs):
         self.__check(args[0])
       except IndexError:
         pass
-      super(RestrictedClass, self).__init__(*args, **kwargs)
+      try:
+        super(RestrictedClass, self).__init__(*args, **kwargs)
+      except TypeError:
+        super(RestrictedClass, self).__init__()
 
     def __new__(self, *args, **kwargs):
       self._restriction_dict = restriction_dict
@@ -328,7 +331,10 @@ def RestrictedClassType(*args, **kwargs):
         if not passed:
           raise ValueError("%s does not match a restricted type" % val)
 
-      obj = base_type.__new__(self, *args, **kwargs)
+      try:
+        obj = base_type.__new__(self, *args, **kwargs)
+      except TypeError:
+        obj = base_type.__new__(self)
       return obj
 
     def __check(self, v):
@@ -541,10 +547,10 @@ def YANGListType(*args, **kwargs):
       return True
 
     def iteritems(self):
-      return self._members.iteritems()
+      return six.iteritems(self._members)
 
     def itervalues(self):
-      return self._members.itervalues()
+      return six.itervalues(self._members)
 
     def _key_to_native_key_type(self, k):
       if self._keyval is False:
@@ -949,7 +955,10 @@ def YANGDynClass(*args, **kwargs):
                                   str(base_type))
 
     def __new__(self, *args, **kwargs):
-      obj = base_type.__new__(self, *args, **kwargs)
+      try:
+        obj = base_type.__new__(self, *args, **kwargs)
+      except TypeError:
+        obj = base_type.__new__(self)
       return obj
 
     def __init__(self, *args, **kwargs):
@@ -1016,9 +1025,10 @@ def YANGDynClass(*args, **kwargs):
 
       try:
         super(YANGBaseClass, self).__init__(*args, **kwargs)
-      except Exception as e:
-        raise TypeError("couldn't generate dynamic type -> %s -> %s"
-                        % (type(e), e))
+      except TypeError:
+        super(YANGBaseClass, self).__init__()
+      except Exception:
+        six.reraise()
 
     def _changed(self):
       return self._mchanged

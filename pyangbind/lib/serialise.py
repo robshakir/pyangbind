@@ -23,6 +23,7 @@ serialise:
   * module containing methods to serialise pyangbind class hierarchie
     to various data encodings. XML and/or JSON as the primary examples.
 """
+from __future__ import unicode_literals
 
 import json
 from collections import OrderedDict
@@ -88,7 +89,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return [self.default(i, mode=mode) for i in obj]
     # Expand dictionaries
     elif isinstance(obj, dict):
-      return {k: self.default(v, mode=mode) for k, v in obj.iteritems()}
+      return {k: self.default(v, mode=mode) for k, v in six.iteritems(obj)}
 
     if pybc is not None:
       # Special cases where the wrapper has an underlying class
@@ -101,7 +102,12 @@ class pybindJSONEncoder(json.JSONEncoder):
     if orig_yangt in ["leafref"]:
       return self.default(obj._get()) if hasattr(obj, "_get") else six.text_type(obj)
     elif orig_yangt in ["int64", "uint64"]:
-      return six.text_type(obj) if mode == "ietf" else int(obj)
+      if mode == "ietf":
+        return six.text_type(obj)
+      elif six.PY3:
+        return int(obj)
+      else:
+        return long(obj)
     elif orig_yangt in ["identityref"]:
       if mode == "ietf":
         try:
@@ -113,11 +119,6 @@ class pybindJSONEncoder(json.JSONEncoder):
         return six.text_type(obj)
     elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
       return int(obj)
-    elif orig_yangt in ["int64" "uint64"]:
-      if mode == "ietf":
-        return six.text_type(obj)
-      else:
-        return int(obj)
     elif orig_yangt in ["string", "enumeration"]:
       return six.text_type(obj)
     elif orig_yangt in ["binary"]:
@@ -148,7 +149,7 @@ class pybindJSONEncoder(json.JSONEncoder):
       return nlist
     elif isinstance(obj, dict):
       ndict = {}
-      for k, v in obj.iteritems():
+      for k, v in six.iteritems(obj):
         ndict[k] = self.default(v, mode=mode)
       return ndict
     elif isinstance(obj, six.string_types + (six.text_type,)):
@@ -191,12 +192,18 @@ class pybindJSONEncoder(json.JSONEncoder):
     elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
         return [self.default(i) for i in obj]
     elif map_val in ["int"]:
+      int_size = getattr(obj, "_restricted_int_size", None)
+      if mode == "ietf" and int_size == 64:
+        return six.text_type(obj)
       return int(obj)
     elif map_val in ["long"]:
       int_size = getattr(obj, "_restricted_int_size", None)
       if mode == "ietf" and int_size == 64:
         return six.text_type(obj)
-      return int(obj)
+      elif six.PY3:
+        return int(obj)
+      else:
+        return long(obj)
     elif map_val in ["container"]:
       return self._preprocess_element(obj.get(), mode=mode)
     elif map_val in ["decimal.Decimal"]:
@@ -274,7 +281,7 @@ class pybindJSONDecoder(object):
           # Put keys in order:
           okeys = []
           kdict = {}
-          for k, v in d[key].iteritems():
+          for k, v in six.iteritems(d[key]):
             if "__yang_order" not in v:
               # Element is not specified in terms of order, so
               # push to a list that keeps this order
@@ -337,7 +344,7 @@ class pybindJSONDecoder(object):
   def check_metadata_add(key, data, obj):
     keys = [six.text_type(k) for k in data]
     if ("@" + key) in keys:
-      for k, v in data["@" + key].iteritems():
+      for k, v in six.iteritems(data["@" + key]):
         obj._add_metadata(k, v)
 
   @staticmethod
@@ -379,7 +386,7 @@ class pybindJSONDecoder(object):
 
       if key == "@":
         # Handle whole container metadata object
-        for k, v in d[key].iteritems():
+        for k, v in six.iteritems(d[key]):
           obj._add_metadata(k, v)
         continue
       elif "@" in key:
@@ -530,7 +537,7 @@ class pybindIETFJSONEncoder(pybindJSONEncoder):
         d[yname] = [pybindIETFJSONEncoder.generate_element(i,
                       parent_namespace=element._namespace, flt=flt,
                       with_defaults=with_defaults)
-                        for i in element._members.itervalues()]
+                        for i in element.itervalues()]
         if not len(d[yname]):
           del d[yname]
       else:

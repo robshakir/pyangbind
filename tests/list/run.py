@@ -124,7 +124,7 @@ class ListTests(PyangBindTestCase):
     for i in range(1, 10):
       self.instance.list_container.list_five.add(i)
 
-    for (key, match) in zip(self.instance.list_container.list_five.keys(), range(1, 10)):
+    for (key, match) in zip(list(self.instance.list_container.list_five.keys()), range(1, 10)):
       with self.subTest(key=key, match=match):
         self.assertEqual(key, match)
 
@@ -162,7 +162,7 @@ class ListTests(PyangBindTestCase):
     self.instance.list_container.list_eight.add(val="one", additional="ten")
     self.instance.list_container.list_eight.add(val="two", additional="twenty")
     self.instance.list_container.list_eight.delete(val="one", additional="ten")
-    self.assertEqual(self.instance.list_container.list_eight.keys(), ['value one value two', 'two twenty'])
+    self.assertEqual(list(self.instance.list_container.list_eight.keys()), ['value one value two', 'two twenty'])
 
   def test_cant_delete_nonexistent_list_item_by_keywords(self):
     self.instance.list_container.list_eight.add(val="two", additional="twenty")
@@ -233,7 +233,7 @@ class ListTests(PyangBindTestCase):
       item.kv = key
       item.lv = val
       self.instance.list_nine.append(item)
-    self.assertEqual(self.instance.list_nine.keys(), [13, "fourteen"])
+    self.assertEqual(list(self.instance.list_nine.keys()), [13, "fourteen"])
 
   def test_append_new_list_item_with_compound_key(self):
     item = self.instance.list_ten._new_item()
@@ -250,7 +250,7 @@ class ListTests(PyangBindTestCase):
       item.kvtwo = key2
       item.lv = val
       self.instance.list_ten.append(item)
-    self.assertEqual(self.instance.list_ten.keys(), ['12 13', '13 14'])
+    self.assertEqual(list(self.instance.list_ten.keys()), ['12 13', '13 14'])
 
   def test_append_new_list_item_with_identityref(self):
     item = self.instance.list_eleven._new_item()

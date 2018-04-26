@@ -17,6 +17,7 @@ from tests.base import PyangBindTestCase
 
 class JSONDeserialiseTests(PyangBindTestCase):
   yang_files = ['json-deserialise.yang']
+  maxDiff = None
 
   def setUp(self):
     self.yang_helper = YANGPathHelper()
@@ -59,7 +60,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
             'one-leaf': 'hi',
             'typedef-one': 'test',
             'boolean': True,
-            'binary': bitarray('111111'),
+            'binary': bitarray('010101'),
             'union': '16',
             'identityref': 'idone',
             'enumeration': 'one',
@@ -103,7 +104,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
       "json_deserialise",
       path_helper=self.yang_helper
     )
-    self.assertEqual(actual_json.ordered.keys(), ["two", "one"], "Did not correctly load a user ordered list.")
+    self.assertEqual(list(actual_json.ordered.keys()), ["two", "one"])
 
   def test_load_json_ordered_list(self):
     actual_json = pbJ.load(
@@ -112,7 +113,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
       "json_deserialise",
       path_helper=self.yang_helper
     )
-    self.assertEqual(actual_json.ordered.keys(), ["two", "one"], "Did not correctly follow ordering in JSON file.")
+    self.assertEqual(list(actual_json.ordered.keys()), ["two", "one"])
 
   def test_skip_unknown_keys(self):
     allowed = True
