@@ -1,20 +1,20 @@
-![#PyangBind](http://rob.sh/img/pyblogo_gh.png)
+[![#PyangBind][img-pyangbind]][pyangbind-docs]
 
 
-![Travis](https://img.shields.io/travis/robshakir/pyangbind.svg)
-![Codecov](https://img.shields.io/codecov/c/github/robshakir/pyangbind.svg)
-![PyPI](https://img.shields.io/pypi/v/pyangbind.svg)
-![PyPI - License](https://img.shields.io/pypi/l/pyangbind.svg)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/pyangbind.svg)
+[![Travis][img-travis]][travis]
+[![Codecov][img-codecov]][codecov]
+[![PyPI][img-pypi]][pypi-project]
+[![PyPI - License][img-license]][license]
+[![PyPI - Python Version][img-pyversion]][pypi-project]
 
 
-**PyangBind** is a plugin for [Pyang](https://github.com/mbj4668/pyang) that generates a Python class hierarchy from a YANG data model. The resulting classes can be directly interacted with in Python. Particularly, **PyangBind** will allow you to:
+**PyangBind** is a plugin for [Pyang][pyang] that generates a Python class hierarchy from a YANG data model. The resulting classes can be directly interacted with in Python. Particularly, **PyangBind** will allow you to:
 
  * Create new data instances - through setting values in the Python class hierarchy.
  * Load data instances from external sources - taking input data from an external source and allowing it to be addressed through the Python classes.
  * Serialise populated objects into formats that can be stored, or sent to another system (e.g., a network element).
 
-Development of **PyangBind** has been motivated by consuming the  [OpenConfig](http://www.openconfig.net/) data models; and is intended to be well-tested against these models. The Python classes generated, and serialisation methods are intended to provide network operators with a starting point for loading data instances from network elements, manipulating them, and sending them to a network device. **PyangBind** classes also have functionality which allows additional methods to be associated with the classes, such that it can be used for the foundation of a NMS.
+Development of **PyangBind** has been motivated by consuming the  [OpenConfig][openconfig] data models; and is intended to be well-tested against these models. The Python classes generated, and serialisation methods are intended to provide network operators with a starting point for loading data instances from network elements, manipulating them, and sending them to a network device. **PyangBind** classes also have functionality which allows additional methods to be associated with the classes, such that it can be used for the foundation of a NMS.
 
 ## Contents
 
@@ -33,7 +33,7 @@ Development of **PyangBind** has been motivated by consuming the  [OpenConfig](h
 
 ## Getting Started <a name="getting-started"></a>
 
-**PyangBind** is distributed through [PyPI](https://pypi.org/), it can be installed by simply running:
+**PyangBind** is distributed through [PyPI][pypi], it can be installed by simply running:
 
 ```
 $ pip install pyangbind
@@ -165,9 +165,9 @@ except ValueError as m:
 
 Clearly, populated PyangBind classes are not useful in and of themselves - the common use case is that they are sent to a external system (e.g., a router, or other NMS component). To achieve this the class hierarchy needs to be serialised into a format that can be sent to the remote entity. There are currently multiple ways to do this:
 
- * **XML** - the rules for this mapping are defined in [RFC6020bis](https://tools.ietf.org/html/draft-ietf-netmod-rfc6020bis-11) - currently _NOT SUPPORTED_.
+ * **XML** - the rules for this mapping are defined in [RFC 7950][rfc7950] - currently _NOT SUPPORTED_.
  * **OpenConfig-suggested JSON** - the rules for this mapping are currently being written into a formal specification. This is the standard (`default`) format used by PyangBind. Some network equipment vendors utilise this serialisation format.
- * **IETF JSON** - the rules for this mapping are defined in [draft-ietf-netmod-yang-json](https://tools.ietf.org/html/draft-ietf-netmod-yang-json-09) - some network equipment vendors use this format.
+ * **IETF JSON** - the rules for this mapping are defined in [RFC 7951][rfc7951] - some network equipment vendors use this format.
 
 Any PyangBind class can be serialised into any of the supported formats. Using the static route example above, the entire `local-routing` module can be serialised into OC-JSON using the following code:
 
@@ -339,12 +339,34 @@ limitations under the License.
 
 ## Acknowledgements <a name="acks"></a>
 * This project was initiated as part of BT plc. Network Architecture 'future network management' projects.
-* Additional development efforts were supported by [Jive Communications, Inc](http://www.jive.com).
-* Current maintenance is supported by [Google](http://www.google.com).
+* Additional development efforts were supported by [Jive Communications, Inc][jive].
+* Current maintenance is supported by [Google][google].
 * Key contributions have been made to this project by the following developers, and companies. Many thanks
   are extended to them:
-  * GoDaddy, particularly Joey Wilhelm's herculean efforts to refactor test code to use the `unittest` framework.
+  * [GoDaddy][godaddy], particularly Joey Wilhelm's herculean efforts to refactor test code to use the `unittest` framework.
   * David Barroso, who initiated efforts to address Python 3 compatibility, and a number of other enhancements.
 * Design, debugging, example code, and ideas have been contributed by:
-  * Members of the [OpenConfig](http://www.openconfig.net) working group.
+  * Members of the [OpenConfig][openconfig] working group.
   * The managability team at Juniper Networks.
+
+
+[img-pyangbind]: http://rob.sh/img/pyblogo_gh.png
+[img-travis]: https://img.shields.io/travis/robshakir/pyangbind.svg
+[img-codecov]: https://img.shields.io/codecov/c/github/robshakir/pyangbind.svg
+[img-pypi]: https://img.shields.io/pypi/v/pyangbind.svg
+[img-license]: https://img.shields.io/pypi/l/pyangbind.svg
+[img-pyversion]: https://img.shields.io/pypi/pyversions/pyangbind.svg
+
+[pyangbind-docs]: http://pynms.io/pyangbind/
+[travis]: https://travis-ci.org/robshakir/pyangbind
+[codecov]: https://codecov.io/gh/robshakir/pyangbind
+[pypi-project]: https://pypi.org/project/pyangbind/
+[license]: http://www.apache.org/licenses/LICENSE-2.0
+[pyang]: https://github.com/mbj4668/pyang
+[openconfig]: http://www.openconfig.net
+[pypi]: https://pypi.org/
+[rfc7950]: https://tools.ietf.org/html/rfc7950
+[rfc7951]: https://tools.ietf.org/html/rfc7951
+[jive]: https://www.jive.com/
+[google]: https://www.google.com/
+[godaddy]: https://www.godaddy.com/
