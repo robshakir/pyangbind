@@ -20,12 +20,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from __future__ import unicode_literals
 
 import copy
 import decimal
 import optparse
 import os
 import sys
+from collections import OrderedDict
 
 import six
 from bitarray import bitarray
@@ -390,9 +392,9 @@ elif six.PY2:
 
   # Build a list of the 'typedef' and 'identity' statements that are included
   # in the modules supplied.
-  defn = {}
+  defn = OrderedDict()
   for defnt in ['typedef', 'identity']:
-    defn[defnt] = {}
+    defn[defnt] = OrderedDict()
     for m in all_mods:
       t = misc_help.find_definitions(defnt, ctx, m[1], m[0])
       for k in t:
@@ -528,11 +530,11 @@ def build_typedefs(ctx, defnd):
       real_pfx = defining_module.search_one('prefix').arg
 
       if ":" in i.arg:
-        tn = u"%s:%s" % (real_pfx, i.arg.split(":")[1])
+        tn = "%s:%s" % (real_pfx, i.arg.split(":")[1])
       elif i.arg not in base_types:
         # If this was not a base type (defined in YANG) then resolve it
         # to the module it belongs to.
-        tn = u"%s:%s" % (real_pfx, i.arg)
+        tn = "%s:%s" % (real_pfx, i.arg)
       else:
         tn = i.arg
 
