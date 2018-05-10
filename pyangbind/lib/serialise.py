@@ -35,6 +35,10 @@ from enum import IntEnum
 from pyangbind.lib.yangtypes import YANGBool, safe_name
 
 
+if six.PY3:
+  long = int
+
+
 class WithDefaults(IntEnum):
   IF_SET = 0
 
