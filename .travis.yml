@@ -10,7 +10,7 @@ python:
   - 3.7-dev
 matrix:
   include:
-  - python: 2.7
+  - python: 3.6
     env: TOXENV=flake8
 install:
   - pip install tox tox-travis codecov
@@ -19,3 +19,15 @@ after_success: codecov
 branches:
   only:
     - master
+    - "/^v?\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+deploy:
+  provider: pypi
+  user: jwilhelm
+  password:
+    secure: oC+pOZSikl7MHxVdukVej9RH+fr/2LpXgaI1MphxZIohCZvWFXIMl+4vHfNbhI7ax4d7VaW7OLJEWUE7dPMpicHeTD6oD1jZps2ri3TNgWC1G5GiMUuCqDCo+SD+KFv1EWOY+esfX3TKCI0vOOvv01rfXJYH6yoHziFgYK8XJfEvMkGpKkCjAnlQ8wSpt3QTWaMULvyUMYv/83h6hyhajbRSarvci0DXO7xdN1p3OE0CDFgCa1xcvUi3URhIlUROLW1mI+P/aPjyNETn/Kkdn9a70NZjGez9vaD5KbxKegxcRmyRNYlyHNxVRFkAfCj9zVP+DtKxnX0gPGhK9t6ZXSAcZJOMBzETbSn33pzSsSvLTHMxzh1ppZ3CXdkxjVyCjwtu9PTjuh9lFIWyXFPv6UcaUnmnEf7o6D7PjrFoT+HGwD7+hbrFmQbM1mAPm9POdxMJ4/UYJ20iT4BaDxXh+QxxJjipJbQY1BlPz7iesusvBtDFQUlFi6JX/gBdOODscto89vnASmVcv+hJRFXK73VNSp3DuTSh7r5mxYM0PNX6/TDS3x9qAm+jQa1vYEhPeELWusp19lf5mff80nfoRBmEqngOiXNegDr5zUN8jYjWdpIaukV+DLpTpHQgxjsmdCOm8bJU+OTY8OP3HbWXOQGKhUKKvB4m3yHWdasK4fY=
+  on:
+    tags: true
+    python: 3.6
+    condition: "$TOXENV = flake8"
+    distributions: sdist bdist_wheel
+    repo: robshakir/pyangbind
