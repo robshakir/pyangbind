@@ -377,19 +377,25 @@ def TypedListType(*args, **kwargs):
     _list = list()
 
     def __init__(self, *args, **kwargs):
+      self._unique = kwargs.pop('unique', False)
       self._allowed_type = allowed_type
       self._list = list()
       if len(args):
         if isinstance(args[0], list):
           tmp = []
           for i in args[0]:
-            tmp.append(self.check(i))
+            if not self._unique or i not in tmp:
+              tmp.append(self.check(i))
           self._list.extend(tmp)
         else:
           tmp = self.check(args[0])
           self._list.append(tmp)
 
     def check(self, v):
+      # Short circuit uniqueness check
+      if self._unique and v in self._list:
+        raise ValueError("Values in this list must be unique.")
+
       passed = False
       count = 0
       for i in self._allowed_type:
@@ -446,16 +452,16 @@ def TypedListType(*args, **kwargs):
       del self._list[i]
 
     def __setitem__(self, i, v):
-      self.check(v)
-      self._list.insert(i, v)
+      self.insert(i, v)
 
     def insert(self, i, v):
       val = self.check(v)
       self._list.insert(i, val)
 
     def append(self, v):
-      val = self.check(v)
-      self._list.append(val)
+      if not self._unique or v not in self._list:
+        val = self.check(v)
+        self._list.append(val)
 
     def __str__(self):
       return str(self._list)

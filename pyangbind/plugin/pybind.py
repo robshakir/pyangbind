@@ -844,7 +844,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(),
         # TypedList (see lib.yangtypes) with a particular set of types allowed.
         class_str["name"] = "__%s" % (i["name"])
         class_str["type"] = "YANGDynClass"
-        class_str["arg"] = "base="
+        class_str["arg"] = "unique=True, base="
         if isinstance(i["type"]["native_type"][1], list):
           allowed_type = "["
           for subtype in i["type"]["native_type"][1]:
