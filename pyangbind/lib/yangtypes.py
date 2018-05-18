@@ -1007,10 +1007,6 @@ def YANGDynClass(*args, **kwargs):
       if default:
         self._default = default
       if len(args):
-        if self._default is not False:
-          if not args[0] == self._default:
-            self._set()
-        else:
           self._set()
 
       # lists themselves do not register, only elements within them
