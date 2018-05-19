@@ -20,41 +20,45 @@ import sys
 
 
 def module_import_prefixes(ctx):
-  mod_ref_prefixes = {}
-  for mod in ctx.modules:
-    m = ctx.search_module(0, mod[0])
-    for importstmt in m.search('import'):
-      if importstmt.arg not in mod_ref_prefixes:
-        mod_ref_prefixes[importstmt.arg] = []
-      mod_ref_prefixes[importstmt.arg].append(importstmt.search_one('prefix').arg)
-  return mod_ref_prefixes
+    mod_ref_prefixes = {}
+    for mod in ctx.modules:
+        m = ctx.search_module(0, mod[0])
+        for importstmt in m.search("import"):
+            if importstmt.arg not in mod_ref_prefixes:
+                mod_ref_prefixes[importstmt.arg] = []
+            mod_ref_prefixes[importstmt.arg].append(importstmt.search_one("prefix").arg)
+    return mod_ref_prefixes
 
 
 def find_child_definitions(obj, defn, prefix, definitions):
-  for i in obj.search(defn):
-    if i.arg in definitions:
-      sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
-    else:
-      definitions["%s:%s" % (prefix, i.arg)] = i
+    for i in obj.search(defn):
+        if i.arg in definitions:
+            sys.stderr.write("WARNING: duplicate definition of %s" % i.arg)
+        else:
+            definitions["%s:%s" % (prefix, i.arg)] = i
 
-  possible_parents = [
-                        'grouping', 'container',
-                        'list', 'rpc', 'input',
-                        'output', 'notification'
-                      ]
+    possible_parents = [
+        "grouping",
+        "container",
+        "list",
+        "rpc",
+        "input",
+        "output",
+        "notification",
+    ]
 
-  for parent_type in possible_parents:
-    for ch in obj.search(parent_type):
-      if ch.i_children:
-        find_child_definitions(ch, defn, prefix, definitions)
+    for parent_type in possible_parents:
+        for ch in obj.search(parent_type):
+            if ch.i_children:
+                find_child_definitions(ch, defn, prefix, definitions)
 
-  return definitions
+    return definitions
 
 
 def find_definitions(defn, ctx, module, prefix):
-  # Find the statements within a module that map to a particular type of
-  # statement, for instance - find typedefs, or identities, and reutrn them
-  # as a dictionary to the calling function.
-  definitions = {}
-  defin = find_child_definitions(module, defn, prefix, definitions)
-  return defin
+    # Find the statements within a module that map to a particular type of
+    # statement, for instance - find typedefs, or identities, and reutrn them
+    # as a dictionary to the calling function.
+    definitions = {}
+    defin = find_child_definitions(module, defn, prefix, definitions)
+    return defin

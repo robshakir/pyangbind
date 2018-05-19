@@ -1,3 +1,4 @@
+black==18.5b0; python_version >= '3.6'
 coverage
 flake8
 requests
