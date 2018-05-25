@@ -1,0 +1,23 @@
+module simple {
+    yang-version "1";
+    namespace "http://rob.sh/yang/test/simple";
+    prefix "foo";
+    organization "BugReports Inc";
+    contact "A bug reporter";
+
+    description
+        "A test module";
+    revision 2014-01-01 {
+        description "april-fools";
+        reference "fooled-you";
+    }
+
+    container test_leaf_changed {
+        leaf a1 {
+            type string;
+            default "default";
+            description
+                "A test leaf";
+        }
+    }
+}
