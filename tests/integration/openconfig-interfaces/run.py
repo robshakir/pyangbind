@@ -49,6 +49,7 @@ class OpenconfigInterfacesTests(PyangBindTestCase):
         'interfaces/openconfig-if-ip.yang',
         'interfaces/openconfig-if-ethernet.yang',
         'interfaces/openconfig-if-aggregate.yang',
+        'interfaces/openconfig-if-types.yang',
         'interfaces/openconfig-interfaces.yang',
       ],
     },
