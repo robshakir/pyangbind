@@ -2,7 +2,7 @@ from tests.base import PyangBindTestCase
 
 
 class APITests(PyangBindTestCase):
-    yang_files = ['models/simple.yang']
+    yang_files = ["models/simple.yang"]
 
     def setUp(self):
         self.simple_unchanged = self.bindings.simple()
@@ -15,7 +15,10 @@ class APITests(PyangBindTestCase):
 
     def test_leaf_changed_with_defaults(self):
         self.simple_changed_defaults.test_leaf_changed.a1 = self.simple.test_leaf_changed.a1._default
-        self.assertTrue(self.simple_changed_defaults.test_leaf_changed.a1 == self.simple_changed_defaults.test_leaf_changed.a1._default)
+        self.assertTrue(
+            self.simple_changed_defaults.test_leaf_changed.a1
+            == self.simple_changed_defaults.test_leaf_changed.a1._default
+        )
         self.assertTrue(self.simple_changed_defaults.test_leaf_changed.a1._changed())
         self.assertTrue(self.simple_changed_defaults.test_leaf_changed._changed())
 

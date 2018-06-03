@@ -20,7 +20,7 @@ print(dumps(rpc_input, mode="ietf"))
 # Load an output from IETF JSON
 rpc_output = output()
 fn = os.path.join("json", "rpc-output.json")
-json_obj = json.load(open(fn, 'r'))
+json_obj = json.load(open(fn, "r"))
 pybindJSONDecoder.load_ietf_json(json_obj, None, None, obj=rpc_output)
 print(rpc_output.response_id)
 
