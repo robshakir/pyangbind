@@ -11,8 +11,6 @@ python:
 matrix:
   include:
   - python: 3.6
-    env: TOXENV=flake8
-  - python: 3.6
     env: TOXENV=black
 install:
   - pip install tox tox-travis codecov
@@ -30,6 +28,5 @@ deploy:
   on:
     tags: true
     python: 3.6
-    condition: "$TOXENV = flake8"
     distributions: sdist bdist_wheel
     repo: robshakir/pyangbind
