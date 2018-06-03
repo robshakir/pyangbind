@@ -21,139 +21,140 @@ from .misc import module_import_prefixes
 
 
 class Identity(object):
-  def __init__(self, name):
-    self.name = name
-    self.source_module = None
-    self._imported_prefixes = []
-    self.source_namespace = None
-    self.base = None
-    self.children = []
 
-  def add_prefix(self, prefix):
-    if prefix not in self._imported_prefixes:
-      self._imported_prefixes.append(prefix)
+    def __init__(self, name):
+        self.name = name
+        self.source_module = None
+        self._imported_prefixes = []
+        self.source_namespace = None
+        self.base = None
+        self.children = []
 
-  def add_child(self, child):
-    if not isinstance(child, Identity):
-      raise ValueError("Must supply a identity as a child")
-    self.children.append(child)
+    def add_prefix(self, prefix):
+        if prefix not in self._imported_prefixes:
+            self._imported_prefixes.append(prefix)
 
-  def __str__(self):
-    return "%s:%s" % (self.source_module, self.name)
+    def add_child(self, child):
+        if not isinstance(child, Identity):
+            raise ValueError("Must supply a identity as a child")
+        self.children.append(child)
 
-  def prefixes(self):
-    return self._imported_prefixes
+    def __str__(self):
+        return "%s:%s" % (self.source_module, self.name)
+
+    def prefixes(self):
+        return self._imported_prefixes
 
 
 class IdentityStore(object):
-  def __init__(self):
-    self._store = []
 
-  def find_identity_by_source_name(self, s, n):
-    for i in self._store:
-      if i.source_module == s and i.name == n:
-        return i
+    def __init__(self):
+        self._store = []
 
-  def add_identity(self, i):
-    if isinstance(i, Identity):
-      if not self.find_identity_by_source_name(i.source_module, i.name):
-        self._store.append(i)
-    else:
-      raise ValueError("Must specify an identity")
+    def find_identity_by_source_name(self, s, n):
+        for i in self._store:
+            if i.source_module == s and i.name == n:
+                return i
 
-  def identities(self):
-    return ["%s:%s" % (i.source_module, i.name) for i in self._store]
-
-  def __iter__(self):
-    return iter(self._store)
-
-  def build_store_from_definitions(self, ctx, defnd):
-    unresolved_identities = list(defnd.keys())
-    unresolved_identity_count = {k: 0 for k in defnd}
-    error_ids = []
-
-    mod_ref_prefixes = module_import_prefixes(ctx)
-
-    while len(unresolved_identities):
-      this_id = unresolved_identities.pop(0)
-      iddef = defnd[this_id]
-
-      base = iddef.search_one('base')
-      try:
-        mainmod = iddef.main_module()
-      except AttributeError:
-        mainmod = None
-      if mainmod is not None:
-        defmod = mainmod
-
-      defining_module = defmod.arg
-      namespace = defmod.search_one('namespace').arg
-      prefix = defmod.search_one('prefix').arg
-
-      if base is None:
-        # Add a new identity which can be a base
-        tid = Identity(iddef.arg)
-        tid.source_module = defining_module
-        tid.source_namespace = namespace
-        tid.add_prefix(prefix)
-        self.add_identity(tid)
-
-        if defining_module in mod_ref_prefixes:
-          for i in mod_ref_prefixes[defining_module]:
-            tid.add_prefix(i)
-
-      else:
-        # Determine what the name of the base and the prefix for
-        # the base should be
-        if ":" in base.arg:
-          base_pfx, base_name = base.arg.split(":")
+    def add_identity(self, i):
+        if isinstance(i, Identity):
+            if not self.find_identity_by_source_name(i.source_module, i.name):
+                self._store.append(i)
         else:
-          base_pfx, base_name = prefix, base.arg
+            raise ValueError("Must specify an identity")
 
-        parent_module = util.prefix_to_module(defmod, base_pfx,
-                                  base.pos, ctx.errors)
+    def identities(self):
+        return ["%s:%s" % (i.source_module, i.name) for i in self._store]
 
-        # Find whether we have the base in the store
-        base_id = self.find_identity_by_source_name(parent_module.arg, base_name)
+    def __iter__(self):
+        return iter(self._store)
 
-        if base_id is None:
-          # and if not, then push this identity back onto the stack
-          unresolved_identities.append(this_id)
-          unresolved_identity_count[this_id] += 1
-          # FIXME(Joey Wilhelm): `unresolved_idc` and `ident` are both undefined. What is the intent of this code?
-          # if unresolved_identity_count[this_id] > 1000:
-          #   if unresolved_idc[ident] > 1000:
-          #     sys.stderr.write("could not find a match for %s base: %s\n" %
-          #       (iddef.arg, base_name))
-          #     error_ids.append(ident)
-        else:
-          # Check we don't already have this identity defined
-          if self.find_identity_by_source_name(defining_module, iddef.arg) is None:
-            # otherwise, create a new identity that reflects this one
-            tid = Identity(iddef.arg)
-            tid.source_module = defining_module
-            tid.source_namespace = namespace
-            tid.add_prefix(prefix)
-            base_id.add_child(tid)
-            self.add_identity(tid)
+    def build_store_from_definitions(self, ctx, defnd):
+        unresolved_identities = list(defnd.keys())
+        unresolved_identity_count = {k: 0 for k in defnd}
+        error_ids = []
 
-            if defining_module in mod_ref_prefixes:
-              for i in mod_ref_prefixes[defining_module]:
-                tid.add_prefix(i)
+        mod_ref_prefixes = module_import_prefixes(ctx)
 
-      if error_ids:
-        raise TypeError("could not resolve identities %s" % error_ids)
+        while len(unresolved_identities):
+            this_id = unresolved_identities.pop(0)
+            iddef = defnd[this_id]
 
-    self._build_inheritance()
+            base = iddef.search_one("base")
+            try:
+                mainmod = iddef.main_module()
+            except AttributeError:
+                mainmod = None
+            if mainmod is not None:
+                defmod = mainmod
 
-  def _recurse_children(self, identity, children):
-    for child in identity.children:
-      children.append(child)
-      self._recurse_children(child, children)
-    return children
+            defining_module = defmod.arg
+            namespace = defmod.search_one("namespace").arg
+            prefix = defmod.search_one("prefix").arg
 
-  def _build_inheritance(self):
-    for i in self._store:
-      ch = list()
-      self._recurse_children(i, ch)
-      i.children = ch
+            if base is None:
+                # Add a new identity which can be a base
+                tid = Identity(iddef.arg)
+                tid.source_module = defining_module
+                tid.source_namespace = namespace
+                tid.add_prefix(prefix)
+                self.add_identity(tid)
+
+                if defining_module in mod_ref_prefixes:
+                    for i in mod_ref_prefixes[defining_module]:
+                        tid.add_prefix(i)
+
+            else:
+                # Determine what the name of the base and the prefix for
+                # the base should be
+                if ":" in base.arg:
+                    base_pfx, base_name = base.arg.split(":")
+                else:
+                    base_pfx, base_name = prefix, base.arg
+
+                parent_module = util.prefix_to_module(defmod, base_pfx, base.pos, ctx.errors)
+
+                # Find whether we have the base in the store
+                base_id = self.find_identity_by_source_name(parent_module.arg, base_name)
+
+                if base_id is None:
+                    # and if not, then push this identity back onto the stack
+                    unresolved_identities.append(this_id)
+                    unresolved_identity_count[this_id] += 1
+                    # FIXME(Joey Wilhelm): `unresolved_idc` and `ident` are both undefined. What is the intent of this code?
+                    # if unresolved_identity_count[this_id] > 1000:
+                    #   if unresolved_idc[ident] > 1000:
+                    #     sys.stderr.write("could not find a match for %s base: %s\n" %
+                    #       (iddef.arg, base_name))
+                    #     error_ids.append(ident)
+                else:
+                    # Check we don't already have this identity defined
+                    if self.find_identity_by_source_name(defining_module, iddef.arg) is None:
+                        # otherwise, create a new identity that reflects this one
+                        tid = Identity(iddef.arg)
+                        tid.source_module = defining_module
+                        tid.source_namespace = namespace
+                        tid.add_prefix(prefix)
+                        base_id.add_child(tid)
+                        self.add_identity(tid)
+
+                        if defining_module in mod_ref_prefixes:
+                            for i in mod_ref_prefixes[defining_module]:
+                                tid.add_prefix(i)
+
+            if error_ids:
+                raise TypeError("could not resolve identities %s" % error_ids)
+
+        self._build_inheritance()
+
+    def _recurse_children(self, identity, children):
+        for child in identity.children:
+            children.append(child)
+            self._recurse_children(child, children)
+        return children
+
+    def _build_inheritance(self):
+        for i in self._store:
+            ch = list()
+            self._recurse_children(i, ch)
+            i.children = ch
