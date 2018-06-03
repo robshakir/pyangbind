@@ -100,43 +100,25 @@ class_map = {
         "quote_arg": True,
         "pytype": YANGBool,
     },
-    "binary": {
-        "native_type": "bitarray",
-        "base_type": True,
-        "quote_arg": True,
-        "pytype": bitarray,
-    },
+    "binary": {"native_type": "bitarray", "base_type": True, "quote_arg": True, "pytype": bitarray},
     "uint8": {
-        "native_type": (
-            "RestrictedClassType(base_type=int,"
-            + " restriction_dict={'range': ['0..255']}, int_size=8)"
-        ),
+        "native_type": ("RestrictedClassType(base_type=int," + " restriction_dict={'range': ['0..255']}, int_size=8)"),
         "base_type": True,
-        "pytype": RestrictedClassType(
-            base_type=int, restriction_dict={"range": ["0..255"]}, int_size=8
-        ),
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={"range": ["0..255"]}, int_size=8),
     },
     "uint16": {
         "native_type": (
-            "RestrictedClassType(base_type=int,"
-            + " restriction_dict={'range': ['0..65535']},"
-            + "int_size=16)"
+            "RestrictedClassType(base_type=int," + " restriction_dict={'range': ['0..65535']}," + "int_size=16)"
         ),
         "base_type": True,
-        "pytype": RestrictedClassType(
-            base_type=int, restriction_dict={"range": ["0..65535"]}, int_size=16
-        ),
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={"range": ["0..65535"]}, int_size=16),
     },
     "uint32": {
         "native_type": (
-            "RestrictedClassType(base_type=long,"
-            + " restriction_dict={'range': ['0..4294967295']},"
-            + " int_size=32)"
+            "RestrictedClassType(base_type=long," + " restriction_dict={'range': ['0..4294967295']}," + " int_size=32)"
         ),
         "base_type": True,
-        "pytype": RestrictedClassType(
-            base_type=long, restriction_dict={"range": ["0..4294967295"]}, int_size=32
-        ),
+        "pytype": RestrictedClassType(base_type=long, restriction_dict={"range": ["0..4294967295"]}, int_size=32),
     },
     "uint64": {
         "native_type": (
@@ -146,22 +128,11 @@ class_map = {
         ),
         "base_type": True,
         "pytype": RestrictedClassType(
-            base_type=long,
-            restriction_dict={"range": ["0..18446744073709551615"]},
-            int_size=64,
+            base_type=long, restriction_dict={"range": ["0..18446744073709551615"]}, int_size=64
         ),
     },
-    "string": {
-        "native_type": "six.text_type",
-        "base_type": True,
-        "quote_arg": True,
-        "pytype": six.text_type,
-    },
-    "decimal64": {
-        "native_type": "Decimal",
-        "base_type": True,
-        "pytype": decimal.Decimal,
-    },
+    "string": {"native_type": "six.text_type", "base_type": True, "quote_arg": True, "pytype": six.text_type},
+    "decimal64": {"native_type": "Decimal", "base_type": True, "pytype": decimal.Decimal},
     "empty": {
         "native_type": "YANGBool",
         "map": class_bool_map,
@@ -173,19 +144,14 @@ class_map = {
         "native_type": "RestrictedClassType(base_type=int, "
         + "restriction_dict={'range': ['-128..127']}, int_size=8)",
         "base_type": True,
-        "pytype": RestrictedClassType(
-            base_type=int, restriction_dict={"range": ["-128..127"]}, int_size=8
-        ),
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={"range": ["-128..127"]}, int_size=8),
     },
     "int16": {
         "native_type": (
-            "RestrictedClassType(base_type=int,"
-            "restriction_dict={'range': ['-32768..32767']}, " + "int_size=16)"
+            "RestrictedClassType(base_type=int," "restriction_dict={'range': ['-32768..32767']}, " + "int_size=16)"
         ),
         "base_type": True,
-        "pytype": RestrictedClassType(
-            base_type=int, restriction_dict={"range": ["-32768..32767"]}, int_size=16
-        ),
+        "pytype": RestrictedClassType(base_type=int, restriction_dict={"range": ["-32768..32767"]}, int_size=16),
     },
     "int32": {
         "native_type": (
@@ -195,9 +161,7 @@ class_map = {
         ),
         "base_type": True,
         "pytype": RestrictedClassType(
-            base_type=long,
-            restriction_dict={"range": ["-2147483648..2147483647"]},
-            int_size=32,
+            base_type=long, restriction_dict={"range": ["-2147483648..2147483647"]}, int_size=32
         ),
     },
     "int64": {
@@ -209,34 +173,17 @@ class_map = {
         ),
         "base_type": True,
         "pytype": RestrictedClassType(
-            base_type=long,
-            restriction_dict={"range": ["-9223372036854775808..9223372036854775807"]},
-            int_size=64,
+            base_type=long, restriction_dict={"range": ["-9223372036854775808..9223372036854775807"]}, int_size=64
         ),
     },
 }
 
 # We have a set of types which support "range" statements in RFC6020. This
 # list determins types that should be allowed to have a "range" argument.
-INT_RANGE_TYPES = [
-    "uint8",
-    "uint16",
-    "uint32",
-    "uint64",
-    "int8",
-    "int16",
-    "int32",
-    "int64",
-]
+INT_RANGE_TYPES = ["uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64"]
 
 # The types that are built-in to YANG
-YANG_BUILTIN_TYPES = list(class_map.keys()) + [
-    "container",
-    "list",
-    "rpc",
-    "notification",
-    "leafref",
-]
+YANG_BUILTIN_TYPES = list(class_map.keys()) + ["container", "list", "rpc", "notification", "leafref"]
 
 
 # Base machinery to support operation as a plugin to pyang.
@@ -266,9 +213,7 @@ class PyangBindClass(plugin.PyangPlugin):
         #     preferable when one has large trees being compiled.
         #   * extensions - support for YANG extensions that pyangbind should look
         #     for, and add as a dictionary with each element.
-        option_group = optparse.OptionGroup(
-            optparser, "pyangbind output specific options"
-        )
+        option_group = optparse.OptionGroup(optparser, "pyangbind output specific options")
         option_group.add_option(
             "--use-xpathhelper",
             dest="use_xpathhelper",
@@ -355,10 +300,7 @@ def build_pybind(ctx, modules, fd):
         for e in ctx.errors:
             print("INFO: encountered %s" % str(e))
             if not e[1] in ["UNUSED_IMPORT", "PATTERN_ERROR"]:
-                sys.stderr.write(
-                    "FATAL: pyangbind cannot build module that pyang"
-                    + " has found errors with.\n"
-                )
+                sys.stderr.write("FATAL: pyangbind cannot build module that pyang" + " has found errors with.\n")
                 sys.exit(127)
 
     # Build the common set of imports that all pyangbind files needs
@@ -378,9 +320,7 @@ def build_pybind(ctx, modules, fd):
         "ReferenceType",
     ]
     for library in yangtypes_imports:
-        ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(
-            library
-        )
+        ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
     ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
     ctx.pybind_common_hdr += "from collections import OrderedDict\n"
     ctx.pybind_common_hdr += "from decimal import Decimal\n"
@@ -414,9 +354,7 @@ elif six.PY2:
         if local_module_prefix is None:
             local_module_prefix = module.search_one("belongs-to").search_one("prefix")
             if local_module_prefix is None:
-                raise AttributeError(
-                    "A module (%s) must have a prefix or parent " + "module"
-                )
+                raise AttributeError("A module (%s) must have a prefix or parent " + "module")
             local_module_prefix = local_module_prefix.arg
         else:
             local_module_prefix = local_module_prefix.arg
@@ -477,11 +415,7 @@ elif six.PY2:
             if subm is not None:
                 mods.append(subm)
         for m in mods:
-            children = [
-                ch
-                for ch in module.i_children
-                if ch.keyword in statements.data_definition_keywords
-            ]
+            children = [ch for ch in module.i_children if ch.keyword in statements.data_definition_keywords]
             get_children(ctx, fd, children, m, m)
 
             if ctx.opts.build_rpcs:
@@ -490,19 +424,11 @@ elif six.PY2:
                 # can be used as a proxy for the namespace.
                 if len(rpcs):
                     get_children(
-                        ctx,
-                        fd,
-                        rpcs,
-                        module,
-                        module,
-                        register_paths=False,
-                        path="/%s_rpc" % (safe_name(module.arg)),
+                        ctx, fd, rpcs, module, module, register_paths=False, path="/%s_rpc" % (safe_name(module.arg))
                     )
 
             if ctx.opts.build_notifications:
-                notifications = [
-                    ch for ch in module.i_children if ch.keyword == "notification"
-                ]
+                notifications = [ch for ch in module.i_children if ch.keyword == "notification"]
                 # Build notifications specifically under the module name,
                 # since this can be used as a proxy for the namespace.
                 if len(notifications):
@@ -632,10 +558,7 @@ def build_typedefs(ctx, defnd):
                 # typedef that has a type in it that is not found after many iterations
                 # then we should bail.
                 error_ids.append(t)
-                sys.stderr.write(
-                    "could not find a match for %s type -> %s\n"
-                    % (t, [i.arg for i in subtypes])
-                )
+                sys.stderr.write("could not find a match for %s type -> %s\n" % (t, [i.arg for i in subtypes]))
             else:
                 unresolved_t.append(t)
 
@@ -674,9 +597,7 @@ def build_typedefs(ctx, defnd):
             else:
                 yang_type = item.search_one("type").arg
                 if yang_type not in known_types:
-                    raise TypeError(
-                        "typedef specified a native type that was not " + "supported"
-                    )
+                    raise TypeError("typedef specified a native type that was not " + "supported")
                 class_map[type_name]["parent_type"] = yang_type
             if default_stmt is not None:
                 class_map[type_name]["default"] = default_stmt.arg
@@ -687,9 +608,7 @@ def build_typedefs(ctx, defnd):
                 class_map[type_name]["require_instance"] = elemtype["require_instance"]
             if "restriction_type" in elemtype:
                 class_map[type_name]["restriction_type"] = elemtype["restriction_type"]
-                class_map[type_name]["restriction_argument"] = elemtype[
-                    "restriction_argument"
-                ]
+                class_map[type_name]["restriction_argument"] = elemtype["restriction_argument"]
             if "quote_arg" in elemtype:
                 class_map[type_name]["quote_arg"] = elemtype["quote_arg"]
         else:
@@ -720,11 +639,7 @@ def build_typedefs(ctx, defnd):
                     # is within a typedef, then pyangbind will choose the first one.
                     q = True if "quote_arg" in i[1] else False
                     default = (i[1]["default"], q)
-            class_map[type_name] = {
-                "native_type": native_type,
-                "base_type": False,
-                "parent_type": parent_type,
-            }
+            class_map[type_name] = {"native_type": native_type, "base_type": False, "parent_type": parent_type}
             if default:
                 class_map[type_name]["default"] = default[0]
                 class_map[type_name]["quote_default"] = default[1]
@@ -732,17 +647,7 @@ def build_typedefs(ctx, defnd):
         class_map[type_name.split(":")[1]] = class_map[type_name]
 
 
-def get_children(
-    ctx,
-    fd,
-    i_children,
-    module,
-    parent,
-    path=str(),
-    parent_cfg=True,
-    choice=False,
-    register_paths=True,
-):
+def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False, register_paths=True):
 
     # Iterative function that is called for all elements that have childen
     # data nodes in the tree. This function resolves those nodes into the
@@ -870,27 +775,14 @@ def get_children(
 
     # 'container', 'module', 'list' and 'submodule' all have their own classes
     # generated.
-    if parent.keyword in [
-        "container",
-        "module",
-        "list",
-        "submodule",
-        "input",
-        "output",
-        "rpc",
-        "notification",
-    ]:
+    if parent.keyword in ["container", "module", "list", "submodule", "input", "output", "rpc", "notification"]:
         if ctx.opts.split_class_dir:
             nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
         else:
             if not path == "":
                 nfd.write(
                     "class yc_%s_%s_%s(PybindBase):\n"
-                    % (
-                        safe_name(parent.arg),
-                        safe_name(module.arg),
-                        safe_name(path.replace("/", "_")),
-                    )
+                    % (safe_name(parent.arg), safe_name(module.arg), safe_name(path.replace("/", "_")))
                 )
             else:
                 nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
@@ -899,11 +791,7 @@ def get_children(
         # is and store this such that we can give a hint.
         keyval = False
         if parent.keyword == "list":
-            keyval = (
-                parent.search_one("key").arg
-                if parent.search_one("key") is not None
-                else False
-            )
+            keyval = parent.search_one("key").arg if parent.search_one("key") is not None else False
             if keyval and " " in keyval:
                 keyval = keyval.split(" ")
             else:
@@ -926,16 +814,10 @@ def get_children(
   the container is represented as a class variable - with a specific
   YANG type.%s
   """\n'''
-            % (
-                module.arg,
-                (path if not path == "" else "/%s" % parent.arg),
-                parent_descr,
-            )
+            % (module.arg, (path if not path == "" else "/%s" % parent.arg), parent_descr)
         )
     else:
-        raise TypeError(
-            "unhandled keyword with children %s at %s" % (parent.keyword, parent.pos)
-        )
+        raise TypeError("unhandled keyword with children %s at %s" % (parent.keyword, parent.pos))
 
     elements_str = ""
     if len(elements) == 0:
@@ -973,9 +855,7 @@ def get_children(
             # extension that were provided with the leaf, etc.).
             class_str = {}
             if "default" in i and not i["default"] is None:
-                default_arg = (
-                    '"%s"' % (i["default"]) if i["quote_arg"] else "%s" % i["default"]
-                )
+                default_arg = '"%s"' % (i["default"]) if i["quote_arg"] else "%s" % i["default"]
 
             if i["class"] == "leaf-list":
                 # Map a leaf-list to the type specified in the class map. This is a
@@ -990,15 +870,9 @@ def get_children(
                     allowed_type += "]"
                 else:
                     allowed_type = "%s" % (i["type"]["native_type"][1])
-                class_str["arg"] += "%s(allowed_type=%s)" % (
-                    i["type"]["native_type"][0],
-                    allowed_type,
-                )
+                class_str["arg"] += "%s(allowed_type=%s)" % (i["type"]["native_type"][0], allowed_type)
                 if "default" in i and not i["default"] is None:
-                    class_str["arg"] += ", default=%s(%s)" % (
-                        i["defaulttype"],
-                        default_arg,
-                    )
+                    class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
             elif i["class"] == "list":
                 # Map a list to YANGList class - this is dynamically derived by the
                 # YANGListType function to have the relevant characteristics, such as
@@ -1006,14 +880,9 @@ def get_children(
                 class_str["name"] = "__%s" % (i["name"])
                 class_str["type"] = "YANGDynClass"
                 class_str["arg"] = "base=YANGListType("
-                class_str["arg"] += "%s,%s" % (
-                    '"%s"' % i["key"] if i["key"] else False,
-                    i["type"],
-                )
+                class_str["arg"] += "%s,%s" % ('"%s"' % i["key"] if i["key"] else False, i["type"])
                 class_str["arg"] += ', yang_name="%s", parent=self' % (i["yang_name"])
-                class_str["arg"] += (
-                    ", is_container='list', user_ordered=%s" % i["user_ordered"]
-                )
+                class_str["arg"] += ", is_container='list', user_ordered=%s" % i["user_ordered"]
                 class_str["arg"] += ", path_helper=self._path_helper"
                 class_str["arg"] += ", yang_keys='%s'" % i["yang_keys"]
                 class_str["arg"] += ", extensions=%s" % i["extensions"]
@@ -1036,10 +905,7 @@ def get_children(
                         class_str["arg"] += "%s," % u[1]["native_type"]
                 class_str["arg"] += "]"
                 if "default" in i and not i["default"] is None:
-                    class_str["arg"] += ", default=%s(%s)" % (
-                        i["defaulttype"],
-                        default_arg,
-                    )
+                    class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
             elif i["class"] == "leafref":
                 # A leafref, pyangbind uses the special ReferenceType which performs a
                 # lookup against the path_helper class provided.
@@ -1047,9 +913,7 @@ def get_children(
                 class_str["type"] = "YANGDynClass"
                 class_str["arg"] = "base=%s" % i["type"]
                 class_str["arg"] += "(referenced_path='%s'" % i["referenced_path"]
-                class_str["arg"] += ", caller=self._path() + ['%s'], " % (
-                    i["yang_name"]
-                )
+                class_str["arg"] += ", caller=self._path() + ['%s'], " % (i["yang_name"])
                 class_str["arg"] += "path_helper=self._path_helper, "
                 class_str["arg"] += "require_instance=%s)" % (i["require_instance"])
             elif i["class"] == "leafref-list":
@@ -1065,9 +929,7 @@ def get_children(
                 )
                 class_str["arg"] += "caller=self._path() + ['%s'], " % i["yang_name"]
                 class_str["arg"] += "path_helper=self._path_helper, "
-                class_str["arg"] += "require_instance=%s))" % (
-                    i["type"]["native_type"][1]["require_instance"]
-                )
+                class_str["arg"] += "require_instance=%s))" % (i["type"]["native_type"][1]["require_instance"])
             else:
                 # Generically handle all other classes with the 'standard' mappings.
                 class_str["name"] = "__%s" % (i["name"])
@@ -1080,10 +942,7 @@ def get_children(
                 else:
                     class_str["arg"] = "base=%s" % i["type"]
                 if "default" in i and not i["default"] is None:
-                    class_str["arg"] += ", default=%s(%s)" % (
-                        i["defaulttype"],
-                        default_arg,
-                    )
+                    class_str["arg"] += ", default=%s(%s)" % (i["defaulttype"], default_arg)
             if i["class"] == "container":
                 class_str["arg"] += ", is_container='container'"
                 if ctx.opts.generate_presence:
@@ -1173,10 +1032,7 @@ def get_children(
         # Write out the classes that are stored locally as self.__foo where
         # foo is the safe YANG name.
         for c in classes:
-            nfd.write(
-                "    self.%s = %s(%s)\n"
-                % (classes[c]["name"], classes[c]["type"], classes[c]["arg"])
-            )
+            nfd.write("    self.%s = %s(%s)\n" % (classes[c]["name"], classes[c]["type"], classes[c]["arg"]))
         # Don't accept arguments to a container/list/submodule class
         nfd.write(
             """
@@ -1229,14 +1085,7 @@ def get_children(
     """
     return self.__%s
       '''
-                % (
-                    i["name"],
-                    i["name"],
-                    i["path"],
-                    i["origtype"],
-                    description_str,
-                    i["name"],
-                )
+                % (i["name"], i["name"], i["path"], i["origtype"], description_str, i["name"])
             )
 
             nfd.write(
@@ -1249,15 +1098,7 @@ def get_children(
     method. Backends looking to populate this variable should
     do so via calling thisObj._set_%s() directly.%s
     """'''
-                % (
-                    i["name"],
-                    i["name"],
-                    i["path"],
-                    i["origtype"],
-                    i["name"],
-                    i["name"],
-                    description_str,
-                )
+                % (i["name"], i["name"], i["path"], i["origtype"], i["name"], i["name"], description_str)
             )
             if keyval and i["yang_name"] in keyval:
                 nfd.write(
@@ -1292,8 +1133,7 @@ def get_children(
                     i["name"],
                     i["origtype"],
                     "%s:%s" % (i["defining_module"], i["origtype"])
-                    if ":" not in i["origtype"]
-                    and not i["origtype"] in YANG_BUILTIN_TYPES
+                    if ":" not in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
                     else i["origtype"],
                     c_str["type"],
                     c_str["arg"],
@@ -1326,15 +1166,9 @@ def get_children(
                 rw = False
 
             if not rw:
-                nfd.write(
-                    """  %s = __builtin__.property(_get_%s)\n"""
-                    % (i["name"], i["name"])
-                )
+                nfd.write("""  %s = __builtin__.property(_get_%s)\n""" % (i["name"], i["name"]))
             else:
-                nfd.write(
-                    """  %s = __builtin__.property(_get_%s, _set_%s)\n"""
-                    % (i["name"], i["name"], i["name"])
-                )
+                nfd.write("""  %s = __builtin__.property(_get_%s, _set_%s)\n""" % (i["name"], i["name"], i["name"]))
     nfd.write("\n")
 
     # Store a list of the choices that are included within this module such that
@@ -1361,13 +1195,9 @@ def build_elemtype(ctx, et, prefix=False):
     # both in the case that a typedef needs to be built, as well as on per-list
     # basis.
     cls = None
-    pattern_stmt = (
-        et.search_one("pattern") if not et.search_one("pattern") is None else False
-    )
+    pattern_stmt = et.search_one("pattern") if not et.search_one("pattern") is None else False
     range_stmt = et.search_one("range") if not et.search_one("range") is None else False
-    length_stmt = (
-        et.search_one("length") if not et.search_one("length") is None else False
-    )
+    length_stmt = et.search_one("length") if not et.search_one("length") is None else False
 
     # Determine whether there are any restrictions that are placed on this leaf,
     # and build a dictionary of the different restrictions to be placed on the
@@ -1378,18 +1208,14 @@ def build_elemtype(ctx, et, prefix=False):
 
     if length_stmt:
         if "|" in length_stmt.arg:
-            restrictions["length"] = [
-                i.replace(" ", "") for i in length_stmt.arg.split("|")
-            ]
+            restrictions["length"] = [i.replace(" ", "") for i in length_stmt.arg.split("|")]
         else:
             restrictions["length"] = [length_stmt.arg]
 
     if range_stmt:
         # Complex ranges are separated by pipes
         if "|" in range_stmt.arg:
-            restrictions["range"] = [
-                i.replace(" ", "") for i in range_stmt.arg.split("|")
-            ]
+            restrictions["range"] = [i.replace(" ", "") for i in range_stmt.arg.split("|")]
         else:
             restrictions["range"] = [range_stmt.arg]
 
@@ -1445,8 +1271,7 @@ def build_elemtype(ctx, et, prefix=False):
             if fd_stmt is not None:
                 cls = "restricted-decimal64"
                 elemtype = {
-                    "native_type": """RestrictedPrecisionDecimalType(precision=%s)"""
-                    % fd_stmt.arg,
+                    "native_type": """RestrictedPrecisionDecimalType(precision=%s)""" % fd_stmt.arg,
                     "base_type": False,
                     "parent_type": "decimal64",
                 }
@@ -1483,11 +1308,7 @@ def build_elemtype(ctx, et, prefix=False):
                 }
                 cls = "leafref"
             else:
-                elemtype = {
-                    "native_type": "six.text_type",
-                    "parent_type": "string",
-                    "base_type": False,
-                }
+                elemtype = {"native_type": "six.text_type", "parent_type": "string", "base_type": False}
         # Handle identityrefs, but check whether there is a valid base where this
         # has been specified.
         elif et.arg == "identityref":
@@ -1554,17 +1375,7 @@ def find_absolute_default_type(default_type, default_value, elemname):
     return find_absolute_default_type(default_type, default_value, elemname)
 
 
-def get_element(
-    ctx,
-    fd,
-    element,
-    module,
-    parent,
-    path,
-    parent_cfg=True,
-    choice=False,
-    register_paths=True,
-):
+def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=False, register_paths=True):
     # Handle mapping of an invidual element within the model. This function
     # produces a dictionary that can then be mapped into the relevant code that
     # dynamically generates a class.
@@ -1581,9 +1392,7 @@ def get_element(
         element_module = None
 
     namespace = (
-        element_module.search_one("namespace").arg
-        if element_module.search_one("namespace") is not None
-        else None
+        element_module.search_one("namespace").arg if element_module.search_one("namespace") is not None else None
     )
     defining_module = element_module.arg
 
@@ -1687,20 +1496,14 @@ def get_element(
             # ordered.
             if element.keyword == "list":
                 elemdict["key"] = (
-                    safe_name(element.search_one("key").arg)
-                    if element.search_one("key") is not None
-                    else False
+                    safe_name(element.search_one("key").arg) if element.search_one("key") is not None else False
                 )
                 elemdict["yang_keys"] = (
-                    element.search_one("key").arg
-                    if element.search_one("key") is not None
-                    else False
+                    element.search_one("key").arg if element.search_one("key") is not None else False
                 )
                 user_ordered = element.search_one("ordered-by")
                 elemdict["user_ordered"] = (
-                    True
-                    if user_ordered is not None and user_ordered.arg.upper() == "USER"
-                    else False
+                    True if user_ordered is not None and user_ordered.arg.upper() == "USER" else False
                 )
             this_object.append(elemdict)
             has_children = True
@@ -1791,9 +1594,7 @@ def get_element(
             # a single option for the type. check the default
             # against each option, to get a to a single default_type
             if isinstance(default_type, list):
-                default_type = find_absolute_default_type(
-                    default_type, elemdefault, element.arg
-                )
+                default_type = find_absolute_default_type(default_type, elemdefault, element.arg)
 
             if not default_type["base_type"]:
                 if "parent_type" in default_type:
@@ -1803,9 +1604,7 @@ def get_element(
                         to_visit = [default_type["parent_type"]]
                 checked = list()
                 while to_visit:
-                    check = to_visit.pop(
-                        0
-                    )  # remove from the top of stack - depth first
+                    check = to_visit.pop(0)  # remove from the top of stack - depth first
                     if check not in checked:
                         checked.append(check)
                         if "parent_type" in tmp_class_map[check]:
@@ -1820,16 +1619,10 @@ def get_element(
         # Set the default type based on what was determined above about the
         # correct value to set.
         if default_type:
-            quote_arg = (
-                default_type["quote_arg"] if "quote_arg" in default_type else False
-            )
+            quote_arg = default_type["quote_arg"] if "quote_arg" in default_type else False
             default_type = default_type["native_type"]
 
-        elemconfig = (
-            class_bool_map[element.search_one("config").arg]
-            if element.search_one("config")
-            else True
-        )
+        elemconfig = class_bool_map[element.search_one("config").arg] if element.search_one("config") else True
 
         elemname = safe_name(element.arg)
 

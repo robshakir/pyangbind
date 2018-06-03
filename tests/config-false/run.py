@@ -55,12 +55,8 @@ class ConfigFalseTests(PyangBindTestCase):
             allowed = False
         self.assertFalse(allowed)
 
-    def test_leaf_in_sub_container_of_non_configurable_container_reports_not_configurable(
-        self
-    ):
-        self.assertFalse(
-            self.test_instance.container.subtwo.subsubtwo.c_leaf._is_config
-        )
+    def test_leaf_in_sub_container_of_non_configurable_container_reports_not_configurable(self):
+        self.assertFalse(self.test_instance.container.subtwo.subsubtwo.c_leaf._is_config)
 
 
 if __name__ == "__main__":

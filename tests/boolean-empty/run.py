@@ -15,8 +15,7 @@ class BooleanEmptyTests(PyangBindTestCase):
         for leaf in ["b1", "b2", "e1"]:
             with self.subTest(leaf=leaf):
                 self.assertTrue(
-                    hasattr(self.boolean_obj.container, leaf),
-                    "Element did not exist in container (%s)" % leaf,
+                    hasattr(self.boolean_obj.container, leaf), "Element did not exist in container (%s)" % leaf
                 )
 
     def test_boolean_leaf_accepts_boolean_values(self):
@@ -27,9 +26,7 @@ class BooleanEmptyTests(PyangBindTestCase):
                     self.boolean_obj.container.b1 = value
                 except ValueError:
                     allowed = False
-                self.assertTrue(
-                    allowed, "Value of b1 was not correctly set to %s" % value
-                )
+                self.assertTrue(allowed, "Value of b1 was not correctly set to %s" % value)
 
     def test_boolean_leaf_sets_boolean_values_correctly(self):
         for value in [
@@ -64,9 +61,7 @@ class BooleanEmptyTests(PyangBindTestCase):
                     self.boolean_obj.container.e1 = value
                 except ValueError:
                     allowed = False
-                self.assertTrue(
-                    allowed, "Value of e1 was not correctly set to %s" % value
-                )
+                self.assertTrue(allowed, "Value of e1 was not correctly set to %s" % value)
 
     def test_empty_leaf_sets_boolean_values_correctly(self):
         for value in [
@@ -96,23 +91,20 @@ class BooleanEmptyTests(PyangBindTestCase):
     def test_boolean_leaf_default_value(self):
         self.assertFalse(
             self.boolean_obj.container.b2._default,
-            "Value default was not correctly set (%s)"
-            % self.boolean_obj.container.b2._default,
+            "Value default was not correctly set (%s)" % self.boolean_obj.container.b2._default,
         )
 
     def test_boolean_leaf_is_not_changed_by_default(self):
         self.assertFalse(
             self.boolean_obj.container.b2._changed(),
-            "Value was marked as changed incorrectly (%s)"
-            % self.boolean_obj.container.b2._changed(),
+            "Value was marked as changed incorrectly (%s)" % self.boolean_obj.container.b2._changed(),
         )
 
     def test_boolean_leaf_sets_changed(self):
         self.boolean_obj.container.b2 = True
         self.assertTrue(
             self.boolean_obj.container.b2._changed(),
-            "Value was not flagged as changed (%s != True)"
-            % self.boolean_obj.container.b2._changed(),
+            "Value was not flagged as changed (%s != True)" % self.boolean_obj.container.b2._changed(),
         )
 
     def test_get(self):

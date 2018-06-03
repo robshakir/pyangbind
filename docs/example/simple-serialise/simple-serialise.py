@@ -11,9 +11,7 @@ import os
 pp = pprint.PrettyPrinter(indent=4)
 
 # Load an instance from file using PyBind's native JSON format
-loaded_object = pbJ.load(
-    os.path.join("json", "simple-instance.json"), sbindings, "simple_serialise"
-)
+loaded_object = pbJ.load(os.path.join("json", "simple-instance.json"), sbindings, "simple_serialise")
 pp.pprint(loaded_object.get(filter=True))
 
 # Load an instance from a corresponding string using the native JSON format
@@ -23,9 +21,7 @@ loaded_object_two = pbJ.loads(string_to_load, sbindings, "simple_serialise")
 pp.pprint(loaded_object_two.get(filter=True))
 
 # Load an instance from an IETF-JSON file
-loaded_ietf_obj = pbJ.load_ietf(
-    os.path.join("json", "simple-instance-ietf.json"), sbindings, "simple_serialise"
-)
+loaded_ietf_obj = pbJ.load_ietf(os.path.join("json", "simple-instance-ietf.json"), sbindings, "simple_serialise")
 pp.pprint(loaded_ietf_obj.get(filter=True))
 
 # Load an instance from an IETF-JSON string

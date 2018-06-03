@@ -11,10 +11,7 @@ from tests.base import PyangBindTestCase
 
 class OpenconfigBGPTests(PyangBindTestCase):
     yang_files = [os.path.join("openconfig", "openconfig-bgp.yang")]
-    pyang_flags = [
-        "-p %s" % os.path.join(os.path.dirname(__file__), "include"),
-        "--use-xpathhelper",
-    ]
+    pyang_flags = ["-p %s" % os.path.join(os.path.dirname(__file__), "include"), "--use-xpathhelper"]
     split_class_dir = True
     module_name = "ocbind"
 
@@ -22,11 +19,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
         {
             "local_path": "include",
             "remote_prefix": "https://raw.githubusercontent.com/robshakir/yang/master/standard/ietf/RFC/",
-            "files": [
-                "ietf-inet-types.yang",
-                "ietf-yang-types.yang",
-                "ietf-interfaces.yang",
-            ],
+            "files": ["ietf-inet-types.yang", "ietf-yang-types.yang", "ietf-interfaces.yang"],
         },
         {
             "local_path": "include",
@@ -74,9 +67,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
         n.config.peer_as = 5400
         n.config.description = "a fictional transit session"
         json_out = pbj.dumps(self.instance)
-        with open(
-            os.path.join(os.path.dirname(__file__), "testdata", "tc010.json")
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "testdata", "tc010.json")) as fp:
             testdata = fp.read()
         self.assertEqual(json.loads(json_out), json.loads(testdata))
 
@@ -87,9 +78,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
         n.config.peer_as = 5400
         n.config.description = "a fictional transit session"
         json_out = pbj.dumps(self.instance, filter=False)
-        with open(
-            os.path.join(os.path.dirname(__file__), "testdata", "tc020.json")
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "testdata", "tc020.json")) as fp:
             testdata = fp.read()
         self.assertEqual(json.loads(json_out), json.loads(testdata))
 
@@ -100,9 +89,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
         n.config.peer_as = 5400
         n.config.description = "a fictional transit session"
         json_out = pbj.dumps(self.instance, mode="ietf")
-        with open(
-            os.path.join(os.path.dirname(__file__), "testdata", "tc030.json")
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "testdata", "tc030.json")) as fp:
             testdata = fp.read()
         self.assertEqual(json.loads(json_out), json.loads(testdata))
 
@@ -113,9 +100,7 @@ class OpenconfigBGPTests(PyangBindTestCase):
         n.config.peer_as = 5400
         n.config.description = "a fictional transit session"
         json_out = pbj.dumps(self.instance, filter=False, mode="ietf")
-        with open(
-            os.path.join(os.path.dirname(__file__), "testdata", "tc040.json")
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "testdata", "tc040.json")) as fp:
             testdata = fp.read()
         self.assertEqual(json.loads(json_out), json.loads(testdata))
 

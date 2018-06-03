@@ -21,9 +21,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
 
     def setUp(self):
         self.yang_helper = YANGPathHelper()
-        self.deserialise_obj = self.bindings.json_deserialise(
-            path_helper=self.yang_helper
-        )
+        self.deserialise_obj = self.bindings.json_deserialise(path_helper=self.yang_helper)
 
     def test_load_full_object(self):
         expected_json = {
@@ -45,31 +43,14 @@ class JSONDeserialiseTests(PyangBindTestCase):
             path_helper=self.yang_helper,
         ).get(filter=True)
 
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "Whole object load did not return the correct list.",
-        )
+        self.assertEqual(actual_json, expected_json, "Whole object load did not return the correct list.")
 
     def test_load_into_existing_object(self):
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "list-items.json"), "r"
-        ) as fp:
-            pbS.pybindJSONDecoder.load_json(
-                json.load(fp), None, None, obj=self.deserialise_obj
-            )
-        expected_json = {
-            "load-list": {
-                "5": {"index": 5, "value": "five"},
-                "4": {"index": 4, "value": "four"},
-            }
-        }
+        with open(os.path.join(os.path.dirname(__file__), "json", "list-items.json"), "r") as fp:
+            pbS.pybindJSONDecoder.load_json(json.load(fp), None, None, obj=self.deserialise_obj)
+        expected_json = {"load-list": {"5": {"index": 5, "value": "five"}, "4": {"index": 4, "value": "four"}}}
         actual_json = self.deserialise_obj.get(filter=True)
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "Existing object load did not return the correct list.",
-        )
+        self.assertEqual(actual_json, expected_json, "Existing object load did not return the correct list.")
 
     def test_all_the_types(self):
         expected_json = {
@@ -111,9 +92,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
             path_helper=self.yang_helper,
         ).get(filter=True)
 
-        self.assertEqual(
-            actual_json, expected_json, "Load of object with all items not correct."
-        )
+        self.assertEqual(actual_json, expected_json, "Load of object with all items not correct.")
 
     def test_load_user_ordered_list(self):
         actual_json = pbJ.load(
@@ -126,9 +105,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
 
     def test_load_json_ordered_list(self):
         actual_json = pbJ.load(
-            os.path.join(
-                os.path.dirname(__file__), "json", "orderedlist-no-order.json"
-            ),
+            os.path.join(os.path.dirname(__file__), "json", "orderedlist-no-order.json"),
             self.bindings,
             "json_deserialise",
             path_helper=self.yang_helper,
@@ -138,32 +115,20 @@ class JSONDeserialiseTests(PyangBindTestCase):
     def test_skip_unknown_keys(self):
         allowed = True
         try:
-            with open(
-                os.path.join(os.path.dirname(__file__), "json", "nonexist.json"), "r"
-            ) as fp:
-                pybindJSONDecoder.load_ietf_json(
-                    json.load(fp), self.bindings, "json_deserialise", skip_unknown=True
-                )
+            with open(os.path.join(os.path.dirname(__file__), "json", "nonexist.json"), "r") as fp:
+                pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "json_deserialise", skip_unknown=True)
         except AttributeError:
             allowed = False
-        self.assertTrue(
-            allowed, "Skipping keys that did not exist was not successfully handled."
-        )
+        self.assertTrue(allowed, "Skipping keys that did not exist was not successfully handled.")
 
     def test_dont_skip_unknown_keys(self):
         allowed = True
         try:
-            with open(
-                os.path.join(os.path.dirname(__file__), "json", "nonexist.json"), "r"
-            ) as fp:
-                pybindJSONDecoder.load_ietf_json(
-                    json.load(fp), self.bindings, "json_deserialise", skip_unknown=False
-                )
+            with open(os.path.join(os.path.dirname(__file__), "json", "nonexist.json"), "r") as fp:
+                pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "json_deserialise", skip_unknown=False)
         except AttributeError:
             allowed = False
-        self.assertFalse(
-            allowed, "Skipping keys that did not exist was not successfully handled."
-        )
+        self.assertFalse(allowed, "Skipping keys that did not exist was not successfully handled.")
 
 
 if __name__ == "__main__":

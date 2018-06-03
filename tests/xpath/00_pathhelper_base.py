@@ -84,9 +84,7 @@ class PathHelperBaseTests(unittest.TestCase):
             with self.subTest(style=style):
                 allowed = True
                 try:
-                    self.tree.register(
-                        ["container", "foo[id={0}42{0}]".format(style)], TestObject(42)
-                    )
+                    self.tree.register(["container", "foo[id={0}42{0}]".format(style)], TestObject(42))
                 except Exception:
                     allowed = False
                 self.assertTrue(allowed)

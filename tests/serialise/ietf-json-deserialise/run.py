@@ -19,42 +19,23 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
 
     def test_multi_key_list_load(self):
         expected_json = {
-            "mkey": {
-                "one 1": {"leaf-two": 1, "leaf-one": "one"},
-                "three 2": {"leaf-two": 2, "leaf-one": "three"},
-            }
+            "mkey": {"one 1": {"leaf-two": 1, "leaf-one": "one"}, "three 2": {"leaf-two": 2, "leaf-one": "three"}}
         }
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "mkeylist.json")
-        ) as fp:
-            actual_json = pybindJSONDecoder.load_ietf_json(
-                json.load(fp), self.bindings, "ietf_json_deserialise"
-            ).get(filter=True)
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "Multikey list load did not return expected JSON",
-        )
+        with open(os.path.join(os.path.dirname(__file__), "json", "mkeylist.json")) as fp:
+            actual_json = pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "ietf_json_deserialise").get(
+                filter=True
+            )
+        self.assertEqual(actual_json, expected_json, "Multikey list load did not return expected JSON")
 
     def test_single_key_list_load(self):
         expected_json = {
-            "skey": {
-                "one": {"leaf-one": "one"},
-                "three": {"leaf-one": "three"},
-                "two": {"leaf-one": "two"},
-            }
+            "skey": {"one": {"leaf-one": "one"}, "three": {"leaf-one": "three"}, "two": {"leaf-one": "two"}}
         }
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "skeylist.json")
-        ) as fp:
-            actual_json = pybindJSONDecoder.load_ietf_json(
-                json.load(fp), self.bindings, "ietf_json_deserialise"
-            ).get(filter=True)
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "Single key list load did not return expected JSON",
-        )
+        with open(os.path.join(os.path.dirname(__file__), "json", "skeylist.json")) as fp:
+            actual_json = pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "ietf_json_deserialise").get(
+                filter=True
+            )
+        self.assertEqual(actual_json, expected_json, "Single key list load did not return expected JSON")
 
     def test_list_with_children_load(self):
         expected_json = {
@@ -64,14 +45,10 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
             }
         }
         with open(os.path.join(os.path.dirname(__file__), "json", "chlist.json")) as fp:
-            actual_json = pybindJSONDecoder.load_ietf_json(
-                json.load(fp), self.bindings, "ietf_json_deserialise"
-            ).get(filter=True)
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "List with children load did not return expected JSON",
-        )
+            actual_json = pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "ietf_json_deserialise").get(
+                filter=True
+            )
+        self.assertEqual(actual_json, expected_json, "List with children load did not return expected JSON")
 
     def test_all_the_types(self):
         expected_json = {
@@ -121,53 +98,33 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
                 "t1": {"32": {"target": "32"}, "16": {"target": "16"}},
             }
         }
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "complete-obj.json")
-        ) as fp:
-            actual_json = pybindJSONDecoder.load_ietf_json(
-                json.load(fp), self.bindings, "ietf_json_deserialise"
-            ).get(filter=True)
-        self.assertEqual(
-            actual_json,
-            expected_json,
-            "Deserialisation of complete object not as expected.",
-        )
+        with open(os.path.join(os.path.dirname(__file__), "json", "complete-obj.json")) as fp:
+            actual_json = pybindJSONDecoder.load_ietf_json(json.load(fp), self.bindings, "ietf_json_deserialise").get(
+                filter=True
+            )
+        self.assertEqual(actual_json, expected_json, "Deserialisation of complete object not as expected.")
 
     def test_skip_unknown_keys(self):
         allowed = True
         try:
-            with open(
-                os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")
-            ) as fp:
+            with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
                 pybindJSONDecoder.load_ietf_json(
-                    json.load(fp),
-                    self.bindings,
-                    "ietf_json_deserialise",
-                    skip_unknown=True,
+                    json.load(fp), self.bindings, "ietf_json_deserialise", skip_unknown=True
                 )
         except AttributeError:
             allowed = False
-        self.assertTrue(
-            allowed, "Skipping keys that did not exist was not successfully handled."
-        )
+        self.assertTrue(allowed, "Skipping keys that did not exist was not successfully handled.")
 
     def test_dont_skip_unknown_keys(self):
         allowed = True
         try:
-            with open(
-                os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")
-            ) as fp:
+            with open(os.path.join(os.path.dirname(__file__), "json", "nonexistkey.json")) as fp:
                 pybindJSONDecoder.load_ietf_json(
-                    json.load(fp),
-                    self.bindings,
-                    "ietf_json_deserialise",
-                    skip_unknown=False,
+                    json.load(fp), self.bindings, "ietf_json_deserialise", skip_unknown=False
                 )
         except AttributeError:
             allowed = False
-        self.assertFalse(
-            allowed, "Skipping keys that did not exist was not successfully handled."
-        )
+        self.assertFalse(allowed, "Skipping keys that did not exist was not successfully handled.")
 
 
 if __name__ == "__main__":

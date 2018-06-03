@@ -27,9 +27,7 @@ class OpenconfigBGPJuniperTests(PyangBindTestCase):
 
         for peer in self.peers:
             self.bgp_obj.juniper_config.bgp.peer_group[peer[1]].neighbor.add(peer[0])
-            self.bgp_obj.juniper_config.bgp.peer_group[peer[1]].neighbor[
-                peer[0]
-            ].peer_as = peer[2]
+            self.bgp_obj.juniper_config.bgp.peer_group[peer[1]].neighbor[peer[0]].peer_as = peer[2]
 
     def test_set_unknown_element(self):
         allowed = True
@@ -37,10 +35,7 @@ class OpenconfigBGPJuniperTests(PyangBindTestCase):
             self.bgp_obj.system = False
         except AttributeError:
             allowed = False
-        self.assertFalse(
-            allowed,
-            "Trying to set a missing container did not result in an attribute error",
-        )
+        self.assertFalse(allowed, "Trying to set a missing container did not result in an attribute error")
 
     def test_get(self):
         self.assertEqual(
@@ -53,29 +48,15 @@ class OpenconfigBGPJuniperTests(PyangBindTestCase):
                             "groupA": {
                                 "group-name": "groupA",
                                 "neighbor": {
-                                    "1.1.1.1": {
-                                        "neighbor-name": "1.1.1.1",
-                                        "peer-as": "3741",
-                                    },
-                                    "1.1.1.2": {
-                                        "neighbor-name": "1.1.1.2",
-                                        "peer-as": "5400",
-                                    },
-                                    "1.1.1.3": {
-                                        "neighbor-name": "1.1.1.3",
-                                        "peer-as": "29636",
-                                    },
+                                    "1.1.1.1": {"neighbor-name": "1.1.1.1", "peer-as": "3741"},
+                                    "1.1.1.2": {"neighbor-name": "1.1.1.2", "peer-as": "5400"},
+                                    "1.1.1.3": {"neighbor-name": "1.1.1.3", "peer-as": "29636"},
                                 },
                                 "peer-type": "",
                             },
                             "groupB": {
                                 "group-name": "groupB",
-                                "neighbor": {
-                                    "2.2.2.2": {
-                                        "neighbor-name": "2.2.2.2",
-                                        "peer-as": "12767",
-                                    }
-                                },
+                                "neighbor": {"2.2.2.2": {"neighbor-name": "2.2.2.2", "peer-as": "12767"}},
                                 "peer-type": "",
                             },
                         },
@@ -96,28 +77,14 @@ class OpenconfigBGPJuniperTests(PyangBindTestCase):
                             "groupA": {
                                 "group-name": "groupA",
                                 "neighbor": {
-                                    "1.1.1.1": {
-                                        "neighbor-name": "1.1.1.1",
-                                        "peer-as": "3741",
-                                    },
-                                    "1.1.1.2": {
-                                        "neighbor-name": "1.1.1.2",
-                                        "peer-as": "5400",
-                                    },
-                                    "1.1.1.3": {
-                                        "neighbor-name": "1.1.1.3",
-                                        "peer-as": "29636",
-                                    },
+                                    "1.1.1.1": {"neighbor-name": "1.1.1.1", "peer-as": "3741"},
+                                    "1.1.1.2": {"neighbor-name": "1.1.1.2", "peer-as": "5400"},
+                                    "1.1.1.3": {"neighbor-name": "1.1.1.3", "peer-as": "29636"},
                                 },
                             },
                             "groupB": {
                                 "group-name": "groupB",
-                                "neighbor": {
-                                    "2.2.2.2": {
-                                        "neighbor-name": "2.2.2.2",
-                                        "peer-as": "12767",
-                                    }
-                                },
+                                "neighbor": {"2.2.2.2": {"neighbor-name": "2.2.2.2", "peer-as": "12767"}},
                             },
                         },
                     }

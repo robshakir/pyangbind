@@ -48,8 +48,7 @@ class PyangBindTestCase(unittest.TestCase):
                             break
                     if not downloaded:
                         raise RuntimeError(
-                            "Could not download file: %s (response: %s)"
-                            % (remote_file_path, response.status_code)
+                            "Could not download file: %s (response: %s)" % (remote_file_path, response.status_code)
                         )
 
     @classmethod
@@ -65,16 +64,12 @@ class PyangBindTestCase(unittest.TestCase):
         if not pyang_path:
             raise RuntimeError("Could not locate `pyang` executable.")
         base_dir = os.path.dirname(os.path.dirname(__file__))
-        yang_files = [
-            os.path.join(cls._test_path, filename) for filename in cls.yang_files
-        ]
+        yang_files = [os.path.join(cls._test_path, filename) for filename in cls.yang_files]
         plugin_dir = os.path.join(base_dir, "pyangbind", "plugin")
 
         flags = cls.pyang_flags or []
         if cls.split_class_dir is True:
-            cls._pyang_generated_class_dir = os.path.join(
-                cls._test_path, cls.module_name
-            )
+            cls._pyang_generated_class_dir = os.path.join(cls._test_path, cls.module_name)
             flags.append("--split-class-dir {}".format(cls._pyang_generated_class_dir))
 
         pyang_cmd = "{pyang} --plugindir {plugins} -f pybind -p {test_path} {flags} {yang_files}".format(
@@ -85,10 +80,7 @@ class PyangBindTestCase(unittest.TestCase):
             yang_files=" ".join(yang_files),
         )
         bindings_code = subprocess.check_output(
-            pyang_cmd,
-            shell=True,
-            stderr=subprocess.STDOUT,
-            env={"PYTHONPATH": base_dir},
+            pyang_cmd, shell=True, stderr=subprocess.STDOUT, env={"PYTHONPATH": base_dir}
         )
         if not cls.split_class_dir:
             module = types.ModuleType(cls.module_name)

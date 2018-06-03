@@ -112,14 +112,10 @@ class IdentityStore(object):
                 else:
                     base_pfx, base_name = prefix, base.arg
 
-                parent_module = util.prefix_to_module(
-                    defmod, base_pfx, base.pos, ctx.errors
-                )
+                parent_module = util.prefix_to_module(defmod, base_pfx, base.pos, ctx.errors)
 
                 # Find whether we have the base in the store
-                base_id = self.find_identity_by_source_name(
-                    parent_module.arg, base_name
-                )
+                base_id = self.find_identity_by_source_name(parent_module.arg, base_name)
 
                 if base_id is None:
                     # and if not, then push this identity back onto the stack
@@ -133,10 +129,7 @@ class IdentityStore(object):
                     #     error_ids.append(ident)
                 else:
                     # Check we don't already have this identity defined
-                    if (
-                        self.find_identity_by_source_name(defining_module, iddef.arg)
-                        is None
-                    ):
+                    if self.find_identity_by_source_name(defining_module, iddef.arg) is None:
                         # otherwise, create a new identity that reflects this one
                         tid = Identity(iddef.arg)
                         tid.source_module = defining_module

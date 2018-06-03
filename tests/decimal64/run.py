@@ -15,10 +15,7 @@ class DecimalTests(PyangBindTestCase):
     def test_container_has_all_leafs(self):
         for leaf in ["d1", "d2", "d3"]:
             with self.subTest(leaf=leaf):
-                self.assertTrue(
-                    hasattr(self.decimal_obj.container, leaf),
-                    "Container missing attribute - %s" % leaf,
-                )
+                self.assertTrue(hasattr(self.decimal_obj.container, leaf), "Container missing attribute - %s" % leaf)
 
     def test_decimal_precision(self):
         self.decimal_obj.container.d1 = 42.0
@@ -33,8 +30,7 @@ class DecimalTests(PyangBindTestCase):
         self.assertEqual(
             self.decimal_obj.container.d2,
             Decimal("42.001"),
-            "Precision did not result in correct rounding (%s)"
-            % self.decimal_obj.container.d2,
+            "Precision did not result in correct rounding (%s)" % self.decimal_obj.container.d2,
         )
 
     def test_decimal_default_with_extra_precision(self):
@@ -48,8 +44,7 @@ class DecimalTests(PyangBindTestCase):
         self.assertEqual(
             self.decimal_obj.container.d3._default,
             Decimal("1"),
-            "Default was set wrong for d3 (%s)"
-            % self.decimal_obj.container.d3._default,
+            "Default was set wrong for d3 (%s)" % self.decimal_obj.container.d3._default,
         )
 
     def test_various_values_with_complex_range(self):
@@ -73,8 +68,7 @@ class DecimalTests(PyangBindTestCase):
                 self.assertEqual(
                     allowed,
                     value[1],
-                    "Decimal64 leaf with range was not correctly set (%f -> %s != %s)"
-                    % (value[0], allowed, value[1]),
+                    "Decimal64 leaf with range was not correctly set (%f -> %s != %s)" % (value[0], allowed, value[1]),
                 )
 
 

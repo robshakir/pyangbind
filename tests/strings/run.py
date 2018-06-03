@@ -30,24 +30,16 @@ class StringTests(PyangBindTestCase):
     def test_concatenation_to_string_leaf(self):
         self.instance.string_container.string_leaf = "TestValue"
         self.instance.string_container.string_leaf += "Addition"
-        self.assertEqual(
-            self.instance.string_container.string_leaf, "TestValueAddition"
-        )
+        self.assertEqual(self.instance.string_container.string_leaf, "TestValueAddition")
 
     def test_string_leaf_with_default_is_blank(self):
         self.assertEqual(self.instance.string_container.string_default_leaf, "")
 
     def test_string_leaf_with_default_has_correct_default_value_hidden(self):
-        self.assertEqual(
-            self.instance.string_container.string_default_leaf._default, "string"
-        )
+        self.assertEqual(self.instance.string_container.string_default_leaf._default, "string")
 
-    def test_string_leaf_with_default_and_pattern_has_correct_default_value_hidden(
-        self
-    ):
-        self.assertEqual(
-            self.instance.string_container.restricted_string_default._default, "beep"
-        )
+    def test_string_leaf_with_default_and_pattern_has_correct_default_value_hidden(self):
+        self.assertEqual(self.instance.string_container.restricted_string_default._default, "beep")
 
     def test_set_valid_value_on_restricted_string(self):
         allowed = True
@@ -72,18 +64,11 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_fixed_length_string_with_pattern(self):
-        for (value, valid) in [
-            ("a", False),
-            ("ba", False),
-            ("abc", False),
-            ("ab", True),
-        ]:
+        for (value, valid) in [("a", False), ("ba", False), ("abc", False), ("ab", True)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
-                    self.instance.string_container.restricted_length_and_pattern_string = (
-                        value
-                    )
+                    self.instance.string_container.restricted_length_and_pattern_string = value
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)
@@ -93,25 +78,17 @@ class StringTests(PyangBindTestCase):
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
-                    self.instance.string_container.restricted_length_string_with_range = (
-                        value
-                    )
+                    self.instance.string_container.restricted_length_string_with_range = value
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)
 
     def test_string_with_length_as_range_with_upper_bound(self):
-        for (value, valid) in [
-            ("short", False),
-            ("loooooooong", True),
-            ("toooooooooolooooooooong", False),
-        ]:
+        for (value, valid) in [("short", False), ("loooooooong", True), ("toooooooooolooooooooong", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
-                    self.instance.string_container.restricted_length_string_range_two = (
-                        value
-                    )
+                    self.instance.string_container.restricted_length_string_range_two = value
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)
@@ -137,9 +114,7 @@ class StringTests(PyangBindTestCase):
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
-                    self.instance.string_container.stringLeafWithPatternWithDollar = (
-                        value
-                    )
+                    self.instance.string_container.stringLeafWithPatternWithDollar = value
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)

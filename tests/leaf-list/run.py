@@ -84,13 +84,7 @@ class LeafListTests(PyangBindTestCase):
 
         self.assertEqual(
             self.leaflist_obj.get(),
-            {
-                "container": {
-                    "leaflist": ["itemOne", "indexOne", "itemTwo"],
-                    "listtwo": [],
-                    "listthree": [],
-                }
-            },
+            {"container": {"leaflist": ["itemOne", "indexOne", "itemTwo"], "listtwo": [], "listthree": []}},
         )
 
     def test_leaflist_assignment(self):
@@ -122,17 +116,13 @@ class LeafListTests(PyangBindTestCase):
 
     def test_leaf_lists_are_unique_after_assignment(self):
         self.leaflist_obj.container.leaflist = ["foo", "bar", "foo"]
-        self.assertEqual(
-            self.leaflist_obj.container.get(filter=True), {"leaflist": ["foo", "bar"]}
-        )
+        self.assertEqual(self.leaflist_obj.container.get(filter=True), {"leaflist": ["foo", "bar"]})
 
     def test_leaf_lists_are_unique_after_append(self):
         self.leaflist_obj.container.leaflist.append("foo")
         self.leaflist_obj.container.leaflist.append("bar")
         self.leaflist_obj.container.leaflist.append("foo")
-        self.assertEqual(
-            self.leaflist_obj.container.get(filter=True), {"leaflist": ["foo", "bar"]}
-        )
+        self.assertEqual(self.leaflist_obj.container.get(filter=True), {"leaflist": ["foo", "bar"]})
 
     def test_leaf_lists_insert_non_unique_value_raises_keyerror(self):
         self.leaflist_obj.container.leaflist[0] = "foo"

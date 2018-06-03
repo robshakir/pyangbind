@@ -21,9 +21,7 @@ class UIntTests(PyangBindTestCase):
             ("sixtyfour", 2 ** 64 - 1),
         ]:
             with self.subTest(size=size, value=value):
-                default = getattr(
-                    self.instance.uint_container, "%sdefault" % size
-                )._default
+                default = getattr(self.instance.uint_container, "%sdefault" % size)._default
                 self.assertEqual(default, value)
 
     def test_set_uint_values(self):
@@ -71,11 +69,7 @@ class UIntTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_uint64_with_restricted_range(self):
-        for (value, valid) in [
-            (799, False),
-            (42424242, True),
-            (18446744073709551615, False),
-        ]:
+        for (value, valid) in [(799, False), (42424242, True), (18446744073709551615, False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -85,12 +79,7 @@ class UIntTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_additional_uint32_range(self):
-        for (value, valid) in [
-            (0, True),
-            (10, True),
-            (2 ** 32 - 1, True),
-            (2 ** 64, False),
-        ]:
+        for (value, valid) in [(0, True), (10, True), (2 ** 32 - 1, True), (2 ** 64, False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -118,12 +107,7 @@ class UIntTests(PyangBindTestCase):
                     setter(-1)
 
     def test_set_uint_values_above_upper_bounds(self):
-        bounds = {
-            "eight": 2 ** 8,
-            "sixteen": 2 ** 16,
-            "thirtytwo": 2 ** 32,
-            "sixtyfour": 2 ** 64,
-        }
+        bounds = {"eight": 2 ** 8, "sixteen": 2 ** 16, "thirtytwo": 2 ** 32, "sixtyfour": 2 ** 64}
         for size, value in bounds.items():
             with self.subTest(size=size, value=value), self.assertRaises(ValueError):
                 setter = getattr(self.instance.uint_container, "_set_%s" % size)

@@ -25,12 +25,7 @@ from collections import OrderedDict
 
 import six
 
-from pyangbind.lib.serialise import (
-    pybindIETFJSONEncoder,
-    pybindJSONDecoder,
-    pybindJSONEncoder,
-    pybindJSONIOError,
-)
+from pyangbind.lib.serialise import pybindIETFJSONEncoder, pybindJSONDecoder, pybindJSONEncoder, pybindJSONIOError
 
 
 def remove_path(tree, path):
@@ -50,9 +45,7 @@ def remove_path(tree, path):
     return tree
 
 
-def loads(
-    d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False
-):
+def loads(d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False):
     # This check is not really logical - since one would expect 'd' to be
     # a string, given that this is loads. However, a previous issue meant
     # that this really expected a dict, so this check simply makes sure
@@ -61,75 +54,37 @@ def loads(
     if isinstance(d, six.string_types + (six.text_type,)):
         d = json.loads(d, object_pairs_hook=OrderedDict)
     return pybindJSONDecoder.load_json(
-        d,
-        parent_pymod,
-        yang_base,
-        path_helper=path_helper,
-        extmethods=extmethods,
-        overwrite=overwrite,
+        d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite
     )
 
 
-def loads_ietf(
-    d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False
-):
+def loads_ietf(d, parent_pymod, yang_base, path_helper=None, extmethods=None, overwrite=False):
     # Same as above, to allow for load_ietf to work the same way
     if isinstance(d, six.string_types + (six.text_type,)):
         d = json.loads(d, object_pairs_hook=OrderedDict)
     return pybindJSONDecoder.load_ietf_json(
-        d,
-        parent_pymod,
-        yang_base,
-        path_helper=path_helper,
-        extmethods=extmethods,
-        overwrite=overwrite,
+        d, parent_pymod, yang_base, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite
     )
 
 
-def load(
-    fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False
-):
+def load(fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False):
     try:
         with open(fn, "r") as fp:
             f = json.load(fp, object_pairs_hook=OrderedDict)
     except IOError as m:
         raise pybindJSONIOError("could not open file to read: %s" % m)
-    return loads(
-        f,
-        parent_pymod,
-        yang_module,
-        path_helper=path_helper,
-        extmethods=extmethods,
-        overwrite=overwrite,
-    )
+    return loads(f, parent_pymod, yang_module, path_helper=path_helper, extmethods=extmethods, overwrite=overwrite)
 
 
-def load_ietf(
-    fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False
-):
+def load_ietf(fn, parent_pymod, yang_module, path_helper=None, extmethods=None, overwrite=False):
     try:
         f = json.load(open(fn, "r"), object_pairs_hook=OrderedDict)
     except IOError as m:
         raise pybindJSONIOError("Could not open file to read: %s" % m)
-    return loads_ietf(
-        f,
-        parent_pymod,
-        yang_module,
-        path_helper,
-        extmethods=extmethods,
-        overwrite=overwrite,
-    )
+    return loads_ietf(f, parent_pymod, yang_module, path_helper, extmethods=extmethods, overwrite=overwrite)
 
 
-def dumps(
-    obj,
-    indent=4,
-    filter=True,
-    skip_subtrees=[],
-    select=False,
-    mode="default",
-    with_defaults=None,
-):
+def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="default", with_defaults=None):
 
     def lookup_subdict(dictionary, key):
         if not isinstance(key, list):
@@ -150,9 +105,7 @@ def dumps(
     if not isinstance(skip_subtrees, list):
         raise AttributeError("the subtrees to be skipped should be a list")
     if mode == "ietf":
-        tree = pybindIETFJSONEncoder.generate_element(
-            obj, flt=filter, with_defaults=with_defaults
-        )
+        tree = pybindIETFJSONEncoder.generate_element(obj, flt=filter, with_defaults=with_defaults)
     else:
         tree = obj.get(filter=filter)
     for p in skip_subtrees:
@@ -182,11 +135,7 @@ def dumps(
             for k, v in six.iteritems(select):
                 v = six.text_type(v)
                 if mode == "default" or isinstance(tree, dict):
-                    if (
-                        keep
-                        and not six.text_type(lookup_subdict(tree[t], k.split(".")))
-                        == v
-                    ):
+                    if keep and not six.text_type(lookup_subdict(tree[t], k.split("."))) == v:
                         keep = False
                 else:
                     # handle ietf case where we have a list and might have namespaces
@@ -215,7 +164,5 @@ def dump(obj, fn, indent=4, filter=True, skip_subtrees=[], mode="default"):
         fh = open(fn, "w")
     except IOError as m:
         raise pybindJSONIOError("could not open file for writing: %s" % m)
-    fh.write(
-        dumps(obj, indent=indent, filter=filter, skip_subtrees=skip_subtrees, mode=mode)
-    )
+    fh.write(dumps(obj, indent=indent, filter=filter, skip_subtrees=skip_subtrees, mode=mode))
     fh.close()

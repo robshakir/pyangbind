@@ -53,20 +53,12 @@ print(pybindJSON.dumps(oclr.local_routes, mode="ietf"))
 # instance of the class can be created by the deserialisation code
 import binding
 
-new_oclr = pybindJSON.load(
-    os.path.join("json", "oc-lr.json"), binding, "openconfig_local_routing"
-)
+new_oclr = pybindJSON.load(os.path.join("json", "oc-lr.json"), binding, "openconfig_local_routing")
 
 # Manipulate the data loaded
-print(
-    "Current tag: %d"
-    % new_oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag
-)
+print("Current tag: %d" % new_oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag)
 new_oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag += 1
-print(
-    "New tag: %d"
-    % new_oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag
-)
+print("New tag: %d" % new_oclr.local_routes.static_routes.static["192.0.2.1/32"].config.set_tag)
 
 # Load JSON into an existing class structure
 from pyangbind.lib.serialise import pybindJSONDecoder

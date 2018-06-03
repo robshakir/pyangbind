@@ -19,25 +19,19 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
 
     def setUp(self):
         self.yang_helper = YANGPathHelper()
-        self.serialise_obj = self.bindings.ietf_json_serialise(
-            path_helper=self.yang_helper
-        )
+        self.serialise_obj = self.bindings.ietf_json_serialise(path_helper=self.yang_helper)
 
     def test_serialise_single_object(self):
         self.serialise_obj.c1.l1.add(1)
         self.serialise_obj.c1.l1[1].string = "bear"
         actual_json = json.loads(
             json.dumps(
-                pybindIETFJSONEncoder.generate_element(
-                    self.serialise_obj.c1.l1[1].string, flt=True
-                ),
+                pybindIETFJSONEncoder.generate_element(self.serialise_obj.c1.l1[1].string, flt=True),
                 cls=pybindIETFJSONEncoder,
                 indent=4,
             )
         )
-        self.assertEqual(
-            actual_json, "bear", "Single element JSON did not match the expected output"
-        )
+        self.assertEqual(actual_json, "bear", "Single element JSON did not match the expected output")
 
     def test_serialise_full_container(self):
         self.serialise_obj.c1.l1.add(1)
@@ -87,14 +81,10 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
                 indent=4,
             )
         )
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "obj.json"), "r"
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "json", "obj.json"), "r") as fp:
             external_json = json.load(fp)
 
-        self.assertEqual(
-            pybind_json, external_json, "JSON did not match the expected output."
-        )
+        self.assertEqual(pybind_json, external_json, "JSON did not match the expected output.")
 
 
 if __name__ == "__main__":

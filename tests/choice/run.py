@@ -12,9 +12,7 @@ class ChoicesTests(PyangBindTestCase):
         self.choice_obj = self.bindings.choice()
 
     def test_class_has_container(self):
-        self.assertTrue(
-            hasattr(self.choice_obj, "container"), "Object does not have container"
-        )
+        self.assertTrue(hasattr(self.choice_obj, "container"), "Object does not have container")
 
     def test_class_has_choice_containers(self):
         for container in ["case_one_container", "case_two_container"]:
@@ -28,8 +26,7 @@ class ChoicesTests(PyangBindTestCase):
         for choice in ["choice_one", "choice_two", "case_one", "case_two"]:
             with self.subTest(choice=choice):
                 self.assertFalse(
-                    hasattr(self.choice_obj, choice),
-                    "Object has an erroneous choice option, %s" % choice,
+                    hasattr(self.choice_obj, choice), "Object has an erroneous choice option, %s" % choice
                 )
 
     def test_case_leaf_default_values(self):
@@ -37,12 +34,7 @@ class ChoicesTests(PyangBindTestCase):
             with self.subTest(leaf=leaf):
                 container = getattr(self.choice_obj.container, "%s_container" % leaf)
                 value = getattr(container, "%s_leaf" % leaf)
-                self.assertEqual(
-                    value,
-                    0,
-                    "Object does not have the correct value for %s_leaf, %s"
-                    % (leaf, value),
-                )
+                self.assertEqual(value, 0, "Object does not have the correct value for %s_leaf, %s" % (leaf, value))
 
     def test_set_choice_value(self):
         self.choice_obj.container.case_one_container.case_one_leaf = 42

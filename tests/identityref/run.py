@@ -83,11 +83,7 @@ class IdentityRefTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_set_ancestral_identities_three(self):
-        for (identity, valid) in [
-            ("daughter", True),
-            ("cousin", False),
-            ("aunt", False),
-        ]:
+        for (identity, valid) in [("daughter", True), ("cousin", False), ("aunt", False)]:
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
@@ -113,11 +109,7 @@ class IdentityRefTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_grouping_identity_inheritance(self):
-        for (address_type, valid) in [
-            ("source-dest", True),
-            ("lcaf", True),
-            ("unknown", False),
-        ]:
+        for (address_type, valid) in [("source-dest", True), ("lcaf", True), ("unknown", False)]:
             with self.subTest(address_type=address_type, valid=valid):
                 allowed = True
                 try:
@@ -141,11 +133,7 @@ class IdentityRefTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_set_identityref_from_imported_module_referencing_local(self):
-        for (identity, valid) in [
-            ("remote-id", True),
-            ("remote-two:remote-id", True),
-            ("invalid", False),
-        ]:
+        for (identity, valid) in [("remote-id", True), ("remote-two:remote-id", True), ("invalid", False)]:
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:

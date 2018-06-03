@@ -10,11 +10,7 @@ from tests.base import PyangBindTestCase
 class OpenconfigInterfacesTests(PyangBindTestCase):
     yang_files = [
         os.path.join("openconfig", "%s.yang" % fname)
-        for fname in [
-            "openconfig-interfaces",
-            "openconfig-if-aggregate",
-            "openconfig-if-ip",
-        ]
+        for fname in ["openconfig-interfaces", "openconfig-if-aggregate", "openconfig-if-ip"]
     ]
     pyang_flags = [
         "-p %s" % os.path.join(os.path.dirname(__file__), "include"),
@@ -28,11 +24,7 @@ class OpenconfigInterfacesTests(PyangBindTestCase):
         {
             "local_path": "include",
             "remote_prefix": "https://raw.githubusercontent.com/robshakir/yang/master/standard/ietf/RFC/",
-            "files": [
-                "ietf-inet-types.yang",
-                "ietf-yang-types.yang",
-                "ietf-interfaces.yang",
-            ],
+            "files": ["ietf-inet-types.yang", "ietf-yang-types.yang", "ietf-interfaces.yang"],
         },
         {
             "local_path": "include",

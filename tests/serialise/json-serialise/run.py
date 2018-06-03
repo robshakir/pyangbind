@@ -23,9 +23,7 @@ class JSONSerialiseTests(PyangBindTestCase):
 
     def test_serialise_container(self):
         self.serialise_obj.two.string_test = "twenty-two"
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "container.json"), "r"
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "json", "container.json"), "r") as fp:
             self.assertEqual(
                 json.loads(dumps(self.yang_helper.get("/two")[0])),
                 json.load(fp),
@@ -71,13 +69,9 @@ class JSONSerialiseTests(PyangBindTestCase):
             self.serialise_obj.c1.l2.add(i)
 
         pybind_json = json.loads(dumps(self.serialise_obj))
-        with open(
-            os.path.join(os.path.dirname(__file__), "json", "expected-output.json"), "r"
-        ) as fp:
+        with open(os.path.join(os.path.dirname(__file__), "json", "expected-output.json"), "r") as fp:
             external_json = json.load(fp)
-        self.assertEqual(
-            pybind_json, external_json, "JSON did not match expected output."
-        )
+        self.assertEqual(pybind_json, external_json, "JSON did not match expected output.")
 
 
 if __name__ == "__main__":

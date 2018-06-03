@@ -25,8 +25,7 @@ class TypedefTests(PyangBindTestCase):
         ]:
             with self.subTest(element=element):
                 self.assertTrue(
-                    hasattr(self.typedef.container, element),
-                    "element %s did not exist within the container" % element,
+                    hasattr(self.typedef.container, element), "element %s did not exist within the container" % element
                 )
 
     def test_string_container(self):
@@ -34,8 +33,7 @@ class TypedefTests(PyangBindTestCase):
         self.assertEqual(
             self.typedef.container.string,
             "hello",
-            "incorrect value set for the strong container (value: %s)"
-            % self.typedef.container.string,
+            "incorrect value set for the strong container (value: %s)" % self.typedef.container.string,
         )
 
     def test_string_default(self):
@@ -56,14 +54,10 @@ class TypedefTests(PyangBindTestCase):
 
     def test_int_value_can_be_updated(self):
         self.typedef.container.integer = 1
-        self.assertEqual(
-            self.typedef.container.integer, 1, "integer value not correctly updated"
-        )
+        self.assertEqual(self.typedef.container.integer, 1, "integer value not correctly updated")
 
     def test_int_value_range_restriction(self):
-        with self.assertRaises(
-            ValueError, msg="restricted int from typedef was set to invalue value"
-        ):
+        with self.assertRaises(ValueError, msg="restricted int from typedef was set to invalue value"):
             self.typedef.container.integer = 65
 
     def test_remote_definition(self):
@@ -71,8 +65,7 @@ class TypedefTests(PyangBindTestCase):
         self.assertEqual(
             self.typedef.container.remote_new_type,
             "testString",
-            "incorrect value for the remote definition (%s)"
-            % self.typedef.container.remote_new_type,
+            "incorrect value for the remote definition (%s)" % self.typedef.container.remote_new_type,
         )
 
     def test_remote_local_definition(self):
@@ -95,8 +88,7 @@ class TypedefTests(PyangBindTestCase):
                 self.assertEqual(
                     wset,
                     pattern[1],
-                    "inherited pattern was not correctly followed for %s (%s != %s)"
-                    % (pattern[0], pattern[1], wset),
+                    "inherited pattern was not correctly followed for %s (%s != %s)" % (pattern[0], pattern[1], wset),
                 )
 
     def test_inherited_range(self):
@@ -110,18 +102,11 @@ class TypedefTests(PyangBindTestCase):
                 self.assertEqual(
                     wset,
                     item[1],
-                    "inherited range was not correctly followed for %s (%s != %s)"
-                    % (item[0], item[1], wset),
+                    "inherited range was not correctly followed for %s (%s != %s)" % (item[0], item[1], wset),
                 )
 
     def test_stacked_union(self):
-        for item in [
-            ("aardvark", True),
-            ("bear", True),
-            ("chicken", False),
-            ("deer", False),
-            ("zebra", True),
-        ]:
+        for item in [("aardvark", True), ("bear", True), ("chicken", False), ("deer", False), ("zebra", True)]:
             with self.subTest(item=item):
                 wset = True
                 try:
@@ -131,8 +116,7 @@ class TypedefTests(PyangBindTestCase):
                 self.assertEqual(
                     wset,
                     item[1],
-                    "incorrectly dealt with %s when added as a list key (%s != %s)"
-                    % (item[0], wset, item[1]),
+                    "incorrectly dealt with %s when added as a list key (%s != %s)" % (item[0], wset, item[1]),
                 )
 
     def test_hybrid_typedef_across_modules(self):
@@ -166,13 +150,7 @@ class TypedefTests(PyangBindTestCase):
                 )
 
     def test_union_with_union(self):
-        for item in [
-            ("aardvark", True),
-            ("bear", True),
-            ("chicken", False),
-            ("quail", True),
-            ("zebra", False),
-        ]:
+        for item in [("aardvark", True), ("bear", True), ("chicken", False), ("quail", True), ("zebra", False)]:
             with self.subTest(item=item):
                 wset = True
                 try:
@@ -191,8 +169,7 @@ class TypedefTests(PyangBindTestCase):
         self.assertEqual(
             self.typedef.container.scoped_leaf,
             "aardwolf",
-            "scoped leaf was not set correctly (%s)"
-            % self.typedef.container.scoped_leaf,
+            "scoped leaf was not set correctly (%s)" % self.typedef.container.scoped_leaf,
         )
 
     def test_union_with_identityref(self):

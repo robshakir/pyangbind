@@ -15,8 +15,7 @@ class EnumerationTests(PyangBindTestCase):
         for leaf in ["e", "f"]:
             with self.subTest(leaf=leaf):
                 self.assertTrue(
-                    hasattr(self.enum_obj.container, leaf),
-                    "Container does not contain enumeration %s" % leaf,
+                    hasattr(self.enum_obj.container, leaf), "Container does not contain enumeration %s" % leaf
                 )
 
     def test_assign_to_enum(self):
@@ -34,9 +33,7 @@ class EnumerationTests(PyangBindTestCase):
         except ValueError:
             allowed = False
         self.assertFalse(
-            allowed,
-            "Erroneous value was not caught by restriction handler (%s)"
-            % self.enum_obj.container.e,
+            allowed, "Erroneous value was not caught by restriction handler (%s)" % self.enum_obj.container.e
         )
 
     def test_enum_default_value(self):
@@ -51,8 +48,7 @@ class EnumerationTests(PyangBindTestCase):
         self.assertEqual(
             self.enum_obj.container.e.getValue(mapped=True),
             42,
-            "Erroneously statically defined value returned (%s)"
-            % self.enum_obj.container.e.getValue(mapped=True),
+            "Erroneously statically defined value returned (%s)" % self.enum_obj.container.e.getValue(mapped=True),
         )
 
 

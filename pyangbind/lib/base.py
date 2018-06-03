@@ -87,11 +87,7 @@ class PybindBase(object):
             else:
                 # this is an attribute that does not have get()
                 # method
-                if (
-                    filter is False
-                    and not element._changed()
-                    and not element._present() is True
-                ):
+                if filter is False and not element._changed() and not element._present() is True:
                     if element._default is not False and element._default:
                         d[element_id] = element._default
                     else:

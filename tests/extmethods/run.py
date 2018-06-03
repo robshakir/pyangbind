@@ -28,9 +28,7 @@ class ExtMethodsTests(PyangBindTestCase):
     pyang_flags = ["--use-extmethods"]
 
     def setUp(self):
-        self.instance = self.bindings.extmethods(
-            extmethods={"/item/one": extmethodcls()}
-        )
+        self.instance = self.bindings.extmethods(extmethods={"/item/one": extmethodcls()})
 
     def test_extmethods_get_created_on_leafs(self):
         for (method_name, valid) in [
@@ -56,10 +54,7 @@ class ExtMethodsTests(PyangBindTestCase):
                 self.assertEqual(method(), retval)
 
     def test_args_and_kwargs_pass_to_extmethods_properly(self):
-        expected_return = {
-            "args": ("one",),
-            "kwargs": {"caller": ["item", "one"], "two": 2, "path_helper": False},
-        }
+        expected_return = {"args": ("one",), "kwargs": {"caller": ["item", "one"], "two": 2, "path_helper": False}}
         self.assertEqual(self.instance.item.one._echo("one", two=2), expected_return)
 
     def test_kwargs_passed_to_extmethods_do_not_set_invalid_attributes(self):
