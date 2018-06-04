@@ -4,16 +4,10 @@ Contributions to PyangBind are very welcome, either directly via pull requests, 
 
 ### Code Style
 
- * Code style is currently intended to be PEP-8 compliant, however, the following rules are ignored:
-   * E111 - indentation is not a multiple of four
-   * E114 - indentation is not a multiple of four (comment)
-   * E121 - continuation line under-indented for hanging indent
-   * E126 - continuation line over-indented for hanging indent
-   * E127 - continuation line over-indented for visual indent
-   * E128 - continuation line under-indented for visual indent
-   * E131 - continuation line unaligned for hanging indent
- * The standard indentation in PyangBind code is 2 spaces (**not** 4)
- * Continued lines are made to be subjectively aesthetically pleasing/readable.
+To avoid unnecessary discussions about coding style we are currently enforcing it with [black](https://github.com/ambv/black). Before pushing code:
+
+* make sure you are running the correct version of `black` as per `REQUIREMENTS.DEVELOPER.txt`.
+* reformat your code with `black` passing the option `--line-length 119`.
 
 ### Testing
 
