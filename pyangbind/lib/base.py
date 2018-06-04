@@ -38,7 +38,6 @@ class PybindBase(object):
         d = {}
         # for each YANG element within this container.
         for element_name in self._pyangbind_elements:
-
             if filter and not getattr(self, "_initialized_{}".format(yangtypes.safe_name(element_name)))():
                 continue
             element = getattr(self, element_name, error)
