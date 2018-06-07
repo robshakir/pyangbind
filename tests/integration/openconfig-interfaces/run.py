@@ -57,7 +57,7 @@ class OpenconfigInterfacesTests(PyangBindTestCase):
 
     def test_001_populated_intf_type(self):
         i0 = self.instance.interfaces.interface.add("eth0")
-        self.assertEqual(len(i0.config.type._restriction_dict), 1)
+        self.assertEqual(len(i0.config.type_._restriction_dict), 1)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ class RPCTests(PyangBindTestCase):
 
         allowed = True
         try:
-            instance.input.argument = "test"
+            instance.input_.argument = "test"
         except ValueError:
             allowed = False
         self.assertTrue(allowed)
@@ -44,8 +44,8 @@ class RPCTests(PyangBindTestCase):
         instance = check_three(path_helper=self.path_helper)
         allowed = True
         try:
-            instance.input.arguments.arg_one = "test string"
-            instance.input.arguments.arg_two = "another test string"
+            instance.input_.arguments.arg_one = "test string"
+            instance.input_.arguments.arg_two = "another test string"
         except ValueError:
             allowed = False
         self.assertTrue(allowed)
@@ -68,7 +68,7 @@ class RPCTests(PyangBindTestCase):
         instance = check_five(path_helper=self.path_helper)
         allowed = True
         try:
-            instance.input.arguments.arg_one = "test string"
+            instance.input_.arguments.arg_one = "test string"
             instance.output.return_values.return_val = 10
         except ValueError:
             allowed = False
@@ -78,7 +78,7 @@ class RPCTests(PyangBindTestCase):
         from bindings.rpc_rpc.check import check
 
         instance = check(path_helper=self.path_helper)
-        instance.input.argument = "test string"
+        instance.input_.argument = "test string"
         self.assertEqual(dict(self.path_helper.get_unique("/")), {})
 
     def test_set_input_argument_to_valid_leafref(self):
@@ -91,7 +91,7 @@ class RPCTests(PyangBindTestCase):
         base_instance.test.reference_target.append("six")
         allowed = True
         try:
-            instance.input.argument = "six"
+            instance.input_.argument = "six"
         except ValueError:
             allowed = False
         self.assertTrue(allowed)
@@ -105,7 +105,7 @@ class RPCTests(PyangBindTestCase):
 
         base_instance.test.reference_target.append("six")
         with self.assertRaises(ValueError):
-            instance.input.argument = "fish"
+            instance.input_.argument = "fish"
 
 
 if __name__ == "__main__":
