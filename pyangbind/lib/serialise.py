@@ -499,6 +499,15 @@ class pybindJSONDecoder(object):
                             val = True
                         else:
                             raise ValueError("Invalid value for empty in input JSON " "key: %s, got: %s" % (ykey, val))
+
+                    if chk._yang_type == "identityref":
+                        # identityref values in IETF JSON may contain their module name, as a prefix,
+                        # but we don't build identities with these as valid values. If this is the
+                        # case then re-write the value to just be the name of the identity that we
+                        # should know about.
+                        if ":" in val:
+                            _, val = val.split(":", 1)
+
                     if val is not None:
                         set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
                         if set_method is None:

@@ -75,7 +75,7 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
                         "leafref": "16",
                         "int8": 1,
                         "uint64": 1,
-                        "remote-identityref": "remote:stilton",
+                        "remote-identityref": "stilton",
                         "int64": 1,
                         "restricted-string": "aardvark",
                         "decimal": Decimal("16.32"),

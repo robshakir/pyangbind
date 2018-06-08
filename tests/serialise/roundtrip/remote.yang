@@ -1,0 +1,24 @@
+module remote {
+  yang-version "1";
+  namespace "http://rob.sh/yang/test/serialise/remote";
+  prefix "foo";
+
+  import roundtrip { prefix "rt"; }
+
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+
+  description
+      "A test module";
+  revision 2014-01-01 {
+      description "april-fools";
+      reference "fooled-you";
+  }
+  
+  identity VALUE_TWO {
+    base rt:BASE;
+  }
+  
+}
+

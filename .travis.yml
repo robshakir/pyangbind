@@ -12,6 +12,7 @@ matrix:
   include:
   - python: 3.6
     env: TOXENV=black
+    condition: "$TOXENV = black"
 install:
   - pip install tox tox-travis codecov
 script: tox
