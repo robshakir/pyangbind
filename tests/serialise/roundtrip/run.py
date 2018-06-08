@@ -25,13 +25,14 @@ class RoundtripTests(PyangBindTestCase):
 
     def test_ietf_roundtrip_simple(self):
         self.rt_obj.a.idref = "VALUE_TWO"
-        j = pbJ.dumps(self.rt_obj, mode='ietf')
+        j = pbJ.dumps(self.rt_obj, mode="ietf")
         pbS.pybindJSONDecoder.load_ietf_json(json.loads(j), None, None, obj=self.rt_obj)
 
     def test_roundtrip_simple(self):
         self.rt_obj.a.idref = "VALUE_TWO"
         j = pbJ.dumps(self.rt_obj)
         pbS.pybindJSONDecoder.load_json(json.loads(j), None, None, obj=self.rt_obj)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,7 +6,7 @@ Contributions to PyangBind are very welcome, either directly via pull requests, 
 
 To avoid unnecessary discussions about coding style we are currently enforcing it with [black](https://github.com/ambv/black). Before pushing code:
 
-* make sure you are running the correct version of `black` as per `REQUIREMENTS.DEVELOPER.txt`.
+* make sure you are running the correct version of `black` as per `requirements.DEVELOPER.txt`.
 * reformat your code with `black` passing the option `--line-length 119`.
 
 ### Testing

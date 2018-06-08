@@ -506,7 +506,7 @@ class pybindJSONDecoder(object):
                         # case then re-write the value to just be the name of the identity that we
                         # should know about.
                         if ":" in val:
-                            _, val = val.split(":", 2)
+                            _, val = val.split(":", 1)
 
                     if val is not None:
                         set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
