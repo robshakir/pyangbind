@@ -46,7 +46,7 @@
                 "union": "16", 
                 "k1": 1, 
                 "enumeration": "one", 
-                "identityref": "idone", 
+                "identityref": "ietf-json-serialise:idone", 
                 "uint16": 1, 
                 "union-list": [
                     16, 
