@@ -200,14 +200,14 @@ class YangDataSerialiser(object):
         return int(obj)
 
     def yangt_long(self, obj):
-        # don't need to sepcial-case for PY3 because we assign `long = int` in the header
+        # don't need to special-case for PY3 because we assign `long = int` in the header
         return long(obj)
 
     def yangt_identityref(self, obj):
+        # we don't want to do anything for non-IETF serialisation, this will fall-through
         raise UnmappedItem
 
     def yangt_decimal(self, obj):
-        # doesn't seem to need a distinction for non-64-bit decimal?
         return float(obj)
 
     def yangt_empty(self, obj):
@@ -253,22 +253,31 @@ class XmlYangDataSerialiser(IETFYangDataSerialiser):
         return None
 
 
-class pybindJSONEncoderBase(json.JSONEncoder):
-    serialiser_klass = None
+class _pybindJSONEncoderBase(json.JSONEncoder):
+    """
+    Pybind JSON encoder base class. Implements default `encode()` and `default()` methods
+    to be used as an encoder class with the deault *json* module.
+
+    Do not use directly, subclass and set the `serialiser_class` attribute appropriately
+    """
+    serialiser_class = None
 
     def encode(self, obj):
-        return json.JSONEncoder.encode(self, self.serialiser_klass().preprocess_element(obj))
+        return json.JSONEncoder.encode(self, self.serialiser_class().preprocess_element(obj))
 
     def default(self, obj):
-        return self.serialiser_klass().default(obj)
+        return self.serialiser_class().default(obj)
 
 
-class pybindJSONEncoder(pybindJSONEncoderBase):
-    serialiser_klass = YangDataSerialiser
+class pybindJSONEncoder(_pybindJSONEncoderBase):
+    """Default pybind JSON encoder"""
+    serialiser_class = YangDataSerialiser
 
 
-class pybindIETFJSONEncoder(pybindJSONEncoderBase):
-    serialiser_klass = IETFYangDataSerialiser
+class pybindIETFJSONEncoder(_pybindJSONEncoderBase):
+    """IETF JSON encoder, we add a special method `generate_element()` that should be used
+    to restructure the pybind object to fit IETF requirements prior to JSON encoding."""
+    serialiser_class = IETFYangDataSerialiser
 
     @staticmethod
     def yname_ns_func(parent_namespace, element, yname):
@@ -281,47 +290,46 @@ class pybindIETFJSONEncoder(pybindJSONEncoderBase):
 
     @staticmethod
     def generate_element(obj, parent_namespace=None, flt=False, with_defaults=None):
+        """Restructure pybind `obj` to IETF spec"""
         ietf_tree_json_func = make_generate_ietf_tree(pybindIETFJSONEncoder.yname_ns_func)
         return ietf_tree_json_func(obj, parent_namespace=parent_namespace, flt=flt, with_defaults=with_defaults)
 
 
-class EMF(objectify.ElementMaker):
-    """
-    Override ElementMaker to do netconf specific niceties, e.g.
-     - set the namespace
-     - convert underscore to hyphens for tags
-    """
-
-    def __init__(self, namespace=None, nsmap=None):
-        assert namespace or nsmap, "Must set either namespace or nsmap"
-        if namespace:
-            super(EMF, self).__init__(annotate=False, namespace=namespace, nsmap={None: namespace})
-        elif nsmap:
-            super(EMF, self).__init__(annotate=False, namespace=nsmap[None], nsmap=nsmap)
-
-    def __getattribute__(self, tag):
-        return super(EMF, self).__getattr__(tag.replace("_", "-"))
-
-
 class pybindIETFXMLEncoder(object):
+    """
+    IETF XML encoder for pybind object tree serialisation.
+    Use the `encode()` method to return an lxml.objectify tree representation of the pybind object.
+    The `serialise()` method is a helper around that to return a pretty-printed XML string.
+    """
+
+    class EMF(objectify.ElementMaker):
+        """Custome ElementMaker class to ease netconf namespace handling"""
+
+        def __init__(self, namespace=None, nsmap=None):
+            assert namespace or nsmap, "Must set either namespace or nsmap"
+            if namespace:
+                nsmap = {None: namespace}
+            elif nsmap:
+                namespace = nsmap[None]
+            super(pybindIETFXMLEncoder.EMF, self).__init__(annotate=False, namespace=namespace, nsmap=nsmap)
 
     @classmethod
     def generate_xml_tree(cls, module_name, module_namespace, tree):
-        doc = EMF(namespace=module_namespace)(module_name)
+        """Map the IETF structured, and value-processed, object tree into an lxml objectify object"""
+        doc = pybindIETFXMLEncoder.EMF(namespace=module_namespace)(module_name)
 
         def aux(parent, root):
             for k, v in root.items():
                 k, nsmap = k
-                E = EMF(nsmap=dict(nsmap))
+                E = pybindIETFXMLEncoder.EMF(nsmap=dict(nsmap))
                 if isinstance(v, deque):
-                    # TypedList (e.g. leaf-list or union-list)
+                    # TypedList (e.g. leaf-list or union-list), process each element as a sibling
                     for i in v:
                         el = E(k, str(i))
                         parent.append(el)
                 elif isinstance(v, list):
+                    # a container maps to a list, recursively process each element as a child element
                     for i in v:
-                        assert isinstance(i, dict)
-                        # nested
                         el = E(k)
                         parent.append(el)
                         aux(el, i)
@@ -351,17 +359,19 @@ class pybindIETFXMLEncoder(object):
             )
         return yname, tuple(ns_map)
 
-    def encode(self, obj, filter=True):
-        """return the complete XML document, as objectify tree for the yang object"""
+    @classmethod
+    def encode(cls, obj, filter=True):
+        """return the lxml objectify tree for the pybind object"""
         ietf_tree_xml_func = make_generate_ietf_tree(pybindIETFXMLEncoder.yname_ns_func)
         tree = ietf_tree_xml_func(obj, flt=filter)
         preprocessed = XmlYangDataSerialiser().preprocess_element(tree)
-        return self.generate_xml_tree(obj._yang_name, obj._yang_namespace, preprocessed)
+        return cls.generate_xml_tree(obj._yang_name, obj._yang_namespace, preprocessed)
 
-    def encoded_str(self, obj, filter=True):
+    @classmethod
+    def serialise(cls, obj, filter=True, pretty_print=True):
         """return the complete XML document, as pretty-printed string"""
-        doc = self.encode(obj, filter=filter)
-        return etree.tostring(doc, pretty_print=True).decode("utf8")
+        doc = cls.encode(obj, filter=filter)
+        return etree.tostring(doc, pretty_print=pretty_print).decode("utf8")
 
 
 def make_generate_ietf_tree(yname_ns_func):
