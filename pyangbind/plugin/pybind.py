@@ -842,6 +842,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         # creating instance documents (e.g., peer-group is not valid due to '-').
         nfd.write("  _yang_name = '%s'\n" % (parent.arg))
 
+        # Store the namespace URI for easier access during XML serialisation
+        if module.keyword == "submodule":
+            mod_location = next(v for k, v in ctx.modules.items() if k[0] == module.i_modulename)
+        else:
+            mod_location = module
+        nfd.write("  _yang_namespace = '%s'\n" % (mod_location.search("namespace")[0].arg))
+
         choices = {}
         choice_attrs = []
         classes = {}

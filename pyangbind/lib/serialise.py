@@ -26,11 +26,12 @@ serialise:
 from __future__ import unicode_literals
 
 import json
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from decimal import Decimal
 
 import six
 from enum import IntEnum
+from lxml import objectify, etree
 
 from pyangbind.lib.yangtypes import YANGBool, safe_name
 
@@ -107,7 +108,7 @@ class YangDataSerialiser(object):
             if pybc == "RestrictedClassType":
                 pybc = getattr(obj, "_restricted_class_base")[0]
             elif pybc == "TypedListType":
-                return [self.default(i) for i in obj]
+                return self.yangt_typed_list(obj)
 
         # Map based on YANG type
         if orig_yangt in ["leafref"]:
@@ -185,7 +186,7 @@ class YangDataSerialiser(object):
             else:
                 return bool(obj)
         elif map_val in ["pyangbind.lib.yangtypes.TypedList"]:
-            return [self.default(i) for i in obj]
+            return self.yangt_typed_list(obj)
         elif map_val in ["int", "long"]:
             int_size = getattr(obj, "_restricted_int_size", None)
             return self.yangt_long(obj) if int_size == 64 else self.yangt_int(obj)
@@ -212,6 +213,9 @@ class YangDataSerialiser(object):
     def yangt_empty(self, obj):
         return bool(obj)
 
+    def yangt_typed_list(self, obj):
+        return [self.default(i) for i in obj]
+
 
 class IETFYangDataSerialiser(YangDataSerialiser):
     """
@@ -237,11 +241,22 @@ class IETFYangDataSerialiser(YangDataSerialiser):
         return [None] if obj else False
 
 
+class XmlYangDataSerialiser(IETFYangDataSerialiser):
+    """
+    XML can have an empty tag, and a TypedList must be treated specially, here we mark it with a deque
+    """
+
+    def yangt_typed_list(self, obj):
+        return deque([self.default(i) for i in obj])
+
+    def yangt_empty(self, obj):
+        return None
+
+
 class pybindJSONEncoderBase(json.JSONEncoder):
     serialiser_klass = None
 
     def encode(self, obj):
-        """add an interface *name* to VLAN ID *vid* of *vType*"""
         return json.JSONEncoder.encode(self, self.serialiser_klass().preprocess_element(obj))
 
     def default(self, obj):
@@ -256,16 +271,96 @@ class pybindIETFJSONEncoder(pybindJSONEncoderBase):
     serialiser_klass = IETFYangDataSerialiser
 
     @staticmethod
-    def yname_func(element, yname):
-        return "%s:%s" % (element._defining_module, yname)
+    def yname_ns_func(parent_namespace, element, yname):
+        if not element._namespace == parent_namespace:
+            # if the namespace is different, then precede with the module
+            # name as per spec.
+            return "%s:%s" % (element._defining_module, yname)
+        else:
+            return yname
 
     @staticmethod
     def generate_element(obj, parent_namespace=None, flt=False, with_defaults=None):
-        ietf_tree_json_func = make_generate_ietf_tree(pybindIETFJSONEncoder.yname_func)
+        ietf_tree_json_func = make_generate_ietf_tree(pybindIETFJSONEncoder.yname_ns_func)
         return ietf_tree_json_func(obj, parent_namespace=parent_namespace, flt=flt, with_defaults=with_defaults)
 
 
-def make_generate_ietf_tree(yname_func):
+class EMF(objectify.ElementMaker):
+    """
+    Override ElementMaker to do netconf specific niceties, e.g.
+     - set the namespace
+     - convert underscore to hyphens for tags
+    """
+
+    def __init__(self, namespace=None, nsmap=None):
+        assert namespace or nsmap, "Must set either namespace or nsmap"
+        if namespace:
+            super(EMF, self).__init__(annotate=False, namespace=namespace, nsmap={None: namespace})
+        elif nsmap:
+            super(EMF, self).__init__(annotate=False, namespace=nsmap[None], nsmap=nsmap)
+
+    def __getattribute__(self, tag):
+        return super(EMF, self).__getattr__(tag.replace("_", "-"))
+
+
+class pybindIETFXMLEncoder(object):
+
+    @classmethod
+    def generate_xml_tree(cls, module_name, module_namespace, tree):
+        doc = EMF(namespace=module_namespace)(module_name)
+
+        def aux(parent, root):
+            for k, v in root.items():
+                k, nsmap = k
+                E = EMF(nsmap=dict(nsmap))
+                if isinstance(v, deque):
+                    # TypedList (e.g. leaf-list or union-list)
+                    for i in v:
+                        el = E(k, str(i))
+                        parent.append(el)
+                elif isinstance(v, list):
+                    for i in v:
+                        assert isinstance(i, dict)
+                        # nested
+                        el = E(k)
+                        parent.append(el)
+                        aux(el, i)
+                elif isinstance(v, dict):
+                    el = E(k)
+                    parent.append(el)
+                    aux(el, v)
+                elif v is None:
+                    el = E(k)
+                    parent.append(el)
+                elif isinstance(v, bool):
+                    _v = str(v).lower()
+                    parent.append(E(k, _v))
+                else:
+                    parent.append(E(k, str(v)))
+
+        aux(doc, tree)
+        return doc
+
+    @staticmethod
+    def yname_ns_func(parent_namespace, element, yname):
+        # to keeps things simple, we augment every key with a complete namespace map
+        ns_map = [(None, element._namespace)]
+        if element._yang_type == "identityref":
+            ns_map.append(
+                (element._enumeration_dict[element]["@module"], element._enumeration_dict[element]["@namespace"])
+            )
+        return yname, tuple(ns_map)
+
+    def encode(self, obj, filter=True):
+        """return the complete XML document for the yang object"""
+        ietf_tree_xml_func = make_generate_ietf_tree(pybindIETFXMLEncoder.yname_ns_func)
+        tree = ietf_tree_xml_func(obj, flt=filter)
+        preprocessed = XmlYangDataSerialiser().preprocess_element(tree)
+        doc = self.generate_xml_tree(obj._yang_name, obj._yang_namespace, preprocessed)
+        return etree.tostring(doc, pretty_print=True).decode("utf8")
+
+
+def make_generate_ietf_tree(yname_ns_func):
     """
     Convert a pyangbind class to a format which encodes to the IETF JSON
     specification, rather than the default .get() format, which does not
@@ -297,10 +392,8 @@ def make_generate_ietf_tree(yname_func):
             yang_name = getattr(element, "yang_name", None)
             yname = yang_name() if yang_name is not None else element_name
 
-            if not element._namespace == parent_namespace:
-                # if the namespace is different, then precede with the module
-                # name as per spec.
-                yname = yname_func(element, yname)
+            # adjust yname, if necessary, given the current namespace context
+            yname = yname_ns_func(parent_namespace, element, yname)
 
             generated_by = getattr(element, "_pybind_generated_by", None)
             if generated_by == "container":
