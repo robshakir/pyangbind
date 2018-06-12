@@ -14,7 +14,15 @@ from tests.base import PyangBindTestCase
 
 
 def xml_tree_equivalence(e1, e2):
-    """rough XML comparison function based on https://stackoverflow.com/a/24349916/1294458"""
+    """
+    Rough XML comparison function based on https://stackoverflow.com/a/24349916/1294458.
+    This is necessary to provide some sort of structural equivalence of a generated XML
+    tree; however there is no XML deserialisation implementation yet. A naive text comparison
+    fails because it seems it enforces ordering, which seems to vary between python versions
+    etc. Strictly speaking, I think, only the *leaf-list* element mandates ordering.. this
+    function uses simple sorting on tag name, which I think, should maintain the relative
+    order of these elements.
+    """
     if e1.tag != e2.tag:
         return False
     if e1.text != e2.text:
@@ -31,12 +39,12 @@ def xml_tree_equivalence(e1, e2):
 
 
 class XMLSerialiseTests(PyangBindTestCase):
-    yang_files = ["ietf-json-serialise.yang", "augment.yang"]
+    yang_files = ["ietf-xml-serialise.yang", "augment.yang"]
     maxDiff = None
 
     def setUp(self):
         self.yang_helper = YANGPathHelper()
-        self.serialise_obj = self.bindings.ietf_json_serialise(path_helper=self.yang_helper)
+        self.serialise_obj = self.bindings.ietf_xml_serialise(path_helper=self.yang_helper)
 
     def test_serialise_full_container(self):
         self.serialise_obj.c1.l1.add(1)

@@ -1,6 +1,6 @@
-module ietf-json-serialise {
+module ietf-xml-serialise {
   yang-version "1";
-  namespace "http://rob.sh/yang/test/serialise/ietf-json";
+  namespace "http://rob.sh/yang/test/serialise/ietf-xml";
   prefix "foo";
 
   import remote { prefix "remote"; }

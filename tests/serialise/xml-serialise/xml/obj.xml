@@ -1,4 +1,4 @@
-<ietf-json-serialise xmlns="http://rob.sh/yang/test/serialise/ietf-json">
+<ietf-xml-serialise xmlns="http://rob.sh/yang/test/serialise/ietf-xml">
   <c1>
     <l1>
       <k1>1</k1>
@@ -23,7 +23,7 @@
       <boolean>true</boolean>
       <enumeration>one</enumeration>
       <identityref>idone</identityref>
-      <remote-identityref xmlns:remote="http://rob.sh/yang/test/serialise/ietf-json-serialise/remote">remote:stilton</remote-identityref>
+      <remote-identityref xmlns:remote="http://rob.sh/yang/test/serialise/ietf-xml-serialise/remote">remote:stilton</remote-identityref>
       <typedef-one>test</typedef-one>
       <typedef-two>8</typedef-two>
       <one-leaf>hi</one-leaf>
@@ -74,6 +74,6 @@
     </t1>
   </c1>
   <augtarget>
-    <augleaf xmlns="http://rob.sh/yang/test/serialise/ietf-json-serialise/augment">teststring</augleaf>
+    <augleaf xmlns="http://rob.sh/yang/test/serialise/ietf-xml-serialise/augment">teststring</augleaf>
   </augtarget>
-</ietf-json-serialise>
+</ietf-xml-serialise>

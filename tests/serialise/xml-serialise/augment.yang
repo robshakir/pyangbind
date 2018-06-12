@@ -1,9 +1,9 @@
 module augment {
   yang-version "1";
-  namespace "http://rob.sh/yang/test/serialise/ietf-json-serialise/augment";
+  namespace "http://rob.sh/yang/test/serialise/ietf-xml-serialise/augment";
   prefix "augpfx";
 
-  import ietf-json-serialise { prefix ijs; }
+  import ietf-xml-serialise { prefix ixs; }
 
   organization "BugReports Inc";
   contact "A bug reporter";
@@ -15,7 +15,7 @@ module augment {
       reference "fooled-you";
   }
 
-  augment "/ijs:augtarget" {
+  augment "/ixs:augtarget" {
     leaf augleaf {
       type string;
     }
