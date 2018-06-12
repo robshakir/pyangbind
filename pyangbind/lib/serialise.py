@@ -352,11 +352,15 @@ class pybindIETFXMLEncoder(object):
         return yname, tuple(ns_map)
 
     def encode(self, obj, filter=True):
-        """return the complete XML document for the yang object"""
+        """return the complete XML document, as objectify tree for the yang object"""
         ietf_tree_xml_func = make_generate_ietf_tree(pybindIETFXMLEncoder.yname_ns_func)
         tree = ietf_tree_xml_func(obj, flt=filter)
         preprocessed = XmlYangDataSerialiser().preprocess_element(tree)
-        doc = self.generate_xml_tree(obj._yang_name, obj._yang_namespace, preprocessed)
+        return self.generate_xml_tree(obj._yang_name, obj._yang_namespace, preprocessed)
+
+    def encoded_str(self, obj, filter=True):
+        """return the complete XML document, as pretty-printed string"""
+        doc = self.encode(obj, filter=filter)
         return etree.tostring(doc, pretty_print=True).decode("utf8")
 
 
