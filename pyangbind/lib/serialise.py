@@ -247,6 +247,8 @@ class XmlYangDataSerialiser(IETFYangDataSerialiser):
     """
 
     def yangt_typed_list(self, obj):
+        # We have already used a list to denote a container, so we instead we use a
+        # deque here to distinguish a typed list node here in the serialised model
         return deque([self.default(i) for i in obj])
 
     def yangt_empty(self, obj):
