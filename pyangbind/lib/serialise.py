@@ -26,7 +26,7 @@ serialise:
 from __future__ import unicode_literals
 
 import json
-from collections import OrderedDict, deque
+from collections import OrderedDict
 from decimal import Decimal
 
 import six
@@ -58,6 +58,10 @@ class pybindJSONDecodeError(Exception):
 
 class UnmappedItem(Exception):
     """Used to simulate an Optional value"""
+    pass
+
+
+class SerialisedTypedList(list):
     pass
 
 
@@ -243,13 +247,13 @@ class IETFYangDataSerialiser(YangDataSerialiser):
 
 class XmlYangDataSerialiser(IETFYangDataSerialiser):
     """
-    XML can have an empty tag, and a TypedList must be treated specially, here we mark it with a deque
+    XML can have an empty tag, and a TypedList must be treated specially, here we mark it with a custom type
     """
 
     def yangt_typed_list(self, obj):
-        # We have already used a list to denote a container, so we instead we use a
-        # deque here to distinguish a typed list node here in the serialised model
-        return deque([self.default(i) for i in obj])
+        # We have already used a standard list to denote a container, so we instead we use a custom list
+        # type here in the serialised model
+        return SerialisedTypedList([self.default(i) for i in obj])
 
     def yangt_empty(self, obj):
         return None
@@ -324,7 +328,7 @@ class pybindIETFXMLEncoder(object):
             for k, v in root.items():
                 k, nsmap = k
                 E = pybindIETFXMLEncoder.EMF(nsmap=dict(nsmap))
-                if isinstance(v, deque):
+                if isinstance(v, SerialisedTypedList):
                     # TypedList (e.g. leaf-list or union-list), process each element as a sibling
                     for i in v:
                         el = E(k, str(i))
