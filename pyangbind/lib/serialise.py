@@ -118,7 +118,9 @@ class pybindJSONEncoder(json.JSONEncoder):
                 try:
                     emod = obj._enumeration_dict[obj]["@module"]
                     if emod != obj._defining_module:
-                        return "%s:%s" % (obj._enumeration_dict[obj]["@module"], obj)
+                        # if not already prefixed with the type namespace
+                        if not obj.startswith('%s:' % emod):
+                            return "%s:%s" % (emod, obj)
                 except KeyError:
                     pass
                 return six.text_type(obj)
