@@ -175,7 +175,7 @@ module ietf-xml-serialise {
         }
       }
 
-      leaf missing-identityref {
+      leaf unset-identityref {
         type identityref {
           base id-base;
         }

@@ -35,6 +35,8 @@ def xml_tree_equivalence(e1, e2):
         return False
     e1_children = sorted(e1.getchildren(), key=lambda x: x.tag)
     e2_children = sorted(e2.getchildren(), key=lambda x: x.tag)
+    if len(e1_children) != len(e2_children):
+        return False
     return all(xml_tree_equivalence(c1, c2) for c1, c2 in zip(e1_children, e2_children))
 
 
