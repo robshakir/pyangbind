@@ -359,7 +359,8 @@ class pybindIETFXMLEncoder(object):
     def yname_ns_func(parent_namespace, element, yname):
         # to keeps things simple, we augment every key with a complete namespace map
         ns_map = [(None, element._namespace)]
-        if element._yang_type == "identityref":
+        if element._yang_type == "identityref" and element._changed():
+            # configured identityref (i.e. points to a valid identity)
             ns_map.append(
                 (element._enumeration_dict[element]["@module"], element._enumeration_dict[element]["@namespace"])
             )

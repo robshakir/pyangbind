@@ -175,6 +175,12 @@ module ietf-xml-serialise {
         }
       }
 
+      leaf unset-identityref {
+        type identityref {
+          base id-base;
+        }
+      }
+
       leaf remote-identityref {
         type identityref {
           base remote:cheese;
