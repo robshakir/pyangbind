@@ -445,6 +445,10 @@ def make_generate_ietf_tree(yname_ns_func):
 
 
 class pybindIETFXMLDecoder(object):
+    """
+    IETF XML decoder for pybind object tree deserialisation.
+    Use the `decode()` method to return an pyangbind representation of the yang object.
+    """
 
     @classmethod
     def decode(cls, xml, bindings, module_name):
@@ -455,6 +459,7 @@ class pybindIETFXMLDecoder(object):
 
     @staticmethod
     def load_xml(d, parent, yang_base, obj=None, path_helper=None, extmethods=None):
+        """low-level XML deserialisation function, based on pybindJSONDecoder.load_ietf_json()"""
         if obj is None:
             # we need to find the class to create, as one has not been supplied.
             base_mod_cls = getattr(parent, safe_name(yang_base))
@@ -475,6 +480,7 @@ class pybindIETFXMLDecoder(object):
                 obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
 
         for child in d.getchildren():
+            # separate element namespace and tag
             qn = etree.QName(child)
             namespace, ykey = qn.namespace, qn.localname
 
@@ -483,7 +489,6 @@ class pybindIETFXMLDecoder(object):
             attr_get = getattr(obj, "_get_%s" % safe_name(ykey), None)
             if attr_get is None:
                 raise AttributeError("Invalid attribute specified (%s)" % ykey)
-
             chobj = attr_get()
 
             if chobj._yang_type == "container":
@@ -497,7 +502,7 @@ class pybindIETFXMLDecoder(object):
                 )
 
             elif chobj._yang_type == "list":
-                assert hasattr(chobj, "_keyval"), "a leaf-list?"
+                # TODO: development assertions, not sure how to resolve these yet
                 assert chobj._keyval is not False, "keyless list?"
 
                 # we just need to find the key value to add it to the list
@@ -533,17 +538,13 @@ class pybindIETFXMLDecoder(object):
                         raise ValueError("Invalid value for empty in input XML - key: %s, got: %s" % (ykey, val))
 
                 elif chobj._yang_type == "identityref":
-                    # identityref values in IETF JSON may contain their module name, as a prefix,
-                    # but we don't build identities with these as valid values. If this is the
-                    # case then re-write the value to just be the name of the identity that we
-                    # should know about.
                     if ":" in val:
                         _, val = val.split(":", 1)
 
                 if val is not None:
                     set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
                     if set_method is None:
-                        raise AttributeError("Invalid attribute specified in JSON - %s" % (ykey))
+                        raise AttributeError("Invalid attribute specified in XML - %s" % (ykey))
                     set_method(val)
 
         return obj
