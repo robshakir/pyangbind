@@ -444,6 +444,111 @@ def make_generate_ietf_tree(yname_ns_func):
     return generate_ietf_tree
 
 
+class pybindIETFXMLDecoder(object):
+
+    @classmethod
+    def decode(cls, xml, bindings, module_name):
+        # using a custom parser to strip comments (so we don't handle them later)
+        parser = objectify.makeparser(remove_comments=True, remove_blank_text=True)
+        doc = objectify.fromstring(xml, parser=parser)
+        return cls.load_xml(doc, bindings, module_name)
+
+    @staticmethod
+    def load_xml(d, parent, yang_base, obj=None, path_helper=None, extmethods=None):
+        if obj is None:
+            # we need to find the class to create, as one has not been supplied.
+            base_mod_cls = getattr(parent, safe_name(yang_base))
+            tmp = base_mod_cls(path_helper=False)
+
+            if path_helper is not None:
+                # check that this path doesn't already exist in the
+                # tree, otherwise we create a duplicate.
+                existing_objs = path_helper.get(tmp._path())
+                if len(existing_objs) == 0:
+                    obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+                elif len(existing_objs) == 1:
+                    obj = existing_objs[0]
+                else:
+                    raise pybindJSONUpdateError("update was attempted to a node that " + "was not unique")
+            else:
+                # in this case, we cannot check for an existing object
+                obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
+
+        for child in d.getchildren():
+            qn = etree.QName(child)
+            namespace, ykey = qn.namespace, qn.localname
+
+            # need to look up the key in the object to find out what type it should be,
+            # because we can't tell from the XML structure
+            attr_get = getattr(obj, "_get_%s" % safe_name(ykey), None)
+            if attr_get is None:
+                raise AttributeError("Invalid attribute specified (%s)" % ykey)
+
+            chobj = attr_get()
+
+            if chobj._yang_type == "container":
+
+                if hasattr(chobj, "_presence"):
+                    if chobj._presence:
+                        chobj._set_present()
+
+                pybindIETFXMLDecoder.load_xml(
+                    child, None, None, obj=chobj, path_helper=path_helper, extmethods=extmethods
+                )
+
+            elif chobj._yang_type == "list":
+                assert hasattr(chobj, "_keyval"), "a leaf-list?"
+                assert chobj._keyval is not False, "keyless list?"
+
+                # we just need to find the key value to add it to the list
+                key_parts = []
+                add_kwargs = {}
+                for pkv, ykv in zip(chobj._keyval.split(" "), chobj._yang_keys.split(" ")):
+                    add_kwargs[pkv] = child[ykv]
+                    key_parts.append(str(child[ykv]))
+                key_str = " ".join(map(str, key_parts))
+                if key_str not in chobj:
+                    nobj = chobj.add(**add_kwargs)
+                else:
+                    nobj = chobj[key_str]
+
+                # now we have created the nested object element, we add other members
+                pybindIETFXMLDecoder.load_xml(
+                    child, None, None, obj=nobj, path_helper=path_helper, extmethods=extmethods
+                )
+
+            elif hasattr(chobj, "_pybind_generated_by") and chobj._pybind_generated_by == "TypedListType":
+                chobj.append(str(child))
+
+            else:
+                if chobj._is_keyval is True:
+                    # we've already added the key
+                    continue
+
+                val = child.text
+                if chobj._yang_type == "empty":
+                    if child.text is None:
+                        val = True
+                    else:
+                        raise ValueError("Invalid value for empty in input XML - key: %s, got: %s" % (ykey, val))
+
+                elif chobj._yang_type == "identityref":
+                    # identityref values in IETF JSON may contain their module name, as a prefix,
+                    # but we don't build identities with these as valid values. If this is the
+                    # case then re-write the value to just be the name of the identity that we
+                    # should know about.
+                    if ":" in val:
+                        _, val = val.split(":", 1)
+
+                if val is not None:
+                    set_method = getattr(obj, "_set_%s" % safe_name(ykey), None)
+                    if set_method is None:
+                        raise AttributeError("Invalid attribute specified in JSON - %s" % (ykey))
+                    set_method(val)
+
+        return obj
+
+
 class pybindJSONDecoder(object):
 
     @staticmethod
