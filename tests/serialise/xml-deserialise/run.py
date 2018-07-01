@@ -20,9 +20,9 @@ class XMLDeserialiseTests(PyangBindTestCase):
             existing_doc = objectify.fromstring(external_xml)
 
         result = pybindIETFXMLDecoder().decode(external_xml, self.bindings, "ietf_xml_deserialise")
-        result_doc = pybindIETFXMLEncoder().encode(result)
+        doc = pybindIETFXMLEncoder().encode(result)
 
-        self.assertTrue(xml_tree_equivalence(result_doc, existing_doc), "Generated XML did not match the expected output.")
+        self.assertTrue(xml_tree_equivalence(doc, existing_doc), "Generated XML did not match the expected output.")
 
 
 if __name__ == "__main__":
