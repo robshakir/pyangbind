@@ -254,6 +254,18 @@ module ietf-xml-deserialise {
         type string;
       }
     }
+
+    list mkey {
+      key "leaf-one leaf-two";
+
+      leaf leaf-one {
+        type string;
+      }
+
+      leaf leaf-two {
+        type int8;
+      }
+    }
   }
 
   container augtarget {

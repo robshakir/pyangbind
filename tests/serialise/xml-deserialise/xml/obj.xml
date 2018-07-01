@@ -72,6 +72,14 @@
     <t1>
       <target>32</target>
     </t1>
+    <mkey>
+      <leaf-one>foo</leaf-one>
+      <leaf-two>1</leaf-two>
+    </mkey>
+    <mkey>
+      <leaf-one>bar</leaf-one>
+      <leaf-two>2</leaf-two>
+    </mkey>
   </c1>
   <augtarget>
     <augleaf xmlns="http://rob.sh/yang/test/deserialise/ietf-xml-deserialise/augment">teststring</augleaf>
