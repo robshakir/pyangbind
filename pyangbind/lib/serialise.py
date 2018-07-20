@@ -48,7 +48,7 @@ class pybindJSONIOError(Exception):
     pass
 
 
-class pybindJSONUpdateError(Exception):
+class pybindLoadUpdateError(Exception):
     pass
 
 
@@ -474,7 +474,7 @@ class pybindIETFXMLDecoder(object):
                 elif len(existing_objs) == 1:
                     obj = existing_objs[0]
                 else:
-                    raise pybindJSONUpdateError("update was attempted to a node that " + "was not unique")
+                    raise pybindLoadUpdateError("update was attempted to a node that " + "was not unique")
             else:
                 # in this case, we cannot check for an existing object
                 obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
@@ -502,8 +502,8 @@ class pybindIETFXMLDecoder(object):
                 )
 
             elif chobj._yang_type == "list":
-                # TODO: development assertions, not sure how to resolve these yet
-                assert chobj._keyval is not False, "keyless list?"
+                if not chobj._keyval:
+                    raise NotImplementedError("keyless list?")
 
                 # we just need to find the key value to add it to the list
                 key_parts = []
@@ -571,7 +571,7 @@ class pybindJSONDecoder(object):
                 elif len(existing_objs) == 1:
                     obj = existing_objs[0]
                 else:
-                    raise pybindJSONUpdateError("update was attempted to a node that " + "was not unique")
+                    raise pybindLoadUpdateError("update was attempted to a node that " + "was not unique")
             else:
                 # in this case, we cannot check for an existing object
                 obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
@@ -677,7 +677,7 @@ class pybindJSONDecoder(object):
                 # not a pybind attribute at all - keep using the std set method
                 pass
             else:
-                raise pybindJSONUpdateError("unknown pybind type when loading JSON: %s" % pybind_attr)
+                raise pybindLoadUpdateError("unknown pybind type when loading JSON: %s" % pybind_attr)
 
             if set_via_stdmethod:
                 # simply get the set method and then set the value of the leaf
@@ -710,7 +710,7 @@ class pybindJSONDecoder(object):
                 elif len(existing_objs) == 1:
                     obj = existing_objs[0]
                 else:
-                    raise pybindJSONUpdateError("update was attempted to a node that " + "was not unique")
+                    raise pybindLoadUpdateError("update was attempted to a node that " + "was not unique")
             else:
                 # in this case, we cannot check for an existing object
                 obj = base_mod_cls(path_helper=path_helper, extmethods=extmethods)
