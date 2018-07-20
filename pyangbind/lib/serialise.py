@@ -532,7 +532,7 @@ class pybindIETFXMLDecoder(object):
                 try:
                     chobj.append(child.pyval)
                 except ValueError:
-                    if str in chobj._allowed_type:
+                    if six.text_type in chobj._allowed_type:
                         chobj.append(str(child.pyval))
                     else:
                         raise
