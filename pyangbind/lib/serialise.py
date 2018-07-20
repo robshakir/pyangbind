@@ -523,7 +523,19 @@ class pybindIETFXMLDecoder(object):
                 )
 
             elif hasattr(chobj, "_pybind_generated_by") and chobj._pybind_generated_by == "TypedListType":
-                chobj.append(str(child))
+                # NOTE: this is a little curious, because we are relying on the coercion of types
+                #   i.e. lxml will "identify" the type based on its own internal model of Python
+                #   types, see: https://lxml.de/2.0/objectify.html#how-data-types-are-matched
+                # There are limitations which need to be addressed, e.g. hexadecimal strings.
+                # Already, we have a stringify-fallback: if we fail on the first attempt then
+                # try again as a pure string (if its allowed).
+                try:
+                    chobj.append(child.pyval)
+                except ValueError:
+                    if str in chobj._allowed_type:
+                        chobj.append(str(child.pyval))
+                    else:
+                        raise
 
             else:
                 if chobj._is_keyval is True:

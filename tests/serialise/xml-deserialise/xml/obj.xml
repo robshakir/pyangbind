@@ -18,6 +18,7 @@
       <union>16</union>
       <union-list>16</union-list>
       <union-list>chicken</union-list>
+      <union-list>-100</union-list>
       <leafref>16</leafref>
       <binary>010101</binary>
       <boolean>true</boolean>
@@ -29,7 +30,7 @@
       <one-leaf>hi</one-leaf>
       <ll>1</ll>
       <ll>2</ll>
-      <ll>3</ll>
+      <ll>3.0</ll>
       <ll>4</ll>
       <next-hop>DROP</next-hop>
       <next-hop>192.0.2.1</next-hop>
