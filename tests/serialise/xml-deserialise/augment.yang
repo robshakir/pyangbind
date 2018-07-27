@@ -1,0 +1,24 @@
+module augment {
+  yang-version "1";
+  namespace "http://rob.sh/yang/test/deserialise/ietf-xml-deserialise/augment";
+  prefix "augpfx";
+
+  import ietf-xml-deserialise { prefix ixd; }
+
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+  description
+      "A test module";
+  revision 2014-01-01 {
+      description "april-fools";
+      reference "fooled-you";
+  }
+
+  augment "/ixd:augtarget" {
+    leaf augleaf {
+      type string;
+    }
+  }
+
+}
