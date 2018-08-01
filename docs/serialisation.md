@@ -211,15 +211,15 @@ which emit a string or an [`lxml.objectify`](https://lxml.de/objectify.html) ins
  pybindIETFXMLEncoder.serialise(obj, filter=<bool>, pretty_print=<bool>)
  ```
 
-  * `obj` - which is a PyangBind class instance that is to be dumped. It is expected to havea `get` method, hence be a list or a container.
+  * `obj` - which is a PyangBind class instance that is to be dumped. It is expected to have a `get` method, hence be a list or a container.
   * `filter` - analagous to the `filter` argument to a PyangBind class' `get` method (see the documentation relating to generic methods), which determines whether the entire tree, or just the changed elements are to be dumped.
-  * `pretty_print` - determines whether to apply pretty-printing to the emitted XML string (e.g. newlines and 2-space indentation)
+  * `pretty_print` - determines whether to apply pretty-printing to the emitted XML string (e.g. newlines and 2-space indentation).
 
  ```
  pybindIETFXMLEncoder.encode(obj, filter=<bool>, pretty_print=<bool>)
  ```
 
-  * The `obj` and `filter` arguments are as per `pybindIETFXMLEncoder.serialise`
+  * The `obj` and `filter` arguments are as per `pybindIETFXMLEncoder.serialise`.
 
 ## Serialising Data into JSON <a name="serialising-json"></a>
 
@@ -229,7 +229,7 @@ In order to serialise a PyangBind class instance into JSON, the `dump`, `dumps` 
  dump(obj, filename, indent=<int>, filter=<bool>, skip_subtrees=<list>, mode="default")
  ```
   
-  * `obj` - which is a PyangBind class instance that is to be dumped. It is expected to havea `get` method, hence be a list or a container.
+  * `obj` - which is a PyangBind class instance that is to be dumped. It is expected to have a `get` method, hence be a list or a container.
   * `filename` - the file to which the JSON should be written.
   * `indent` - the number of spaces to use to indent the JSON.
   * `filter` - analagous to the `filter` argument to a PyangBind class' `get` method (see the documentation relating to generic methods), which determines whether the entire tree, or just the changed elements are to be dumped.
