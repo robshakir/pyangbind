@@ -31,8 +31,6 @@ class Identity(object):
         self.children = []
 
     def add_prefix(self, prefix):
-        if self.source_module not in self._imported_prefixes:
-            self._imported_prefixes.append(self.source_module)
         if prefix not in self._imported_prefixes:
             self._imported_prefixes.append(prefix)
 
