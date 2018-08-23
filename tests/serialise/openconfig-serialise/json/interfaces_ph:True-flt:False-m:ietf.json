@@ -31,7 +31,10 @@
                     "ifindex": 0, 
                     "last-change": "0", 
                     "oper-status": "", 
+                    "logical": false,
                     "counters": {
+                        "in-pkts": "0", 
+                        "out-pkts": "0", 
                         "in-fcs-errors": "0", 
                         "in-errors": "0", 
                         "in-discards": "0", 
