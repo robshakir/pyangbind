@@ -1493,12 +1493,15 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
                 register_paths=register_paths,
             )
 
+            elemconfigdef = element.search_one("config")
+            elemconfig = class_bool_map[elemconfigdef.arg] if elemconfigdef else True
+
             elemdict = {
                 "name": safe_name(element.arg),
                 "origtype": element.keyword,
                 "class": element.keyword,
                 "path": safe_name(npath),
-                "config": True,
+                "config": elemconfig,
                 "description": elemdescr,
                 "yang_name": element.arg,
                 "choice": choice,
@@ -1659,7 +1662,8 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
             quote_arg = default_type["quote_arg"] if "quote_arg" in default_type else False
             default_type = default_type["native_type"]
 
-        elemconfig = class_bool_map[element.search_one("config").arg] if element.search_one("config") else True
+        elemconfigdef = element.search_one("config")
+        elemconfig = class_bool_map[elemconfigdef.arg] if elemconfigdef else True
 
         elemname = safe_name(element.arg)
 
