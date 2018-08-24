@@ -165,15 +165,53 @@ except ValueError as m:
 
 Clearly, populated PyangBind classes are not useful in and of themselves - the common use case is that they are sent to a external system (e.g., a router, or other NMS component). To achieve this the class hierarchy needs to be serialised into a format that can be sent to the remote entity. There are currently multiple ways to do this:
 
- * **XML** - the rules for this mapping are defined in [RFC 7950][rfc7950] - currently _NOT SUPPORTED_.
+ * **XML** - the rules for this mapping are defined in [RFC 7950][rfc7950] - supported.
  * **OpenConfig-suggested JSON** - the rules for this mapping are currently being written into a formal specification. This is the standard (`default`) format used by PyangBind. Some network equipment vendors utilise this serialisation format.
  * **IETF JSON** - the rules for this mapping are defined in [RFC 7951][rfc7951] - some network equipment vendors use this format.
 
 Any PyangBind class can be serialised into any of the supported formats. Using the static route example above, the entire `local-routing` module can be serialised into OC-JSON using the following code:
 
 ```python
+from pyangbind.lib.serialise import pybindIETFXMLEncoder
+# Dump the entire instance as RFC 7950 XML
+print(pybindIETFXMLEncoder.serialise(oclr))
+```
+
+This outputs the following XML fragment:
+
+```xml
+<openconfig-local-routing xmlns="http://openconfig.net/yang/local-routing">
+  <local-routes>
+    <static-routes>
+      <static>
+        <prefix>192.0.2.1/32</prefix>
+        <config>
+          <set-tag>42</set-tag>
+        </config>
+        <next-hops>
+          <next-hop>
+            <index>0</index>
+            <config>
+              <next-hop>192.168.0.1</next-hop>
+            </config>
+          </next-hop>
+          <next-hop>
+            <index>1</index>
+            <config>
+              <next-hop>10.0.0.1</next-hop>
+            </config>
+          </next-hop>
+        </next-hops>
+      </static>
+    </static-routes>
+  </local-routes>
+</openconfig-local-routing>
+```
+
+Or, similarly, using OpenConfig-suggested JSON:
+
+```python
 import pyangbind.lib.pybindJSON as pybindJSON
-# Dump the entire instance as JSON in PyangBind format
 print(pybindJSON.dumps(oclr))
 ```
 
