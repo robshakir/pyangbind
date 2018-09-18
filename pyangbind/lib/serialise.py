@@ -72,7 +72,7 @@ class YangDataSerialiser(object):
     """
 
     def preprocess_element(self, d):
-        nd = {}
+        nd = OrderedDict()
         if isinstance(d, OrderedDict) or isinstance(d, dict):
             index = 0
             for k in d:
@@ -105,7 +105,7 @@ class YangDataSerialiser(object):
             return [self.default(i) for i in obj]
         # Expand dictionaries
         elif isinstance(obj, dict):
-            return {k: self.default(v) for k, v in six.iteritems(obj)}
+            return OrderedDict((k, self.default(v)) for k, v in six.iteritems(obj))
 
         if pybc is not None:
             # Special cases where the wrapper has an underlying class
@@ -407,7 +407,7 @@ def make_generate_ietf_tree(yname_ns_func):
             # were a scalar.
             return obj
 
-        d = {}
+        d = OrderedDict()
         for element_name in obj._pyangbind_elements:
             element = getattr(obj, element_name, None)
             yang_name = getattr(element, "yang_name", None)
