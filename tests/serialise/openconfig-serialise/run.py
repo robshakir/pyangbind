@@ -2,7 +2,11 @@
 
 import json
 import os.path
-import unittest
+
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 import regex
 
@@ -53,8 +57,8 @@ class OpenconfigSerialiseTests(PyangBindTestCase):
         for file_name in os.listdir(json_dir):
             with self.subTest(json_file=file_name), open(os.path.join(json_dir, file_name), "r") as file_handle:
                 parameters = regex.sub(
-                    "interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json",
-                    "\g<pathhelper>||\g<filter>||\g<mode>",
+                    r"interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json",
+                    r"\g<pathhelper>||\g<filter>||\g<mode>",
                     file_name,
                 ).split("||")
                 path_helper, config_filter, mode = (YANGBool(parameters[0]), YANGBool(parameters[1]), parameters[2])

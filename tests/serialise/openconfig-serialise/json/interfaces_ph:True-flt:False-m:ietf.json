@@ -4,52 +4,55 @@
             {
                 "hold-time": {
                     "state": {
-                        "down": 0, 
+                        "down": 0,
                         "up": 0
-                    }, 
+                    },
                     "config": {
-                        "down": 0, 
+                        "down": 0,
                         "up": 0
                     }
-                }, 
+                },
                 "config": {
-                    "enabled": false, 
+                    "enabled": false,
                     "loopback-mode": false,
-                    "type": "", 
-                    "description": "", 
-                    "name": "eth0", 
+                    "type": "",
+                    "description": "",
+                    "name": "eth0",
                     "mtu": 0
-                }, 
+                },
                 "state": {
-                    "name": "", 
-                    "type": "", 
-                    "description": "", 
-                    "enabled": false, 
+                    "name": "",
+                    "type": "",
+                    "description": "",
+                    "enabled": false,
+                    "logical": false,
                     "loopback-mode": false,
-                    "admin-status": "", 
-                    "mtu": 0, 
-                    "ifindex": 0, 
-                    "last-change": "0", 
-                    "oper-status": "", 
+                    "admin-status": "",
+                    "mtu": 0,
+                    "ifindex": 0,
+                    "last-change": "0",
+                    "oper-status": "",
                     "counters": {
-                        "in-fcs-errors": "0", 
-                        "in-errors": "0", 
-                        "in-discards": "0", 
-                        "out-broadcast-pkts": "0", 
-                        "out-errors": "0", 
-                        "out-multicast-pkts": "0", 
-                        "in-multicast-pkts": "0", 
-                        "last-clear": "0", 
-                        "out-octets": "0", 
-                        "in-unicast-pkts": "0", 
-                        "out-unicast-pkts": "0", 
-                        "out-discards": "0", 
-                        "in-broadcast-pkts": "0", 
-                        "carrier-transitions": "0", 
-                        "in-unknown-protos": "0", 
-                        "in-octets": "0"
+                        "in-fcs-errors": "0",
+                        "in-errors": "0",
+                        "in-discards": "0",
+                        "out-broadcast-pkts": "0",
+                        "out-errors": "0",
+                        "out-multicast-pkts": "0",
+                        "in-multicast-pkts": "0",
+                        "last-clear": "0",
+                        "out-octets": "0",
+                        "in-unicast-pkts": "0",
+                        "out-unicast-pkts": "0",
+                        "out-discards": "0",
+                        "in-broadcast-pkts": "0",
+                        "carrier-transitions": "0",
+                        "in-unknown-protos": "0",
+                        "in-octets": "0",
+                        "in-pkts": "0",
+                        "out-pkts": "0"
                     }
-                }, 
+                },
                 "name": "eth0"
             }
         ]
