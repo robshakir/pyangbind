@@ -1,13 +1,14 @@
 sudo: false
 language: python
 cache: pip
+dist: xenial
 python:
   - 2.7
   - pypy
   - 3.4
   - 3.5
   - 3.6
-  - 3.7-dev
+  - 3.7
 matrix:
   include:
   - python: 3.6
