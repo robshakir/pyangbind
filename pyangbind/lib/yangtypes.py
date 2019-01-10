@@ -890,8 +890,8 @@ class YANGBool(int):
   """
 
     def __new__(self, *args, **kwargs):
-        false_args = ["false", "False", False, 0, "0"]
-        true_args = ["true", "True", True, 1, "1"]
+        false_args = ["false", "False", False, 0, "0", "FALSE"]
+        true_args = ["true", "True", True, 1, "1", "TRUE"]
         if len(args):
             if not args[0] in false_args + true_args:
                 raise ValueError("%s is an invalid value for a YANGBool" % args[0])
