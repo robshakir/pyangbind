@@ -6,7 +6,6 @@ import unittest
 from decimal import Decimal
 
 import six
-from bitarray import bitarray
 
 from pyangbind.lib.pybindJSON import dumps
 from pyangbind.lib.xpathhelper import YANGPathHelper
@@ -48,7 +47,7 @@ class JSONSerialiseTests(PyangBindTestCase):
         self.serialise_obj.c1.t1.add(32)
         self.serialise_obj.c1.l1[1].leafref = 16
 
-        self.serialise_obj.c1.l1[1].binary = bitarray("010101")
+        self.serialise_obj.c1.l1[1].binary = b"yang"
         self.serialise_obj.c1.l1[1].boolean = True
         self.serialise_obj.c1.l1[1].enumeration = "one"
         self.serialise_obj.c1.l1[1].identityref = "idone"

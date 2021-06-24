@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import unittest
 
 import six
-from bitarray import bitarray
 
 from tests.base import PyangBindTestCase
 
@@ -70,7 +69,7 @@ class UnionTests(PyangBindTestCase):
         self.assertEqual(self.instance.container.u8._default, 10)
 
     def test_leaf_list_with_union_of_unions_from_typedefs(self):
-        for value, valid in [(1, True), ("hello", True), (42.42, True), (True, True), (bitarray(10), False)]:
+        for value, valid in [(1, True), ("hello", True), (42.42, True), (True, True), (b"yang", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:

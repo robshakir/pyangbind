@@ -1,5 +1,4 @@
 pyang
-bitarray
 lxml
 regex
 six
