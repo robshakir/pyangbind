@@ -38,6 +38,8 @@
       <range-decimal>4.44443322</range-decimal>
       <typedef-decimalrange>33.44</typedef-decimalrange>
       <uint64type>4194304</uint64type>
+      <typedefed-bits>bit1 bit2</typedefed-bits>
+      <leaf-bits>b1 b3</leaf-bits>
     </l1>
     <l2>
       <k1>1</k1>

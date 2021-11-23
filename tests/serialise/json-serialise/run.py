@@ -63,6 +63,8 @@ class JSONSerialiseTests(PyangBindTestCase):
         self.serialise_obj.c1.l1[1].range_decimal = Decimal("4.44443322")
         self.serialise_obj.c1.l1[1].typedef_decimalrange = Decimal("42.42")
         self.serialise_obj.c1.l1[1].decleaf = Decimal("42.4422")
+        self.serialise_obj.c1.l1[1].bits.add("flag1")
+        self.serialise_obj.c1.l1[1].bits.add("flag3")
 
         for i in range(1, 10):
             self.serialise_obj.c1.l2.add(i)

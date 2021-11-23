@@ -34,7 +34,13 @@ from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
-from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary
+from pyangbind.lib.yangtypes import (
+    RestrictedClassType,
+    YANGBool,
+    safe_name,
+    YANGBinary,
+    YANGBitsType,
+)
 
 # Python3 support
 if six.PY3:
@@ -104,6 +110,12 @@ class_map = {
         "native_type": ("RestrictedClassType(base_type=int," + " restriction_dict={'range': ['0..255']}, int_size=8)"),
         "base_type": True,
         "pytype": RestrictedClassType(base_type=int, restriction_dict={"range": ["0..255"]}, int_size=8),
+    },
+    "bits": {
+        "native_type": "YANGBitsType(allowed_bits={})",
+        "base_type": True,
+        "quote_arg": True,
+        "pytype": YANGBitsType(allowed_bits={}),
     },
     "uint16": {
         "native_type": (
@@ -317,6 +329,7 @@ def build_pybind(ctx, modules, fd):
         "YANGDynClass",
         "ReferenceType",
         "YANGBinary",
+        "YANGBitsType",
     ]
     for library in yangtypes_imports:
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
@@ -496,6 +509,7 @@ def build_typedefs(ctx, defnd):
     known_types = list(class_map.keys())
     known_types.append("enumeration")
     known_types.append("leafref")
+    known_types.append("bits")
     base_types = copy.deepcopy(known_types)
     process_typedefs_ordered = []
 
@@ -575,6 +589,7 @@ def build_typedefs(ctx, defnd):
         # in the class_map, and hence we append it here.
         known_types.append("enumeration")
         known_types.append("leafref")
+        known_types.append("bits")
 
         # Don't allow duplicate definitions of types
         if type_name in known_types:
@@ -1327,6 +1342,22 @@ def build_elemtype(ctx, et, prefix=False):
                     pp.pprint(et.arg)
                     pp.pprint(base_stmt.arg)
                 sys.exit(127)
+        elif et.arg == "bits":
+            allowed_bits = {}
+            for bit in et.search("bit"):
+                position = bit.search_one("position")
+                if position is not None:
+                    pos = position.arg
+                else:
+                    pos = 1 + max(allowed_bits)
+                allowed_bits[bit.arg] = pos
+            cls = "restricted-bits"
+            elemtype = {
+                "native_type": f"YANGBitsType(allowed_bits={allowed_bits})",
+                "base_type": True,
+                "parent_type": "bits",
+                "quote_arg": True,
+            }
         else:
             # For all other cases, then we should be able to look up directly in the
             # class_map for the defined type, since these are not 'derived' types

@@ -79,6 +79,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
                         "uint64": 1,
                         "int64": 1,
                         "restricted-string": "aardvark",
+                        "bits": set(["flag1", "flag2"]),
                     }
                 },
                 "t1": {"32": {"target": "32"}, "16": {"target": "16"}},

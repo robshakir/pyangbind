@@ -59,6 +59,8 @@ class XMLSerialiseTests(PyangBindTestCase):
         self.serialise_obj.c1.l1[1].next_hop.append("TEST")
         self.serialise_obj.augtarget.augleaf = "teststring"
         self.serialise_obj.c1.l1[1].decleaf = Decimal("42.4422")
+        self.serialise_obj.c1.l1[1].typedefed_bits = "bit1 bit2"
+        self.serialise_obj.c1.l1[1].leaf_bits = "b1 b3"
         for i in range(1, 10):
             self.serialise_obj.c1.l2.add(i)
 

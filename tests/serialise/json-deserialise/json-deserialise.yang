@@ -171,6 +171,20 @@ module json-deserialise {
           }
         }
       }
+
+      leaf bits {
+        type bits {
+	  bit flag1 {
+	    position 1;
+	  }
+	  bit flag2 {
+	    position 2;
+	  }
+	  bit flag3 {
+	    position 3;
+	  }
+	}
+      }
     }
 
     list t1 {
@@ -189,5 +203,4 @@ module json-deserialise {
       type string;
     }
   }
-
 }
