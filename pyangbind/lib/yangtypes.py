@@ -84,6 +84,7 @@ reserved_name = [
     "property",
     "min",
     "max",
+    "async",
 ]
 
 
