@@ -1,8 +1,5 @@
 [![#PyangBind][img-pyangbind]][pyangbind-docs]
 
-
-[![Travis][img-travis]][travis]
-[![Codecov][img-codecov]][codecov]
 [![PyPI][img-pypi]][pypi-project]
 [![PyPI - License][img-license]][license]
 [![PyPI - Python Version][img-pyversion]][pypi-project]
@@ -388,14 +385,14 @@ limitations under the License.
   * The managability team at Juniper Networks.
 
 
-[img-pyangbind]: http://rob.sh/img/pyblogo_gh.png
+[img-pyangbind]: https://cdn.rob.sh/img/pyblogo_gh.png
 [img-travis]: https://img.shields.io/travis/robshakir/pyangbind.svg
 [img-codecov]: https://img.shields.io/codecov/c/github/robshakir/pyangbind.svg
 [img-pypi]: https://img.shields.io/pypi/v/pyangbind.svg
 [img-license]: https://img.shields.io/pypi/l/pyangbind.svg
 [img-pyversion]: https://img.shields.io/pypi/pyversions/pyangbind.svg
 
-[pyangbind-docs]: http://pynms.io/pyangbind/
+[pyangbind-docs]: https://github.com/robshakir/pyangbind/tree/master/docs
 [travis]: https://travis-ci.org/robshakir/pyangbind
 [codecov]: https://codecov.io/gh/robshakir/pyangbind
 [pypi-project]: https://pypi.org/project/pyangbind/
