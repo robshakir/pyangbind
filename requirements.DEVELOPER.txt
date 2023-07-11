@@ -1,5 +1,7 @@
 black==18.5b0; python_version >= '3.6'
+build
 coverage
+pytest
 requests
 tox
 unittest2; python_version < '3.0'
