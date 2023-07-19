@@ -4,5 +4,4 @@ coverage
 pytest
 requests
 tox
-unittest2; python_version < '3.0'
 wheel

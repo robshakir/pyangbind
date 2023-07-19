@@ -4,10 +4,7 @@ from __future__ import print_function
 
 from pyangbind.lib.xpathhelper import XPathError, YANGPathHelper
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 
 class TestObject(object):
