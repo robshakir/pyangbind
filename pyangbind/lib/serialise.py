@@ -58,6 +58,7 @@ class pybindJSONDecodeError(Exception):
 
 class UnmappedItem(Exception):
     """Used to simulate an Optional value"""
+
     pass
 
 
@@ -266,6 +267,7 @@ class _pybindJSONEncoderBase(json.JSONEncoder):
 
     Do not use directly, subclass and set the `serialiser_class` attribute appropriately
     """
+
     serialiser_class = None
 
     def encode(self, obj):
@@ -277,12 +279,14 @@ class _pybindJSONEncoderBase(json.JSONEncoder):
 
 class pybindJSONEncoder(_pybindJSONEncoderBase):
     """Default pybind JSON encoder"""
+
     serialiser_class = YangDataSerialiser
 
 
 class pybindIETFJSONEncoder(_pybindJSONEncoderBase):
     """IETF JSON encoder, we add a special method `generate_element()` that should be used
     to restructure the pybind object to fit IETF requirements prior to JSON encoding."""
+
     serialiser_class = IETFYangDataSerialiser
 
     @staticmethod
@@ -492,7 +496,6 @@ class pybindIETFXMLDecoder(object):
             chobj = attr_get()
 
             if chobj._yang_type == "container":
-
                 if hasattr(chobj, "_presence"):
                     if chobj._presence:
                         chobj._set_present()
@@ -563,12 +566,10 @@ class pybindIETFXMLDecoder(object):
 
 
 class pybindJSONDecoder(object):
-
     @staticmethod
     def load_json(
         d, parent, yang_base, obj=None, path_helper=None, extmethods=None, overwrite=False, skip_unknown=False
     ):
-
         if obj is None:
             # we need to find the class to create, as one has not been supplied.
             base_mod_cls = getattr(parent, safe_name(yang_base))

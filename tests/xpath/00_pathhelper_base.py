@@ -11,7 +11,6 @@ except ImportError:
 
 
 class TestObject(object):
-
     def __init__(self, name):
         self._name = name
 
@@ -20,7 +19,6 @@ class TestObject(object):
 
 
 class PathHelperBaseTests(unittest.TestCase):
-
     def setUp(self):
         self.tree = YANGPathHelper()
 

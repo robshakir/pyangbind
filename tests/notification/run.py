@@ -72,7 +72,7 @@ class NotificationTests(PyangBindTestCase):
 
         parent.test.reference_target.append("five")
 
-        for (value, valid) in [("five", True), ("fish", False)]:
+        for value, valid in [("five", True), ("fish", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:

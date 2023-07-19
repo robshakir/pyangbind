@@ -120,7 +120,7 @@ def remove_path_attributes(p):
 def safe_name(arg):
     """
     Make a leaf or container name safe for use in Python.
-  """
+    """
     arg = arg.replace("-", "_")
     arg = arg.replace(".", "_")
     if arg in reserved_name:
@@ -134,23 +134,24 @@ def RestrictedPrecisionDecimalType(*args, **kwargs):
     """
     Function to return a new type that is based on decimal.Decimal with
     an arbitrary restricted precision.
-  """
+    """
     precision = kwargs.pop("precision", False)
 
     class RestrictedPrecisionDecimal(Decimal):
         """
-      Class extending decimal.Decimal to restrict the precision that is
-      stored, supporting the fraction-digits argument of the YANG decimal64
-      type.
-    """
+        Class extending decimal.Decimal to restrict the precision that is
+        stored, supporting the fraction-digits argument of the YANG decimal64
+        type.
+        """
+
         _precision = 10.0 ** (-1.0 * int(precision))
         _pybind_generated_by = "RestrictedPrecisionDecimal"
 
         def __new__(self, *args, **kwargs):
             """
-        Overloads the decimal __new__ function in order to round the input
-        value to the new value.
-      """
+            Overloads the decimal __new__ function in order to round the input
+            value to the new value.
+            """
             if self._precision is not None:
                 if len(args):
                     value = Decimal(args[0]).quantize(Decimal(str(self._precision)))
@@ -172,7 +173,7 @@ def RestrictedClassType(*args, **kwargs):
     a specified restriction. The restriction_type specified determines the
     type of restriction placed on the class, and the restriction_arg gives
     any input data that this function needs.
-  """
+    """
     base_type = kwargs.pop("base_type", six.text_type)
     restriction_type = kwargs.pop("restriction_type", None)
     restriction_arg = kwargs.pop("restriction_arg", None)
@@ -191,10 +192,11 @@ def RestrictedClassType(*args, **kwargs):
 
     class RestrictedClass(base_type):
         """
-      A class that restricts the base_type class with a new function that the
-      input value is validated against before being applied. The function is
-      a static method which is assigned to _restricted_test.
-    """
+        A class that restricts the base_type class with a new function that the
+        input value is validated against before being applied. The function is
+        a static method which is assigned to _restricted_test.
+        """
+
         _pybind_generated_by = "RestrictedClassType"
 
         _restricted_class_base = restricted_class_hint
@@ -202,10 +204,10 @@ def RestrictedClassType(*args, **kwargs):
 
         def __init__(self, *args, **kwargs):
             """
-        Overloads the base_class __init__ method to check the input argument
-        against the validation function - returns on instance of the base_type
-        class, which can be manipulated as per a usual Python object.
-      """
+            Overloads the base_class __init__ method to check the input argument
+            against the validation function - returns on instance of the base_type
+            class, which can be manipulated as per a usual Python object.
+            """
             try:
                 self.__check(args[0])
             except IndexError:
@@ -228,7 +230,6 @@ def RestrictedClassType(*args, **kwargs):
             range_single_value_regex = regex.compile("(?P<value>\-?[0-9\.]+)")
 
             def convert_regexp(pattern):
-
                 # Some patterns include a $ character in them in some IANA modules, this
                 # is not escaped. Do some logic to escape them, whilst leaving one at the
                 # end of the string if it's there.
@@ -271,7 +272,6 @@ def RestrictedClassType(*args, **kwargs):
                     raise ValueError("Invalid range or length argument specified")
 
             def in_range_check(low_high_tuples, length=False):
-
                 def range_check(value):
                     if length and isinstance(value, bitarray):
                         value = value.length()
@@ -296,7 +296,6 @@ def RestrictedClassType(*args, **kwargs):
                 return range_check
 
             def match_pattern_check(regexp):
-
                 def mp_check(value):
                     if not isinstance(value, six.string_types + (six.text_type,)):
                         return False
@@ -383,9 +382,9 @@ def RestrictedClassType(*args, **kwargs):
 
         def __check(self, v):
             """
-        Run the _restriction_test static method against the argument v,
-        returning an error if the value does not validate.
-      """
+            Run the _restriction_test static method against the argument v,
+            returning an error if the value does not validate.
+            """
             v = base_type(v)
             for chkfn in self._restriction_tests:
                 if not chkfn(v):
@@ -394,9 +393,9 @@ def RestrictedClassType(*args, **kwargs):
 
         def getValue(self, *args, **kwargs):
             """
-        For types where there is a dict_key restriction (such as YANG
-        enumeration), return the value of the dictionary key.
-      """
+            For types where there is a dict_key restriction (such as YANG
+            enumeration), return the value of the dictionary key.
+            """
             if "dict_key" in self._restriction_dict:
                 value = kwargs.pop("mapped", False)
                 if value:
@@ -411,7 +410,7 @@ def TypedListType(*args, **kwargs):
     Return a type that consists of a list object where only
     certain types (specified by allowed_type kwarg to the function)
     can be added to the list.
-  """
+    """
     allowed_type = kwargs.pop("allowed_type", six.text_type)
     if not isinstance(allowed_type, list):
         allowed_type = [allowed_type]
@@ -538,7 +537,7 @@ def YANGListType(*args, **kwargs):
     Where a list exists that does not have a key - which can be the
     case for 'config false' lists - a uuid is generated and used
     as the key for the list.
-  """
+    """
     try:
         keyname = args[0]
         listclass = args[1]
@@ -888,7 +887,7 @@ class YANGBool(int):
 
     This bool also accepts input matching strings to handle the
     forms that might be used in YANG modules.
-  """
+    """
 
     def __new__(self, *args, **kwargs):
         false_args = ["false", "False", False, 0, "0"]
@@ -935,7 +934,7 @@ def YANGDynClass(*args, **kwargs):
                      node.
       - presence:    Whether the YANG container that is being
                      represented has the presence keyword
-  """
+    """
     base_type = kwargs.pop("base", False)
     default = kwargs.pop("default", False)
     yang_name = kwargs.pop("yang_name", False)
@@ -1198,7 +1197,6 @@ def YANGDynClass(*args, **kwargs):
                 return []
 
         def __generate_extmethod(self, methodfn):
-
             def extmethodfn(*args, **kwargs):
                 kwargs["caller"] = self._register_path()
                 kwargs["path_helper"] = self._path_helper
@@ -1232,14 +1230,13 @@ def ReferenceType(*args, **kwargs):
     to be a relative (rather than absolute) path. The require_instance
     argument specifies whether errors should be thrown in the case
     that the referenced instance does not exist.
-  """
+    """
     ref_path = kwargs.pop("referenced_path", False)
     path_helper = kwargs.pop("path_helper", None)
     caller = kwargs.pop("caller", False)
     require_instance = kwargs.pop("require_instance", False)
 
     class ReferencePathType(object):
-
         __slots__ = (
             "_referenced_path",
             "_path_helper",

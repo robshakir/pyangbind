@@ -80,7 +80,7 @@ class ListTests(PyangBindTestCase):
         self.assertEqual(len(self.instance.list_container.list_element), 0)
 
     def test_add_list_item_with_restricted_key(self):
-        for (animal, valid) in [("aardvark", True), ("bear", False), ("chicken", False)]:
+        for animal, valid in [("aardvark", True), ("bear", False), ("chicken", False)]:
             with self.subTest(animal=animal, valid=valid):
                 allowed = True
                 try:
@@ -90,7 +90,7 @@ class ListTests(PyangBindTestCase):
                 self.assertEqual(valid, allowed)
 
     def test_add_list_item_with_key_restricted_by_union_typedef(self):
-        for (animal, valid) in [("aardvark", True), ("bear", True), ("chicken", False)]:
+        for animal, valid in [("aardvark", True), ("bear", True), ("chicken", False)]:
             with self.subTest(animal=animal, valid=valid):
                 allowed = True
                 try:
@@ -100,7 +100,7 @@ class ListTests(PyangBindTestCase):
                 self.assertEqual(valid, allowed)
 
     def test_add_list_item_with_restricted_key_by_keyword(self):
-        for (food, valid) in [("broccoli", False), ("carrot", False), ("avocado", True)]:
+        for food, valid in [("broccoli", False), ("carrot", False), ("avocado", True)]:
             with self.subTest(food=food, valid=valid):
                 allowed = True
                 try:
@@ -115,7 +115,7 @@ class ListTests(PyangBindTestCase):
             self.instance.list_container.list_element[22].keyval = 14
 
     def test_adding_items_to_multi_key_list(self):
-        for (animal, valid) in [("aardvark 5", True), ("bear 7", True), ("chicken 5", False), ("bird 11", False)]:
+        for animal, valid in [("aardvark 5", True), ("bear 7", True), ("chicken 5", False), ("bird 11", False)]:
             with self.subTest(animal=animal, valid=valid):
                 allowed = True
                 try:
@@ -128,7 +128,7 @@ class ListTests(PyangBindTestCase):
         for i in range(1, 10):
             self.instance.list_container.list_five.add(i)
 
-        for (key, match) in zip(list(self.instance.list_container.list_five.keys()), range(1, 10)):
+        for key, match in zip(list(self.instance.list_container.list_five.keys()), range(1, 10)):
             with self.subTest(key=key, match=match):
                 self.assertEqual(key, match)
 
@@ -232,7 +232,7 @@ class ListTests(PyangBindTestCase):
         self.assertEqual(self.instance.list_nine[13].lv, "thirteen")
 
     def test_list_append_new_items_updates_keys(self):
-        for (key, val) in [(13, "thirteen"), ("fourteen", "14")]:
+        for key, val in [(13, "thirteen"), ("fourteen", "14")]:
             item = self.instance.list_nine._new_item()
             item.kv = key
             item.lv = val
@@ -248,7 +248,7 @@ class ListTests(PyangBindTestCase):
         self.assertEqual(self.instance.list_ten["12 13"].lv, "THIRTEEN")
 
     def test_list_append_new_items_with_compound_keys_updates_keys(self):
-        for (key1, key2, val) in [(12, 13, "THIRTEEN"), (13, 14, "FOURTEEN")]:
+        for key1, key2, val in [(12, 13, "THIRTEEN"), (13, 14, "FOURTEEN")]:
             item = self.instance.list_ten._new_item()
             item.kv = key1
             item.kvtwo = key2
