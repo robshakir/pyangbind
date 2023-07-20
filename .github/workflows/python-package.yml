@@ -34,6 +34,5 @@ jobs:
     - name: Run tox
       # Run tox using the version of Python in `PATH`
       run: tox -e py
-      continue-on-error: true
     - name: Build package
       run: python -m build
