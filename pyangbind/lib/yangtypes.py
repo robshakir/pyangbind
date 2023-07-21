@@ -22,6 +22,7 @@ limitations under the License.
 from __future__ import unicode_literals
 
 import collections
+from collections import abc
 import copy
 import uuid
 from decimal import Decimal
@@ -416,7 +417,7 @@ def TypedListType(*args, **kwargs):
     if not isinstance(allowed_type, list):
         allowed_type = [allowed_type]
 
-    class TypedList(collections.MutableSequence):
+    class TypedList(abc.MutableSequence):
         _pybind_generated_by = "TypedListType"
         _list = list()
 
