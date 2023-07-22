@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from tests.base import PyangBindTestCase
@@ -20,7 +17,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
     def test_leaflist_leafref_with_require_instance_true(self):
         for fish in ["mackerel", "trout", "haddock", "flounder"]:
             self.instance.container.t1.append(fish)
-        for (fish, valid) in [("mackerel", True), ("haddock", True), ("minnow", False)]:
+        for fish, valid in [("mackerel", True), ("haddock", True), ("minnow", False)]:
             with self.subTest(fish=fish, valid=valid):
                 allowed = True
                 try:
@@ -32,7 +29,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
     def test_leaflist_leafref_with_require_instance_false(self):
         for fish in ["mackerel", "trout", "haddock", "flounder"]:
             self.instance.container.t1.append(fish)
-        for (fish, exists) in [("flounder", True), ("minnow", False)]:
+        for fish, exists in [("flounder", True), ("minnow", False)]:
             with self.subTest(fish=fish, exists=exists):
                 allowed = True
                 try:
@@ -45,7 +42,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for animal in ["kangaroo", "wallaby", "koala", "dingo"]:
             self.instance.container.t2.add(animal)
 
-        for (animal, valid) in [("kangaroo", True), ("koala", True), ("wombat", False)]:
+        for animal, valid in [("kangaroo", True), ("koala", True), ("wombat", False)]:
             with self.subTest(animal=animal, valid=valid):
                 allowed = True
                 try:
@@ -65,7 +62,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
             self.instance.container.t3.append(beer)
 
         leaflist = self.path_helper.get("/container/t3")[0]
-        for (beer, valid) in [("session-ipa", True), ("amber-ale", True), ("moose-drool", False)]:
+        for beer, valid in [("session-ipa", True), ("amber-ale", True), ("moose-drool", False)]:
             with self.subTest(beer=beer, valid=valid):
                 found = True
                 try:
@@ -78,7 +75,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for beer in ["oatmeal-stout", "amber-ale", "pale-ale", "pils", "ipa", "session-ipa"]:
             self.instance.container.t3.append(beer)
 
-        for (beer, valid) in [("session-ipa", True), ("amber-ale", True), ("moose-drool", False)]:
+        for beer, valid in [("session-ipa", True), ("amber-ale", True), ("moose-drool", False)]:
             with self.subTest(beer=beer, valid=valid):
                 removed = True
                 try:
@@ -104,7 +101,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for beer in ["steam", "liberty", "california-lager", "porter", "ipa", "foghorn"]:
             self.instance.container.t4.add(beer)
 
-        for (beer, exists) in [("steam", 1), ("liberty", 1), ("pygmy-owl", 0)]:
+        for beer, exists in [("steam", 1), ("liberty", 1), ("pygmy-owl", 0)]:
             with self.subTest(beer=beer, exists=exists):
                 retr = self.path_helper.get("/container/t4[keyval=%s]" % beer)
                 self.assertEqual(len(retr), exists)
@@ -113,7 +110,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for beer in ["steam", "liberty", "california-lager", "porter", "ipa", "foghorn"]:
             self.instance.container.t4.add(beer)
 
-        for (beer, valid) in [("steam", True), ("liberty", True), ("pygmy-owl", False)]:
+        for beer, valid in [("steam", True), ("liberty", True), ("pygmy-owl", False)]:
             with self.subTest(beer=beer, valid=valid):
                 removed = True
                 try:
@@ -142,7 +139,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for city in ["quebec-city", "montreal", "laval", "gatineau"]:
             self.instance.container.t5.append(city)
 
-        for (city, valid) in [("quebec-city", True), ("montreal", True), ("dallas", False)]:
+        for city, valid in [("quebec-city", True), ("montreal", True), ("dallas", False)]:
             with self.subTest(city=city, valid=valid):
                 allowed = True
                 try:
@@ -155,7 +152,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for beer in ["la-ciboire", "la-chipie", "la-joufflue", "la-matante"]:
             self.instance.container.t6.add(beer)
 
-        for (beer, valid) in [("la-ciboire", True), ("la-matante", True), ("heiniken", False)]:
+        for beer, valid in [("la-ciboire", True), ("la-matante", True), ("heiniken", False)]:
             with self.subTest(beer=beer, valid=valid):
                 allowed = True
                 try:
@@ -168,7 +165,7 @@ class XPathListLeaflistTests(PyangBindTestCase):
         for beer in ["snapshot", "ranger"]:
             self.instance.container.t7.append(beer)
 
-        for (beer, valid) in [("snapshot", True), ("ranger", True), ("trout-slayer", False)]:
+        for beer, valid in [("snapshot", True), ("ranger", True), ("trout-slayer", False)]:
             with self.subTest(beer=beer, valid=valid):
                 allowed = True
                 try:

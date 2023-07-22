@@ -4,14 +4,10 @@ from __future__ import print_function
 
 from pyangbind.lib.xpathhelper import XPathError, YANGPathHelper
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
 
 class TestObject(object):
-
     def __init__(self, name):
         self._name = name
 
@@ -20,7 +16,6 @@ class TestObject(object):
 
 
 class PathHelperBaseTests(unittest.TestCase):
-
     def setUp(self):
         self.tree = YANGPathHelper()
 

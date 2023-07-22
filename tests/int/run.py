@@ -22,10 +22,10 @@ class IntTests(PyangBindTestCase):
 
     def test_default_values(self):
         for pair in [
-            ("eightdefault", 2 ** 7 - 1),
-            ("sixteendefault", 2 ** 15 - 1),
-            ("thirtytwodefault", 2 ** 31 - 1),
-            ("sixtyfourdefault", 2 ** 63 - 1),
+            ("eightdefault", 2**7 - 1),
+            ("sixteendefault", 2**15 - 1),
+            ("thirtytwodefault", 2**31 - 1),
+            ("sixtyfourdefault", 2**63 - 1),
         ]:
             with self.subTest(pair=pair):
                 default_val = getattr(self.int_obj.int_container, pair[0])._default
@@ -220,7 +220,7 @@ class IntTests(PyangBindTestCase):
                 self.assertIsNotNone(setter, "Could not find attribute setter for %s" % leaf)
 
     def test_set_int_sizes_at_lower_bounds(self):
-        bounds = {"eight": -2 ** 7, "sixteen": -2 ** 15, "thirtytwo": -2 ** 31, "sixtyfour": -2 ** 63}
+        bounds = {"eight": -(2**7), "sixteen": -(2**15), "thirtytwo": -(2**31), "sixtyfour": -(2**63)}
         for leaf, value in bounds.items():
             with self.subTest(leaf=leaf):
                 setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
@@ -232,7 +232,12 @@ class IntTests(PyangBindTestCase):
                 self.assertTrue(allowed, "Could not set int size %s to %d" % (leaf, value))
 
     def test_set_int_sizes_below_lower_bounds(self):
-        bounds = {"eight": -2 ** 7 - 1, "sixteen": -2 ** 15 - 1, "thirtytwo": -2 ** 31 - 1, "sixtyfour": -2 ** 63 - 1}
+        bounds = {
+            "eight": -(2**7) - 1,
+            "sixteen": -(2**15) - 1,
+            "thirtytwo": -(2**31) - 1,
+            "sixtyfour": -(2**63) - 1,
+        }
         for leaf, value in bounds.items():
             with self.subTest(leaf=leaf):
                 setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
@@ -244,7 +249,7 @@ class IntTests(PyangBindTestCase):
                 self.assertFalse(allowed, "Incorrectly set int size %s to %d" % (leaf, value))
 
     def test_set_int_sizes_at_upper_bounds(self):
-        bounds = {"eight": 2 ** 7 - 1, "sixteen": 2 ** 15 - 1, "thirtytwo": 2 ** 31 - 1, "sixtyfour": 2 ** 63 - 1}
+        bounds = {"eight": 2**7 - 1, "sixteen": 2**15 - 1, "thirtytwo": 2**31 - 1, "sixtyfour": 2**63 - 1}
         for leaf, value in bounds.items():
             with self.subTest(leaf=leaf):
                 setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
@@ -256,7 +261,7 @@ class IntTests(PyangBindTestCase):
                 self.assertTrue(allowed, "Could not set int size %s to %d" % (leaf, value))
 
     def test_set_int_sizes_above_upper_bounds(self):
-        bounds = {"eight": 2 ** 7, "sixteen": 2 ** 15, "thirtytwo": 2 ** 31, "sixtyfour": 2 ** 63}
+        bounds = {"eight": 2**7, "sixteen": 2**15, "thirtytwo": 2**31, "sixtyfour": 2**63}
         for leaf, value in bounds.items():
             with self.subTest(leaf=leaf):
                 setter = getattr(self.int_obj.int_container, "_set_%s" % leaf)
@@ -270,7 +275,7 @@ class IntTests(PyangBindTestCase):
     def test_set_int8_range_with_min_max_alias_to_lower_bound(self):
         allowed = True
         try:
-            self.int_obj.int_container.restricted_ueight_min_alias = -2 ** 7
+            self.int_obj.int_container.restricted_ueight_min_alias = -(2**7)
         except ValueError:
             allowed = False
         self.assertTrue(allowed, "Could not set min..max int8 to minimum value")
@@ -278,7 +283,7 @@ class IntTests(PyangBindTestCase):
     def test_set_int8_range_with_min_max_alias_to_upper_bound(self):
         allowed = True
         try:
-            self.int_obj.int_container.restricted_ueight_min_alias = 2 ** 7 - 1
+            self.int_obj.int_container.restricted_ueight_min_alias = 2**7 - 1
         except ValueError:
             allowed = False
         self.assertTrue(allowed, "Could not set min..max int8 to maximum value")
@@ -286,7 +291,7 @@ class IntTests(PyangBindTestCase):
     def test_set_int8_range_with_min_max_alias_below_lower_bound(self):
         allowed = True
         try:
-            self.int_obj.int_container.restricted_ueight_min_alias = -2 ** 7 - 1
+            self.int_obj.int_container.restricted_ueight_min_alias = -(2**7) - 1
         except ValueError:
             allowed = False
         self.assertFalse(allowed, "Incorrectly set min..max int8 to the min value minus one")
@@ -294,7 +299,7 @@ class IntTests(PyangBindTestCase):
     def test_set_int8_range_with_min_max_alias_above_upper_bound(self):
         allowed = True
         try:
-            self.int_obj.int_container.restricted_ueight_min_alias = 2 ** 7 + 1
+            self.int_obj.int_container.restricted_ueight_min_alias = 2**7 + 1
         except ValueError:
             allowed = False
         self.assertFalse(allowed, "Incorrectly set min..max int8 to the max value plus one")

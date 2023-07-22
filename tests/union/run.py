@@ -70,7 +70,7 @@ class UnionTests(PyangBindTestCase):
         self.assertEqual(self.instance.container.u8._default, 10)
 
     def test_leaf_list_with_union_of_unions_from_typedefs(self):
-        for (value, valid) in [(1, True), ("hello", True), (42.42, True), (True, True), (bitarray(10), False)]:
+        for value, valid in [(1, True), ("hello", True), (42.42, True), (True, True), (bitarray(10), False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -80,7 +80,7 @@ class UnionTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_leaf_list_with_union_of_unions_from_typedefs_with_restricted_types(self):
-        for (value, valid) in [
+        for value, valid in [
             (15, True),
             (35, True),
             ("aardvark", True),
@@ -102,7 +102,7 @@ class UnionTests(PyangBindTestCase):
         self.assertIsInstance(self.instance.container.u11._default, six.text_type)
 
     def test_union_of_restricted_class_types(self):
-        for (value, valid) in [("unlimited", True), (1, True), (0, True), ("fish", False), (2 ** 64, False)]:
+        for value, valid in [("unlimited", True), (1, True), (0, True), ("fish", False), (2**64, False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:

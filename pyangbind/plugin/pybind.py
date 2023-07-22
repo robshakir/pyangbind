@@ -192,7 +192,6 @@ def pyang_plugin_init():
 
 
 class PyangBindClass(plugin.PyangPlugin):
-
     def add_output_format(self, fmts):
         # Add the 'pybind' output format to pyang.
         self.multiple_modules = True
@@ -619,7 +618,6 @@ def build_typedefs(ctx, defnd):
             parent_type = []
             default = False if default_stmt is None else default_stmt.arg
             for i in elemtype:
-
                 if isinstance(i[1]["native_type"], list):
                     native_type.extend(i[1]["native_type"])
                 else:
@@ -648,7 +646,6 @@ def build_typedefs(ctx, defnd):
 
 
 def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False, register_paths=True):
-
     # Iterative function that is called for all elements that have childen
     # data nodes in the tree. This function resolves those nodes into the
     # relevant leaf, or container/list configuration and outputs the python

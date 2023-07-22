@@ -60,7 +60,7 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
         self.serialise_obj.c1.l1[1].typedef_one = "test"
         self.serialise_obj.c1.l1[1].typedef_two = 8
         self.serialise_obj.c1.l1[1].one_leaf = "hi"
-        self.serialise_obj.c1.l1[1].uint64type = 2 ** 22
+        self.serialise_obj.c1.l1[1].uint64type = 2**22
         self.serialise_obj.c1.l1[1].typedef_decimal = 32.29
         self.serialise_obj.c1.l1[1].typedef_decimalrange = Decimal("33.44")
         self.serialise_obj.c1.l1[1].range_decimal = Decimal("4.44443322")
