@@ -30,12 +30,11 @@ import sys
 from collections import OrderedDict
 
 import six
-from bitarray import bitarray
 from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
-from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name
+from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary
 
 # Python3 support
 if six.PY3:
@@ -100,7 +99,7 @@ class_map = {
         "quote_arg": True,
         "pytype": YANGBool,
     },
-    "binary": {"native_type": "bitarray", "base_type": True, "quote_arg": True, "pytype": bitarray},
+    "binary": {"native_type": "YANGBinary", "base_type": True, "quote_arg": True, "pytype": YANGBinary},
     "uint8": {
         "native_type": ("RestrictedClassType(base_type=int," + " restriction_dict={'range': ['0..255']}, int_size=8)"),
         "base_type": True,
@@ -317,13 +316,13 @@ def build_pybind(ctx, modules, fd):
         "YANGListType",
         "YANGDynClass",
         "ReferenceType",
+        "YANGBinary",
     ]
     for library in yangtypes_imports:
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
     ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
     ctx.pybind_common_hdr += "from collections import OrderedDict\n"
     ctx.pybind_common_hdr += "from decimal import Decimal\n"
-    ctx.pybind_common_hdr += "from bitarray import bitarray\n"
     ctx.pybind_common_hdr += "import six\n"
 
     # Python3 support

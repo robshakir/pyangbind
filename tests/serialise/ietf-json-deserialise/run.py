@@ -7,8 +7,6 @@ import unittest
 from collections import OrderedDict
 from decimal import Decimal
 
-from bitarray import bitarray
-
 from pyangbind.lib.serialise import pybindJSONDecoder
 from tests.base import PyangBindTestCase
 
@@ -58,7 +56,7 @@ class IETFJSONDeserialiseTests(PyangBindTestCase):
                         "one-leaf": "hi",
                         "typedef-one": "test",
                         "boolean": True,
-                        "binary": bitarray("010101"),
+                        "binary": b"yang",
                         "union": "16",
                         "identityref": "idone",
                         "enumeration": "one",

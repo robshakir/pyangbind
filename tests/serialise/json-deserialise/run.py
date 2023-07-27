@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import json
 import os.path
 import unittest
-from bitarray import bitarray
 from decimal import Decimal
 
 import pyangbind.lib.pybindJSON as pbJ
@@ -60,7 +59,7 @@ class JSONDeserialiseTests(PyangBindTestCase):
                         "one-leaf": "hi",
                         "typedef-one": "test",
                         "boolean": True,
-                        "binary": bitarray("010101"),
+                        "binary": b"yang",
                         "union": "16",
                         "identityref": "idone",
                         "enumeration": "one",

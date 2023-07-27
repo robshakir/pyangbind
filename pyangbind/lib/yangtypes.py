@@ -21,6 +21,7 @@ limitations under the License.
 """
 from __future__ import unicode_literals
 
+import base64
 import collections
 from collections import abc
 import copy
@@ -29,7 +30,6 @@ from decimal import Decimal
 
 import regex
 import six
-from bitarray import bitarray
 
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is
@@ -274,9 +274,7 @@ def RestrictedClassType(*args, **kwargs):
 
             def in_range_check(low_high_tuples, length=False):
                 def range_check(value):
-                    if length and isinstance(value, bitarray):
-                        value = value.length()
-                    elif length:
+                    if length:
                         value = len(value)
                     range_results = []
                     for check_tuple in low_high_tuples:
@@ -334,12 +332,7 @@ def RestrictedClassType(*args, **kwargs):
                         except Exception:
                             raise TypeError("must specify a numeric type for a range " + "argument")
                 elif rtype == "length":
-                    # When the type is a binary then the length is specified in
-                    # octets rather than bits, so we must specify the length to
-                    # be multiplied by 8.
                     multiplier = 1
-                    if base_type == bitarray:
-                        multiplier = 8
                     lengths = []
                     for range_spec in rarg:
                         lengths.append(build_length_range_tuples(range_spec, length=True, multiplier=multiplier))
@@ -1352,3 +1345,28 @@ def ReferenceType(*args, **kwargs):
             return str(self._get_ptr())
 
     return type(ReferencePathType(*args, **kwargs))
+
+
+class YANGBinary(bytes):
+    """
+    A custom binary class for using in YANG.
+    """
+
+    def __new__(self, *args, **kwargs):
+        value = b""
+        if args:
+            value = args[0]
+            if isinstance(value, str):
+                value = base64.b64decode(value)
+            elif isinstance(value, bytes):
+                value = value
+            else:
+                raise ValueError(f"invalid type for {value}: {type(value)}")
+
+        return bytes.__new__(self, value)
+
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self, encoding="ascii", errors="replace"):
+        return str(self, encoding=encoding, errors=errors)

@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 import json
 from collections import OrderedDict
 from decimal import Decimal
+import base64
 
 import six
 from enum import IntEnum
@@ -130,7 +131,7 @@ class YangDataSerialiser(object):
         elif orig_yangt in ["string", "enumeration"]:
             return six.text_type(obj)
         elif orig_yangt in ["binary"]:
-            return obj.to01()
+            return six.text_type(base64.b64encode(obj), "ascii")
         elif orig_yangt in ["decimal64"]:
             return self.yangt_decimal(obj)
         elif orig_yangt in ["bool"]:
@@ -180,8 +181,8 @@ class YangDataSerialiser(object):
         elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal", "RestrictedPrecisionDecimal"]:
             # NOTE: this doesn't seem like it needs to be a special case?
             return self.yangt_decimal(obj)
-        elif map_val in ["bitarray.bitarray"]:
-            return obj.to01()
+        elif map_val in ["pyangbind.lib.yangtypes.YANGBinary", "YANGBinary"]:
+            return six.text_type(base64.b64encode(obj), "ascii")
         elif map_val in ["unicode"]:
             return six.text_type(obj)
         elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
