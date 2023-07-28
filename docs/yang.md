@@ -53,23 +53,23 @@ PyangBind does not currently try and be feature complete against the YANG langua
  **Type**            | **Sub-Statement**   | **Supported Type**      | **Unit Tests**
  --------------------|--------------------|--------------------------|---------------
  **binary**          | -                   | [bytes](https://docs.python.org/3/library/stdtypes.html?#bytes)           | tests/binary
- -                   | length              | Supported           | tests/binary
+ \-                   | length              | Supported           | tests/binary
  **bits**            | -                   | Not supported           | N/A
- -                   | position            | Not supported           | N/A
+ \-                   | position            | Not supported           | N/A
  **boolean**         | -                   | YANGBool                | tests/boolean-empty
  **empty**           | -                   | YANGBool                | tests/boolean-empty
  **decimal64**       | -                   | [Decimal](https://docs.python.org/2/library/decimal.html) | tests/decimal64
- -                   | fraction-digits     | Supported               | tests/decimal64
+ \-                   | fraction-digits     | Supported               | tests/decimal64
  **enumeration**     | -                   | Supported               | tests/enumeration
  **identityref**     | -                   | Supported               | tests/identityref
  **int{8,16,32,64}** | -                   | [numpy int](http://docs.scipy.org/doc/numpy/user/basics.types.html) | tests/int
- -                   | range               | Supported               | tests/int
+ \-                   | range               | Supported               | tests/int
  **uint{8,16,32,64}**| -                   | [numpy uint](http://docs.scipy.org/doc/numpy/user/basics.types.html) | tests/int
- -                   | range               | Supported               | tests/int
+ \-                   | range               | Supported               | tests/int
  **leafref**         | -                   | Supported               | tests/xpath/...
  **string**          | -                   | *str*                   | tests/string
- -                   | pattern             | Using python *re.match* | tests/string
- -                   | length              | Supported using *len*   | tests/string
+ \-                   | pattern             | Using python *re.match* | tests/string
+ \-                   | length              | Supported using *len*   | tests/string
  **typedef**         | -                   | Supported               | tests/typedef
  **container**       | -                   | *class*                 | tests/*
  **list**            | -                   | YANGList                | tests/list
