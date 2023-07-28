@@ -49,49 +49,48 @@ class PybindImplementationError(Exception):
 
 
 class PybindXpathHelper(object):
-
     def register(self, path, object_ptr, caller=False):
         """
-      A PybindXpathHelper class should supply a register() method that
-      takes two mandatory arguments, and one optional.
+        A PybindXpathHelper class should supply a register() method that
+        takes two mandatory arguments, and one optional.
 
-      * path - the path to which the object should be registered. This is
-        supplied as a list of the names of the elements of the path. For
-        example, /device/interfaces/interface[name='eth0'] is supplied as
-        a ["device", "interfaces", "interface[@name='eth0']"].
+        * path - the path to which the object should be registered. This is
+          supplied as a list of the names of the elements of the path. For
+          example, /device/interfaces/interface[name='eth0'] is supplied as
+          a ["device", "interfaces", "interface[@name='eth0']"].
 
-      * object_ptr - a reference to the object that is to be stored at this
-        location in the tree.
+        * object_ptr - a reference to the object that is to be stored at this
+          location in the tree.
 
-      * caller=False - this supplies the path of the object that is currently
-        trying to perform a register. In general, it will not be used, but it
-        is supplied to facilitate relative path lookups.
-    """
+        * caller=False - this supplies the path of the object that is currently
+          trying to perform a register. In general, it will not be used, but it
+          is supplied to facilitate relative path lookups.
+        """
         raise PybindImplementationError("The path helper class specified does " + "not implement register()")
 
     def unregister(self, path, caller=False):
         """
-      A PybindXpathHelper class should supply an unregister() method that
-      takes one mandatory argument, and one optional.
+        A PybindXpathHelper class should supply an unregister() method that
+        takes one mandatory argument, and one optional.
 
-      * path - the path of the object to be unregistered. Supplied as a list()
-        object of the elements of the path.
+        * path - the path of the object to be unregistered. Supplied as a list()
+          object of the elements of the path.
 
-      * caller=False - the absolute path of the object calling the unregister()
-        method.
-    """
+        * caller=False - the absolute path of the object calling the unregister()
+          method.
+        """
         raise PybindImplementationError("The path helper class specified does " + "not implement unregister()")
 
     def get(self, path, caller=False):
         """
-      A PybindXpathHelper class should supply a get() method that takes one
-      mandatory argument and one optional.
+        A PybindXpathHelper class should supply a get() method that takes one
+        mandatory argument and one optional.
 
-      * path - the path to the object to be retrieved. This may be specified as
-        a list of parts, or an XPATH expression.
+        * path - the path to the object to be retrieved. This may be specified as
+          a list of parts, or an XPATH expression.
 
-      * caller=False - the absolute path of the object calling the get method.
-    """
+        * caller=False - the absolute path of the object calling the get method.
+        """
         raise PybindImplementationError("The path helper class specified does " + "not implement get()")
 
 

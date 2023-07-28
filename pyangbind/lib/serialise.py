@@ -28,6 +28,7 @@ from __future__ import unicode_literals
 import json
 from collections import OrderedDict
 from decimal import Decimal
+import base64
 
 import six
 from enum import IntEnum
@@ -58,6 +59,7 @@ class pybindJSONDecodeError(Exception):
 
 class UnmappedItem(Exception):
     """Used to simulate an Optional value"""
+
     pass
 
 
@@ -129,7 +131,7 @@ class YangDataSerialiser(object):
         elif orig_yangt in ["string", "enumeration"]:
             return six.text_type(obj)
         elif orig_yangt in ["binary"]:
-            return obj.to01()
+            return six.text_type(base64.b64encode(obj), "ascii")
         elif orig_yangt in ["decimal64"]:
             return self.yangt_decimal(obj)
         elif orig_yangt in ["bool"]:
@@ -179,8 +181,8 @@ class YangDataSerialiser(object):
         elif map_val in ["pyangbind.lib.yangtypes.RestrictedPrecisionDecimal", "RestrictedPrecisionDecimal"]:
             # NOTE: this doesn't seem like it needs to be a special case?
             return self.yangt_decimal(obj)
-        elif map_val in ["bitarray.bitarray"]:
-            return obj.to01()
+        elif map_val in ["pyangbind.lib.yangtypes.YANGBinary", "YANGBinary"]:
+            return six.text_type(base64.b64encode(obj), "ascii")
         elif map_val in ["unicode"]:
             return six.text_type(obj)
         elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
@@ -266,6 +268,7 @@ class _pybindJSONEncoderBase(json.JSONEncoder):
 
     Do not use directly, subclass and set the `serialiser_class` attribute appropriately
     """
+
     serialiser_class = None
 
     def encode(self, obj):
@@ -277,12 +280,14 @@ class _pybindJSONEncoderBase(json.JSONEncoder):
 
 class pybindJSONEncoder(_pybindJSONEncoderBase):
     """Default pybind JSON encoder"""
+
     serialiser_class = YangDataSerialiser
 
 
 class pybindIETFJSONEncoder(_pybindJSONEncoderBase):
     """IETF JSON encoder, we add a special method `generate_element()` that should be used
     to restructure the pybind object to fit IETF requirements prior to JSON encoding."""
+
     serialiser_class = IETFYangDataSerialiser
 
     @staticmethod
@@ -492,7 +497,6 @@ class pybindIETFXMLDecoder(object):
             chobj = attr_get()
 
             if chobj._yang_type == "container":
-
                 if hasattr(chobj, "_presence"):
                     if chobj._presence:
                         chobj._set_present()
@@ -563,12 +567,10 @@ class pybindIETFXMLDecoder(object):
 
 
 class pybindJSONDecoder(object):
-
     @staticmethod
     def load_json(
         d, parent, yang_base, obj=None, path_helper=None, extmethods=None, overwrite=False, skip_unknown=False
     ):
-
         if obj is None:
             # we need to find the class to create, as one has not been supplied.
             base_mod_cls = getattr(parent, safe_name(yang_base))

@@ -54,7 +54,7 @@ class StringTests(PyangBindTestCase):
             self.instance.string_container.restricted_string = "bear"
 
     def test_fixed_length_string(self):
-        for (value, valid) in [("a", False), ("ab", True), ("abc", False)]:
+        for value, valid in [("a", False), ("ab", True), ("abc", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -64,7 +64,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_fixed_length_string_with_pattern(self):
-        for (value, valid) in [("a", False), ("ba", False), ("abc", False), ("ab", True)]:
+        for value, valid in [("a", False), ("ba", False), ("abc", False), ("ab", True)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -74,7 +74,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_string_with_length_as_range_with_max(self):
-        for (value, valid) in [("short", False), ("loooooooong", True)]:
+        for value, valid in [("short", False), ("loooooooong", True)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -84,7 +84,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_string_with_length_as_range_with_upper_bound(self):
-        for (value, valid) in [("short", False), ("loooooooong", True), ("toooooooooolooooooooong", False)]:
+        for value, valid in [("short", False), ("loooooooong", True), ("toooooooooolooooooooong", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -94,7 +94,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_string_leaf_with_complex_length(self):
-        for (value, valid) in [
+        for value, valid in [
             ("strLength10", True),
             ("LengthTwelve", True),
             ("strTwentyOneCharsLong", False),
@@ -110,7 +110,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_string_leaf_pattern_with_dollar(self):
-        for (value, valid) in [("fi$h", True), ("void", False), ("fi$ho", True)]:
+        for value, valid in [("fi$h", True), ("void", False), ("fi$ho", True)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:
@@ -120,7 +120,7 @@ class StringTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_string_leaf_pattern_with_dollar_at_end(self):
-        for (value, valid) in [("fi$h", True), ("void", False), ("fi$ho", False)]:
+        for value, valid in [("fi$h", True), ("void", False), ("fi$ho", False)]:
             with self.subTest(value=value, valid=valid):
                 allowed = True
                 try:

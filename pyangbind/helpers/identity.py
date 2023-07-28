@@ -21,7 +21,6 @@ from .misc import module_import_prefixes
 
 
 class Identity(object):
-
     def __init__(self, name):
         self.name = name
         self.source_module = None
@@ -47,7 +46,6 @@ class Identity(object):
 
 
 class IdentityStore(object):
-
     def __init__(self):
         self._store = []
 

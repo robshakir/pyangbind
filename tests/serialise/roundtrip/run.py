@@ -2,14 +2,10 @@
 from __future__ import unicode_literals
 
 import json
-import os.path
 import unittest
-from bitarray import bitarray
-from decimal import Decimal
 
 import pyangbind.lib.pybindJSON as pbJ
 import pyangbind.lib.serialise as pbS
-from pyangbind.lib.serialise import pybindJSONDecoder
 from pyangbind.lib.xpathhelper import YANGPathHelper
 
 from tests.base import PyangBindTestCase

@@ -15,7 +15,7 @@ To avoid unnecessary discussions about coding style we are currently enforcing i
  * To ease the testing of generated bindings, there is the `tests.base.PyangBindTestCase` class which
  you may subclass in order to automate the process. A simple example of its usage can be seen in
  `tests/strings/run.py`.
- * Tests can be run via the `tox` command, or `setup.py test`.
+ * Tests can be run via the `tox` command, or `python3 -m pytest -q tests`.
 
 ### Other Issues
 

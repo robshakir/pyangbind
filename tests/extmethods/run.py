@@ -6,7 +6,6 @@ from tests.base import PyangBindTestCase
 
 
 class extmethodcls(object):
-
     def commit(self, *args, **kwargs):
         return "COMMIT_CALLED"
 
@@ -31,7 +30,7 @@ class ExtMethodsTests(PyangBindTestCase):
         self.instance = self.bindings.extmethods(extmethods={"/item/one": extmethodcls()})
 
     def test_extmethods_get_created_on_leafs(self):
-        for (method_name, valid) in [
+        for method_name, valid in [
             ("commit", True),
             ("presave", True),
             ("postsave", True),
@@ -43,7 +42,7 @@ class ExtMethodsTests(PyangBindTestCase):
                 self.assertEqual((method is not None), valid)
 
     def test_extmethods_return_expected_values(self):
-        for (method_name, retval) in [
+        for method_name, retval in [
             ("commit", "COMMIT_CALLED"),
             ("presave", "PRESAVE_CALLED"),
             ("postsave", "POSTSAVE_CALLED"),

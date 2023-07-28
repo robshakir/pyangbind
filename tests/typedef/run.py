@@ -12,7 +12,6 @@ class TypedefTests(PyangBindTestCase):
         self.typedef = self.bindings.typedef()
 
     def test_types(self):
-
         for element in [
             "string",
             "integer",

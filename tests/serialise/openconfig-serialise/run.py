@@ -31,6 +31,8 @@ class OpenconfigSerialiseTests(PyangBindTestCase):
                 "types/openconfig-types.yang",
                 "types/openconfig-yang-types.yang",
                 "types/openconfig-inet-types.yang",
+                "optical-transport/openconfig-transport-types.yang",
+                "platform/openconfig-platform-types.yang",
             ],
         },
         {

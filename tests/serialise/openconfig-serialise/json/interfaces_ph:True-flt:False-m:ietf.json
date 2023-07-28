@@ -14,7 +14,7 @@
                 }, 
                 "config": {
                     "enabled": false, 
-                    "loopback-mode": false,
+                    "loopback-mode": "",
                     "type": "", 
                     "description": "", 
                     "name": "eth0", 
@@ -25,7 +25,10 @@
                     "type": "", 
                     "description": "", 
                     "enabled": false, 
-                    "loopback-mode": false,
+                    "logical": false,
+                    "loopback-mode": "",
+                    "management": false,
+                    "cpu": false,
                     "admin-status": "", 
                     "mtu": 0, 
                     "ifindex": 0, 
@@ -47,7 +50,9 @@
                         "in-broadcast-pkts": "0", 
                         "carrier-transitions": "0", 
                         "in-unknown-protos": "0", 
-                        "in-octets": "0"
+                        "in-octets": "0",
+                        "in-pkts": "0",
+                        "out-pkts": "0"
                     }
                 }, 
                 "name": "eth0"

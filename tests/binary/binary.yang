@@ -21,7 +21,7 @@ module binary {
 
         leaf b2 {
             type binary;
-            default "0100";
+            default "eWFuZw=="; /* yang */
             description
                 "A test leaf with a default";
         }

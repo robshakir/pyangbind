@@ -52,7 +52,7 @@ PyangBind does not currently try and be feature complete against the YANG langua
 
  **Type**            | **Sub-Statement**   | **Supported Type**      | **Unit Tests**
  --------------------|--------------------|--------------------------|---------------
- **binary**          | -                   | [bitarray](https://github.com/ilanschnell/bitarray)           | tests/binary
+ **binary**          | -                   | [bytes](https://docs.python.org/3/library/stdtypes.html?#bytes)           | tests/binary
  \-                   | length              | Supported           | tests/binary
  **bits**            | -                   | Not supported           | N/A
  \-                   | position            | Not supported           | N/A
