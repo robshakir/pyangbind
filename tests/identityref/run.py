@@ -4,6 +4,7 @@ import json
 import unittest
 
 from pyangbind.lib import pybindJSON
+from pyangbind.lib.serialise import pybindJSONDecoder
 from tests.base import PyangBindTestCase
 
 
@@ -111,7 +112,12 @@ class IdentityRefTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_grouping_identity_inheritance(self):
-        for address_type, valid in [("source-dest", True), ("lcaf", True), ("unknown", False)]:
+        for address_type, valid in [
+            ("source-dest", True),
+            ("lcaf", True),
+            ("unknown", False),
+            ("identityref:source-dest", True),
+        ]:
             with self.subTest(address_type=address_type, valid=valid):
                 allowed = True
                 try:
@@ -158,14 +164,28 @@ class IdentityRefTests(PyangBindTestCase):
                 )
 
     def test_json_ietf_serialise_namespace_handling_local(self):
-        self.instance.ak.address_type = "lcaf"
-        data = json.loads(pybindJSON.dumps(self.instance, mode="ietf"))
-        # The JSON representation of the identityref may have, or may omit,
-        # the namespace, as the leaf `address-type` and the identity `lcaf` are
-        # defined in the same module
+        for identity in ["lcaf", "identityref:lcaf"]:
+            with self.subTest(identity=identity):
+                self.instance.ak.address_type = "lcaf"
+                data = json.loads(pybindJSON.dumps(self.instance, mode="ietf"))
+                # The JSON representation of the identityref may have, or may omit,
+                # the namespace, as the leaf `address-type` and the identity `lcaf` are
+                # defined in the same module, so accept either form
+                self.assertIn(
+                    data["identityref:ak"]["address-type"],
+                    ["lcaf", "identityref:lcaf"],
+                )
+
+    def test_load_identityref_with_module_prefix(self):
+        json = {
+            "identityref:ak": {
+                "address-type": "identityref:source-dest",
+            }
+        }
+        obj = pybindJSONDecoder.load_ietf_json(json, self.bindings, "identityref")
         self.assertIn(
-            data["identityref:ak"]["address-type"],
-            ["lcaf", "identityref:lcaf"],
+            obj.ak.address_type,
+            ["identityref:source-dest", "source-dest"],
         )
 
 
