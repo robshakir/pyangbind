@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import json
 import unittest
 
+from pyangbind.lib import pybindJSON
 from tests.base import PyangBindTestCase
 
 
@@ -141,6 +143,30 @@ class IdentityRefTests(PyangBindTestCase):
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)
+
+    def test_json_ietf_serialise_namespace_handling_remote(self):
+        for identity in ["remote-id", "remote-two:remote-id"]:
+            with self.subTest(identity=identity):
+                self.instance.ietfint.ref = identity
+                data = json.loads(pybindJSON.dumps(self.instance, mode="ietf"))
+                # The JSON representation of the identityref must have a namespace, as
+                # the leaf `ref` and the identity `remote-id` are defined in two separate
+                # modules
+                self.assertEqual(
+                    data["identityref:ietfint"]["ref"],
+                    "remote-two:remote-id",
+                )
+
+    def test_json_ietf_serialise_namespace_handling_local(self):
+        self.instance.ak.address_type = "lcaf"
+        data = json.loads(pybindJSON.dumps(self.instance, mode="ietf"))
+        # The JSON representation of the identityref may have, or may omit,
+        # the namespace, as the leaf `address-type` and the identity `lcaf` are
+        # defined in the same module
+        self.assertIn(
+            data["identityref:ak"]["address-type"],
+            ["lcaf", "identityref:lcaf"],
+        )
 
 
 if __name__ == "__main__":
