@@ -52,7 +52,8 @@
                         "in-unknown-protos": 0, 
                         "in-octets": 0,
                         "in-pkts": 0,
-                        "out-pkts": 0
+                        "out-pkts": 0,
+                        "resets": 0
                     }
                 }, 
                 "name": "eth0", 
