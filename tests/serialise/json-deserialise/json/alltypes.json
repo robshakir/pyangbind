@@ -35,7 +35,8 @@
                 "int8": 1, 
                 "uint64": 1, 
                 "int64": 1, 
-                "restricted-string": "aardvark"
+                "restricted-string": "aardvark",
+		"bits": "flag1 flag2"
             }
         }
     }

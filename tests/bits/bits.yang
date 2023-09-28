@@ -1,0 +1,49 @@
+module bits {
+  yang-version 1.1;
+  namespace "http://rob.sh/yang/test/bits";
+  prefix "foo";
+  organization "BugReports Inc";
+  contact "A bug reporter";
+
+  description
+      "A test module";
+  revision 2014-01-01 {
+      description "april-fools";
+      reference "fooled-you";
+  }
+
+  // a typedef for bits, which is then applied to a leaf
+  typedef typedefed-bits {
+    type bits {
+      bit foo {
+	position 0;
+      }
+      bit bar {
+	position 1;
+      }
+      bit baz {
+	position 2;
+      }
+    }
+  }
+
+  leaf bits2 {
+    type typedefed-bits;
+  }
+
+  // a leaf containing the bits type definition
+  leaf mybits {
+    type bits {
+      bit flag1 {
+	position 0;
+      }
+      bit flag2 {
+	position 1;
+      }
+      bit flag3 {
+	position 2;
+      }
+    }
+    default "flag1 flag3";
+  }
+}

@@ -1370,3 +1370,76 @@ class YANGBinary(bytes):
 
     def __str__(self, encoding="ascii", errors="replace"):
         return str(self, encoding=encoding, errors=errors)
+
+
+def YANGBitsType(allowed_bits):
+    class YANGBits(set):
+        """Map the ``bits`` built-in type of YANG
+
+        From RFC 6020, 9.7:
+
+        > The bits built-in type represents a bit set. That is, a bits value
+        > is a set of flags identified by small integer position numbers
+        > starting at 0. Each bit number has an assigned name.
+        >
+        > ... In the canonical form, the bit values are separated by a single
+        > space character and they appear ordered by their position.
+
+        __init__ parses such a string, and __str__() prints the value as
+        above. In the Python model, the bits that are set are kept as a set
+        of strings.
+
+        Override the ``add()``, ``discard()`` and similar methods to set and
+        clear the bits, checking for legal values.
+
+        :param allowed_bits: dictionary of legal bit values and positions; it
+            is set when generating the YANG-Python type mapping, when
+            ``pyangbing.lib.pybing.build_elemtype`` recurses over the YANG model
+        """
+
+        _pybind_generated_by = "YANGBits"
+
+        def __init__(self, *args, **kwargs):
+            super().__init__()
+            self._allowed_bits = allowed_bits
+
+            if args:
+                value = args[0]
+                for bit in value.split():
+                    self.add(bit)
+
+        def _add_bit_definition(self, bit, position):
+            self._allowed_bits[bit] = position
+
+        # overwrite set methods to 1/ check for legal values and 2/ set the
+        # changed flag
+        def add(self, bit):
+            if bit not in self._allowed_bits:
+                raise ValueError(f"Bit value {bit} not valid, expected one of {self._allowed_bits}")
+            super().add(bit)
+            self._mchanged = True
+
+        def clear(self):
+            super().clear()
+            self._mchanged = True
+
+        def discard(self, bit):
+            if bit not in self._allowed_bits:
+                raise ValueError(f"Bit value {bit} not valid, expected one of {self._allowed_bits}")
+            super().discard(bit)
+            self._mchanged = True
+
+        def pop(self):
+            super().pop()
+            self._mchanged = True
+
+        def remove(self, bit):
+            super().remove(bit)
+            self._mchanged = True
+
+        def __str__(self, encoding="ascii", errors="replace"):
+            """Return bits as shown in JSON."""
+            sort_key = self._allowed_bits.__getitem__
+            return " ".join(sorted(self, key=sort_key))
+
+    return YANGBits

@@ -200,6 +200,8 @@ class YangDataSerialiser(object):
             return self.preprocess_element(obj.get())
         elif map_val in ["decimal.Decimal"]:
             return self.yangt_decimal(obj)
+        elif map_val in ["YANGBits"]:
+            return six.text_type(obj)
 
     def yangt_int(self, obj):
         # for values that are 32-bits and under..
@@ -686,7 +688,12 @@ class pybindJSONDecoder(object):
                 else:
                     # use the set method
                     pass
-            elif pybind_attr in ["RestrictedClassType", "ReferencePathType", "RestrictedPrecisionDecimal"]:
+            elif pybind_attr in [
+                "RestrictedClassType",
+                "ReferencePathType",
+                "RestrictedPrecisionDecimal",
+                "YANGBits",
+            ]:
                 # normal but valid types - which use the std set method
                 pass
             elif pybind_attr is None:

@@ -68,6 +68,17 @@ module ietf-xml-serialise {
     }
   }
 
+  typedef typedef-bits {
+    type bits {
+      bit bit1 {
+	position 1;
+      }
+      bit bit2 {
+	position 2;
+      }
+    }
+  }
+
   container c1 {
     list l1 {
       key "k1";
@@ -236,6 +247,24 @@ module ietf-xml-serialise {
 
       leaf uint64type {
         type derived64;
+      }
+
+      leaf typedefed-bits {
+	type typedef-bits;
+      }
+
+      leaf leaf-bits {
+	type bits {
+	  bit b1 {
+	    position 1;
+	  }
+	  bit b2 {
+	    position 2;
+	  }
+	  bit b3 {
+	    position 3;
+	  }
+	}
       }
     }
 
