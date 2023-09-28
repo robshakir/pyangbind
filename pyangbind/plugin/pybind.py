@@ -1581,7 +1581,7 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
 
         # we need to indicate that the default type for the class_map
         # is str
-        tmp_class_map = copy.deepcopy(class_map)
+        tmp_class_map = copy.copy(class_map)
         tmp_class_map["enumeration"] = {"parent_type": "string"}
 
         if not default_type:
