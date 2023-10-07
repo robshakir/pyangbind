@@ -101,6 +101,14 @@ module union {
         }
     }
 
+    typedef union-with-default {
+        type union {
+            type string;
+            type uint64;
+        }
+        default "0";
+    }
+
     container container {
 
         leaf u2 {
@@ -188,6 +196,11 @@ module union {
                     range "0..max";
                 }
             }
+        }
+
+        // issue reported in pull req #318
+        leaf u13 {
+            type union-with-default;
         }
     }
 }
