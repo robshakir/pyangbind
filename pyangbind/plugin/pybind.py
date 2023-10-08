@@ -653,6 +653,9 @@ def build_typedefs(ctx, defnd):
                     default = (i[1]["default"], q)
             class_map[type_name] = {"native_type": native_type, "base_type": False, "parent_type": parent_type}
             if default:
+                if not isinstance(default, tuple):
+                    q = True if "quote_arg" in i[1] else False
+                    default = (default, q)
                 class_map[type_name]["default"] = default[0]
                 class_map[type_name]["quote_default"] = default[1]
 
