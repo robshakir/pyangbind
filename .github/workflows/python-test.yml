@@ -5,6 +5,7 @@ name: Run TOX tests
 
 on:
   push:
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -60,5 +61,5 @@ jobs:
       run: |
         export PYBINDPLUGIN=`/usr/bin/env python -c 'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
         export PYTHONPATH=$PYTHONPATH:.
-        pyang --plugindir $PYBINDPLUGIN -f pybind -o tests/binding.py tests/base-test.yang
+        pyang -V --plugindir $PYBINDPLUGIN -f pybind -o tests/binding.py tests/base-test.yang
     
