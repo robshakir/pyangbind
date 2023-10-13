@@ -64,3 +64,4 @@ tests/serialise/openconfig-serialise/include/
 tests/serialise/openconfig-serialise/ocbind/
 tests/serialise/openconfig-serialise/openconfig/
 tests/split-classes/bindings/
+tests/base-binding-out.py
