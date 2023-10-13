@@ -5,7 +5,6 @@ name: Run TOX tests
 
 on:
   push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
 
@@ -20,7 +19,7 @@ jobs:
       run: pip install tox
     - name: Lint with black
       run: tox -e black
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,3 +37,28 @@ jobs:
     - name: Run tox for ${{ matrix.python-version }}
       # Run tox using the version of Python in `PATH`
       run: tox -e py
+  int-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip' # caching pip dependencies
+    - name: Install build dependencies
+      run: pip install build
+    - name: Build package
+      run: python -m build --wheel --outdir dist/
+    - name: Install package
+      run: pip install dist/pyangbind-*.whl
+    - name: Bind with pyang
+      run: |
+        export PYBINDPLUGIN=`/usr/bin/env python -c 'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
+        export PYTHONPATH=$PYTHONPATH:.
+        pyang --plugindir $PYBINDPLUGIN -f pybind -o tests/binding.py tests/base-test.yang
+    
