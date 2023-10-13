@@ -19,12 +19,12 @@ fi
 pip install twine build
 python -m build --outdir $BASEDIR/dist/ $BASEDIR/
 
-pip install $BASEDIR/dist/pyangbind-*.whl
+pip install --force-reinstall $BASEDIR/dist/pyangbind-*.whl
 export PYBINDPLUGIN=`/usr/bin/env python -c \
 'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
-if ! pyang --plugindir $PYBINDPLUGIN -f pybind -o $BASEDIR/tests/binding.py $BASEDIR/tests/base-test.yang; then
+if ! pyang -V --plugindir $PYBINDPLUGIN -f pybind -o $BASEDIR/tests/base-binding-out.py $BASEDIR/tests/base-test.yang; then
     echo "FAILED: cannot bind with pyang"
     exit 126
 fi
 
-# python -m twine upload -s $BASEDIR/dist/pyangbind*
+python -m twine upload -s $BASEDIR/dist/pyangbind*
