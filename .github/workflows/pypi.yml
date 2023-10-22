@@ -7,7 +7,7 @@ on:
 
 jobs:  
   pypi-publish:
-    name: upload release to PyPI
+    name: Package and upload release to PyPI
     runs-on: ubuntu-latest
     environment: release
     permissions:
@@ -19,9 +19,15 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install building dependencies
-        run: pip install build
+        run: pip -q install build
       - name: Build package
-        run: python -m build --sdist --wheel --outdir dist/
+        run: python -m build --outdir dist/ .
+      - name: Install package
+        run: pip -q install dist/pyangbind-*.whl
+      - name: Test bind with pyang
+        run: |
+          export PYBINDPLUGIN=`/usr/bin/env python -c 'import pyangbind; import os; print ("{}/plugin".format(os.path.dirname(pyangbind.__file__)))'`
+          pyang -V --plugindir $PYBINDPLUGIN -f pybind tests/base-test.yang
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
     
