@@ -19,6 +19,22 @@
                     "description": "", 
                     "name": "eth0", 
                     "mtu": 0
+                },
+                "penalty-based-aied": {
+                    "config": {
+                        "decay-half-life": 0,
+                        "flap-penalty": 0,
+                        "max-suppress-time": 0,
+                        "reuse-threshold": 0,
+                        "suppress-threshold": 0
+                    },
+                    "state": {
+                        "decay-half-life": 0,
+                        "flap-penalty": 0,
+                        "max-suppress-time": 0,
+                        "reuse-threshold": 0,
+                        "suppress-threshold": 0
+                    }
                 }, 
                 "state": {
                     "name": "", 
