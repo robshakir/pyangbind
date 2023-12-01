@@ -3,7 +3,7 @@
 PyangBind adds a number of command-line options to Pyang:
 
  * [Output options](#output-options) - `-o`, `--split-class-dir`
- * [XPathHelper options](#xpathhelper) - `--use-xpath-helper`
+ * [XPathHelper options](#xpathhelper) - `--use-xpathhelper`
  * [Extensions options](#extensions) - `--interesting-extension`
  * [RPC options](#rpcs) -- `--build-rpcs`
  * [Extended Methods](#extmethods) -- `--use-extmethods`
@@ -65,9 +65,9 @@ bgp_global_config = config.config()
 
 ## XPathHelper Options <a name="xpathhelper"></a>
 
-If `--use-xpath-helper` is _not_ specified, then all XPATH references throughout the classes generated will act as strings - such that any element that relies in XPATH (`when`/`leaf-ref` statements etc.) will simply take on any value that they are set to.
+If `--use-xpathhelper` is _not_ specified, then all XPATH references throughout the classes generated will act as strings - such that any element that relies in XPATH (`when`/`leaf-ref` statements etc.) will simply take on any value that they are set to.
 
-When` --use-xpath-helper` is specified, then references to the `path_helper` object that is supplied at the time of class instantiation will be passed to all of the classes children. This object is then used to provide lookup capabilities for XPATH expressions. This behaviour is further documented in (the XPathHelper documentation](xpathhelper.md).
+When` --use-xpathhelper` is specified, then references to the `path_helper` object that is supplied at the time of class instantiation will be passed to all of the classes children. This object is then used to provide lookup capabilities for XPATH expressions. This behaviour is further documented in (the XPathHelper documentation](xpathhelper.md).
 
 ## Extension Options
 
