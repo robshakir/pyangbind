@@ -1,0 +1,43 @@
+{
+  "network-instances": {
+    "network-instance": {
+      "a": {
+        "name": "a",
+        "protocols": {
+          "protocol": {
+            "STATIC DEFAULT": {
+              "identifier": "STATIC",
+              "name": "DEFAULT",
+              "static-routes": {
+                "static": {
+                  "192.0.2.1/32": {
+                    "prefix": "192.0.2.1/32",
+                    "config": {
+                      "set-tag": 42
+                    },
+                    "next-hops": {
+                      "next-hop": {
+                        "0": {
+                          "index": "0",
+                          "config": {
+                            "next-hop": "192.168.0.1"
+                          }
+                        },
+                        "1": {
+                          "index": "1",
+                          "config": {
+                            "next-hop": "10.0.0.1"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
