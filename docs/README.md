@@ -21,7 +21,7 @@ The `docs` directory contains the following documents:
 
 In order to allow new users to quickly see how PyangBind might work for them, some examples are included in this directory:
 
-  * [`example/oc-local-routing`](example/oc-local-routing) uses the OpenConfig `local-routing` module an example and shows how one can build static routes using this module. The main directory's README.md provides a worked example of this.
+  * [`example/oc-network-instance`](example/oc-network-instance) uses the OpenConfig `network-instance` module as an example and shows how one can build static routes using this module. The main directory's README.md provides a worked example of this.
   * [`example/simple-rpc`](example/simple-rpc) shows how a YANG `rpc` definition can be manipulated when PyangBind classes are generated for it. The RPC document provides further explanation of this example.
   * [`example/simple-serialise`](example/simple-serialise) shows how PyangBind's serialisation and deserialisation capabilities work. The serialisation document walks through this example.
 
