@@ -774,9 +774,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
                 choice=choice,
                 register_paths=register_paths,
             )
-
             if ctx.opts.split_class_dir:
-                if hasattr(ch, "i_children") and len(ch.i_children):
+                if (hasattr(ch, "i_children") and len(ch.i_children)) or (
+                    ctx.opts.generate_presence and ch.search_one("presence")
+                ):
                     import_req.append(ch.arg)
 
     # Write out the import statements if needed.
