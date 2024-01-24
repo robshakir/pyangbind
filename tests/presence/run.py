@@ -67,11 +67,14 @@ class PresenceTests(PyangBindTestCase):
         self.assertIs(self.instance.parent.child._present(), False)
 
     def test_008_presence_get(self):
-        self.instance.parent.child._set_present()
+        self.instance.parent.child._set_present(True)
         self.assertIs(self.instance.empty_container._present(), False)
         self.assertIs(self.instance.parent.child._present(), True)
         self.assertIs(self.instance.pp._present(), False)
         self.assertEqual(self.instance.get(filter=True), {"parent": {"child": {}}})
+        self.instance.parent.child._set_present(False)
+        self.assertIs(self.instance.parent.child._present(), False)
+        self.assertEqual(self.instance.get(filter=True), {})
 
     def test_009_presence_serialise(self):
         self.instance.parent.child._set_present()
@@ -82,8 +85,24 @@ class PresenceTests(PyangBindTestCase):
                     }
                 }"""
         self.assertEqual(json.loads(pbJ.dumps(self.instance)), json.loads(expectedJ))
+        self.instance.parent.child._set_present(False)
+        expectedJ = "{}"
+        self.assertEqual(json.loads(pbJ.dumps(self.instance)), json.loads(expectedJ))
 
-    def test_010_presence_deserialise(self):
+    def test_010_presence_serialise_ietf(self):
+        self.instance.parent.child._set_present()
+        expectedJ = """
+                {
+                    "presence:parent": {
+                        "child": {}
+                    }
+                }"""
+        self.assertEqual(json.loads(pbJ.dumps(self.instance, mode="ietf")), json.loads(expectedJ))
+        self.instance.parent.child._set_present(False)
+        expectedJ = "{}"
+        self.assertEqual(json.loads(pbJ.dumps(self.instance, mode="ietf")), json.loads(expectedJ))
+
+    def test_011_presence_deserialise(self):
         inputJ = """
               {
                 "parent": {
@@ -93,7 +112,7 @@ class PresenceTests(PyangBindTestCase):
         x = pbJ.loads(inputJ, self.bindings, "presence")
         self.assertIs(x.parent.child._present(), True)
 
-    def test_011_presence_deserialise(self):
+    def test_012_presence_deserialise(self):
         inputJ = """
               {
                 "presence:parent": {
@@ -102,6 +121,10 @@ class PresenceTests(PyangBindTestCase):
               }"""
         x = pbJ.loads_ietf(inputJ, self.bindings, "presence")
         self.assertIs(x.parent.child._present(), True)
+
+
+class SplitClassesPresenceTests(PresenceTests):
+    split_class_dir = True
 
 
 if __name__ == "__main__":
