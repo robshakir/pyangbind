@@ -657,6 +657,60 @@ def build_typedefs(ctx, defnd):
         class_map[type_name.split(":")[1]] = class_map[type_name]
 
 
+def get_children_elements(
+    ctx,
+    fd,
+    i_children,
+    module,
+    parent,
+    elements,
+    imports,
+    path=str(),
+    parent_cfg=True,
+    register_paths=True,
+    choice=False,
+):
+    # Iterative function that is called to get the elements of
+    # a list of i_children.
+    # It treats 'choice' children, which have elements in its cases.
+    # It extends the list of elements and imports as childs are inspected.
+
+    for ch in i_children:
+        if ch.keyword == "choice":
+            # These are cases
+            for sub_choice_ch in ch.i_children:
+                get_children_elements(
+                    ctx,
+                    fd,
+                    sub_choice_ch.i_children,
+                    module,
+                    parent,
+                    elements,
+                    imports,
+                    path=path,
+                    parent_cfg=parent_cfg,
+                    choice=(ch.arg, sub_choice_ch.arg),
+                    register_paths=register_paths,
+                )
+        else:
+            elements += get_element(
+                ctx,
+                fd,
+                ch,
+                module,
+                parent,
+                path + "/" + ch.arg,
+                parent_cfg=parent_cfg,
+                choice=choice,
+                register_paths=register_paths,
+            )
+            if ctx.opts.split_class_dir:
+                if (hasattr(ch, "i_children") and len(ch.i_children)) or (
+                    ctx.opts.generate_presence and ch.search_one("presence")
+                ):
+                    imports.append(ch.arg)
+
+
 def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=True, choice=False, register_paths=True):
     # Iterative function that is called for all elements that have childen
     # data nodes in the tree. This function resolves those nodes into the
@@ -731,45 +785,21 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
     # that they are imported. Additionally, we need to find the elements that are
     # within a case, and ensure that these are built with the corresponding
     # choice specified.
-    if ctx.opts.split_class_dir:
-        import_req = []
 
-    for ch in i_children:
-        if ch.keyword == "choice":
-            for choice_ch in ch.i_children:
-                # these are case statements
-                for case_ch in choice_ch.i_children:
-                    elements += get_element(
-                        ctx,
-                        fd,
-                        case_ch,
-                        module,
-                        parent,
-                        path + "/" + case_ch.arg,
-                        parent_cfg=parent_cfg,
-                        choice=(ch.arg, choice_ch.arg),
-                        register_paths=register_paths,
-                    )
-                    if ctx.opts.split_class_dir:
-                        if hasattr(case_ch, "i_children") and len(case_ch.i_children):
-                            import_req.append(case_ch.arg)
-        else:
-            elements += get_element(
-                ctx,
-                fd,
-                ch,
-                module,
-                parent,
-                path + "/" + ch.arg,
-                parent_cfg=parent_cfg,
-                choice=choice,
-                register_paths=register_paths,
-            )
-            if ctx.opts.split_class_dir:
-                if (hasattr(ch, "i_children") and len(ch.i_children)) or (
-                    ctx.opts.generate_presence and ch.search_one("presence")
-                ):
-                    import_req.append(ch.arg)
+    import_req = []
+    get_children_elements(
+        ctx,
+        fd,
+        i_children,
+        module,
+        parent,
+        elements,
+        import_req,
+        path=path,
+        parent_cfg=parent_cfg,
+        choice=choice,
+        register_paths=register_paths,
+    )
 
     # Write out the import statements if needed.
     if ctx.opts.split_class_dir:
