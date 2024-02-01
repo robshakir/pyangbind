@@ -49,6 +49,23 @@ module choice {
                     }
                 }
             }
+
+            case case-three {
+                choice choice-three- {
+                    case case-three-one {
+                        container case-three-one-container {
+                            leaf case-three-one-leaf {
+                                type int8;
+                            }
+                        }
+                    }
+                    case case-three-two {
+                        leaf case-three-two-leaf {
+                            type string;
+                        }
+                    }
+                }
+            }
         }
     }
 }
