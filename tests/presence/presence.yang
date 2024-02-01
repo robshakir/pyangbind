@@ -12,6 +12,12 @@ module presence {
         reference "fooled-you";
     }
 
+    grouping a-grouping {
+        leaf s {
+            type string;
+        }
+    }
+
     container empty-container {
         presence "something implied implicity";
     }
@@ -23,19 +29,23 @@ module presence {
     }
 
     container np-container {
-        description
-            "np container";
 
         leaf s {
             type string;
         }
     }
 
-    container pp {
+    container p-container {
         presence "implicit";
 
         leaf s {
             type string;
         }
+    }
+
+    container p-container-grouping {
+        presence "implicit";
+
+        uses a-grouping;
     }
 }
