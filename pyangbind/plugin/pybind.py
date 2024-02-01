@@ -740,9 +740,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         import_req = []
 
     for ch in i_children:
-        children_tmp = getattr(ch, "i_children", None)
-        if children_tmp is not None:
-            children_tmp = [i.arg for i in children_tmp]
         if ch.keyword == "choice":
             for choice_ch in ch.i_children:
                 # these are case statements
@@ -1476,23 +1473,20 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
             npath = path
 
         # Create an element for a container.
-        if element.i_children or ctx.opts.generate_presence:
-            chs = element.i_children
-            has_presence = True if element.search_one("presence") is not None else False
-            if has_presence is False and len(chs) == 0:
-                return []
-
-            get_children(
-                ctx,
-                fd,
-                chs,
-                module,
-                element,
-                npath,
-                parent_cfg=parent_cfg,
-                choice=choice,
-                register_paths=register_paths,
-            )
+        has_presence = True if element.search_one("presence") is not None else False
+        if has_children or (ctx.opts.generate_presence and has_presence):
+            if has_children: 
+                get_children(
+                    ctx,
+                    fd,
+                    element.i_children,
+                    module,
+                    element,
+                    npath,
+                    parent_cfg=parent_cfg,
+                    choice=choice,
+                    register_paths=register_paths,
+                )
 
             elemconfigdef = element.search_one("config")
             elemconfig = class_bool_map[elemconfigdef.arg] if elemconfigdef else True
