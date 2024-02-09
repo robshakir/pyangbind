@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from __future__ import unicode_literals
 
 import copy
@@ -1153,9 +1154,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
                 % (
                     i["name"],
                     i["origtype"],
-                    "%s:%s" % (i["defining_module"], i["origtype"])
-                    if ":" not in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
-                    else i["origtype"],
+                    (
+                        "%s:%s" % (i["defining_module"], i["origtype"])
+                        if ":" not in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
+                        else i["origtype"]
+                    ),
                     c_str["type"],
                     c_str["arg"],
                 )

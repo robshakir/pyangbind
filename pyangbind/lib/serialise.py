@@ -23,6 +23,7 @@ serialise:
   * module containing methods to serialise pyangbind class hierarchie
     to various data encodings. XML and/or JSON as the primary examples.
 """
+
 from __future__ import unicode_literals
 
 import json

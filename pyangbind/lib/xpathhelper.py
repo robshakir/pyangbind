@@ -23,6 +23,7 @@ xpathhelper:
   This module maintains an XML ElementTree for the registered Python
   classes, so that XPATH can be used to lookup particular items.
 """
+
 from __future__ import unicode_literals
 
 import uuid
