@@ -20,6 +20,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from __future__ import unicode_literals
 
 import copy
@@ -34,13 +35,7 @@ from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
-from pyangbind.lib.yangtypes import (
-    RestrictedClassType,
-    YANGBool,
-    safe_name,
-    YANGBinary,
-    YANGBitsType,
-)
+from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary, YANGBitsType
 
 # Python3 support
 if six.PY3:
@@ -203,6 +198,7 @@ def pyang_plugin_init():
 
 
 class PyangBindClass(plugin.PyangPlugin):
+
     def add_output_format(self, fmts):
         # Add the 'pybind' output format to pyang.
         self.multiple_modules = True
@@ -1151,9 +1147,11 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
                 % (
                     i["name"],
                     i["origtype"],
-                    "%s:%s" % (i["defining_module"], i["origtype"])
-                    if ":" not in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
-                    else i["origtype"],
+                    (
+                        "%s:%s" % (i["defining_module"], i["origtype"])
+                        if ":" not in i["origtype"] and not i["origtype"] in YANG_BUILTIN_TYPES
+                        else i["origtype"]
+                    ),
                     c_str["type"],
                     c_str["arg"],
                 )
@@ -1474,19 +1472,18 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
 
         # Create an element for a container.
         has_presence = True if element.search_one("presence") is not None else False
-        if has_children or (ctx.opts.generate_presence and has_presence):
-            if has_children: 
-                get_children(
-                    ctx,
-                    fd,
-                    element.i_children,
-                    module,
-                    element,
-                    npath,
-                    parent_cfg=parent_cfg,
-                    choice=choice,
-                    register_paths=register_paths,
-                )
+        if element.i_children or (ctx.opts.generate_presence and has_presence):
+            get_children(
+                ctx,
+                fd,
+                element.i_children,
+                module,
+                element,
+                npath,
+                parent_cfg=parent_cfg,
+                choice=choice,
+                register_paths=register_paths,
+            )
 
             elemconfigdef = element.search_one("config")
             elemconfig = class_bool_map[elemconfigdef.arg] if elemconfigdef else True

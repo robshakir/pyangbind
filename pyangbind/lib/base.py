@@ -29,6 +29,7 @@ class PybindBase(object):
         return str(self.elements())
 
     def get(self, filter=False):
+
         def error():
             return NameError, "element does not exist"
 
@@ -98,6 +99,7 @@ class PybindBase(object):
         return d
 
     def __getitem__(self, k):
+
         def error():
             raise KeyError("Key %s does not exist" % k)
 

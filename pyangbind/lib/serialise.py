@@ -23,6 +23,7 @@ serialise:
   * module containing methods to serialise pyangbind class hierarchie
     to various data encodings. XML and/or JSON as the primary examples.
 """
+
 from __future__ import unicode_literals
 
 import json
@@ -571,6 +572,7 @@ class pybindIETFXMLDecoder(object):
 
 
 class pybindJSONDecoder(object):
+
     @staticmethod
     def load_json(
         d, parent, yang_base, obj=None, path_helper=None, extmethods=None, overwrite=False, skip_unknown=False
@@ -688,12 +690,7 @@ class pybindJSONDecoder(object):
                 else:
                     # use the set method
                     pass
-            elif pybind_attr in [
-                "RestrictedClassType",
-                "ReferencePathType",
-                "RestrictedPrecisionDecimal",
-                "YANGBits",
-            ]:
+            elif pybind_attr in ["RestrictedClassType", "ReferencePathType", "RestrictedPrecisionDecimal", "YANGBits"]:
                 # normal but valid types - which use the std set method
                 pass
             elif pybind_attr is None:

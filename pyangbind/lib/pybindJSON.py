@@ -17,6 +17,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from __future__ import unicode_literals
 
 import copy
@@ -85,6 +86,7 @@ def load_ietf(fn, parent_pymod, yang_module, path_helper=None, extmethods=None, 
 
 
 def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="default", with_defaults=None):
+
     def lookup_subdict(dictionary, key):
         if not isinstance(key, list):
             raise AttributeError("keys should be a list")

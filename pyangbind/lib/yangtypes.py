@@ -19,6 +19,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+
 from __future__ import unicode_literals
 
 import base64
@@ -273,6 +274,7 @@ def RestrictedClassType(*args, **kwargs):
                     raise ValueError("Invalid range or length argument specified")
 
             def in_range_check(low_high_tuples, length=False):
+
                 def range_check(value):
                     if length:
                         value = len(value)
@@ -295,6 +297,7 @@ def RestrictedClassType(*args, **kwargs):
                 return range_check
 
             def match_pattern_check(regexp):
+
                 def mp_check(value):
                     if not isinstance(value, six.string_types + (six.text_type,)):
                         return False
@@ -1191,6 +1194,7 @@ def YANGDynClass(*args, **kwargs):
                 return []
 
         def __generate_extmethod(self, methodfn):
+
             def extmethodfn(*args, **kwargs):
                 kwargs["caller"] = self._register_path()
                 kwargs["path_helper"] = self._path_helper
@@ -1375,6 +1379,7 @@ class YANGBinary(bytes):
 
 
 def YANGBitsType(allowed_bits):
+
     class YANGBits(set):
         """Map the ``bits`` built-in type of YANG
 
