@@ -35,13 +35,7 @@ from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
-from pyangbind.lib.yangtypes import (
-    RestrictedClassType,
-    YANGBool,
-    safe_name,
-    YANGBinary,
-    YANGBitsType,
-)
+from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary, YANGBitsType
 
 # Python3 support
 if six.PY3:
@@ -1477,19 +1471,18 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
 
         # Create an element for a container.
         has_presence = True if element.search_one("presence") is not None else False
-        if has_children or (ctx.opts.generate_presence and has_presence):
-            if has_children: 
-                get_children(
-                    ctx,
-                    fd,
-                    element.i_children,
-                    module,
-                    element,
-                    npath,
-                    parent_cfg=parent_cfg,
-                    choice=choice,
-                    register_paths=register_paths,
-                )
+        if element.i_children or (ctx.opts.generate_presence and has_presence):
+            get_children(
+                ctx,
+                fd,
+                element.i_children,
+                module,
+                element,
+                npath,
+                parent_cfg=parent_cfg,
+                choice=choice,
+                register_paths=register_paths,
+            )
 
             elemconfigdef = element.search_one("config")
             elemconfig = class_bool_map[elemconfigdef.arg] if elemconfigdef else True
