@@ -16,10 +16,14 @@ class PresenceTests(PyangBindTestCase):
         self.instance = self.bindings.presence()
 
     def test_001_check_containers(self):
-        for attr in ["empty-container", 
-                     "parent", ["parent", "child"], 
-                     "np_container", "p_container", 
-                     "p_container_grouping"]:
+        for attr in [
+            "empty-container",
+            "parent",
+            ["parent", "child"],
+            "np_container",
+            "p_container",
+            "p_container_grouping",
+        ]:
             with self.subTest(attr=attr):
                 if isinstance(attr, list):
                     parent = self.instance
@@ -29,18 +33,18 @@ class PresenceTests(PyangBindTestCase):
                 else:
                     elem = getattr(self.instance, safe_name(attr), None)
                     self.assertIsNot(elem, None)
-    
+
     def test_002_check_leafs(self):
-        for attr in [("np_container", "s"),
-                     ("p_container",  "s"),
-                     ("p_container_grouping", "s"),
-                    ]:
+        for attr in [
+            ("np_container", "s"),
+            ("p_container", "s"),
+            ("p_container_grouping", "s"),
+        ]:
             with self.subTest(attr=attr):
                 container, leaf = attr
                 cont_elem = getattr(self.instance, container, None)
                 leaf_elem = getattr(cont_elem, leaf, None)
-                self.assertIsNotNone(leaf_elem, 
-                                     "Missing leaf %s in container %s" % (leaf, container))
+                self.assertIsNotNone(leaf_elem, "Missing leaf %s in container %s" % (leaf, container))
 
     def test_003_check_presence(self):
         self.assertIs(self.instance.empty_container._presence, True)
