@@ -35,13 +35,7 @@ from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
-from pyangbind.lib.yangtypes import (
-    RestrictedClassType,
-    YANGBool,
-    safe_name,
-    YANGBinary,
-    YANGBitsType,
-)
+from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary, YANGBitsType
 
 # Python3 support
 if six.PY3:
@@ -741,9 +735,6 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
         import_req = []
 
     for ch in i_children:
-        children_tmp = getattr(ch, "i_children", None)
-        if children_tmp is not None:
-            children_tmp = [i.arg for i in children_tmp]
         if ch.keyword == "choice":
             for choice_ch in ch.i_children:
                 # these are case statements
@@ -774,9 +765,10 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
                 choice=choice,
                 register_paths=register_paths,
             )
-
             if ctx.opts.split_class_dir:
-                if hasattr(ch, "i_children") and len(ch.i_children):
+                if (hasattr(ch, "i_children") and len(ch.i_children)) or (
+                    ctx.opts.generate_presence and ch.search_one("presence")
+                ):
                     import_req.append(ch.arg)
 
     # Write out the import statements if needed.
@@ -1478,16 +1470,12 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
             npath = path
 
         # Create an element for a container.
-        if element.i_children or ctx.opts.generate_presence:
-            chs = element.i_children
-            has_presence = True if element.search_one("presence") is not None else False
-            if has_presence is False and len(chs) == 0:
-                return []
-
+        has_presence = True if element.search_one("presence") is not None else False
+        if element.i_children or (ctx.opts.generate_presence and has_presence):
             get_children(
                 ctx,
                 fd,
-                chs,
+                element.i_children,
                 module,
                 element,
                 npath,

@@ -1091,7 +1091,7 @@ def YANGDynClass(*args, **kwargs):
             except TypeError:
                 super(YANGBaseClass, self).__init__()
             except Exception:
-                six.reraise()
+                raise
 
         def _changed(self):
             return self._mchanged
@@ -1205,6 +1205,8 @@ def YANGDynClass(*args, **kwargs):
             self._cpresent = present
             if present is True:
                 self._set()
+            if present is False:
+                self._mchanged = False
 
         def _present(self):
             if not self._is_container == "container":
