@@ -55,7 +55,7 @@ class OpenconfigSerialiseTests(PyangBindTestCase):
         for file_name in os.listdir(json_dir):
             with self.subTest(json_file=file_name), open(os.path.join(json_dir, file_name), "r") as file_handle:
                 parameters = regex.sub(
-                    "interfaces\_ph:(?P<pathhelper>[a-zA-Z]+)\-flt:(?P<filter>[a-zA-Z]+)\-m:(?P<mode>[a-zA-Z]+)\.json",
+                    "interfaces\_ph\.(?P<pathhelper>[a-zA-Z]+)\-flt\.(?P<filter>[a-zA-Z]+)\-m\.(?P<mode>[a-zA-Z]+)\.json",
                     "\g<pathhelper>||\g<filter>||\g<mode>",
                     file_name,
                 ).split("||")
