@@ -137,7 +137,7 @@ class_map = {
             base_type=long, restriction_dict={"range": ["0..18446744073709551615"]}, int_size=64
         ),
     },
-    "string": {"native_type": "six.text_type", "base_type": True, "quote_arg": True, "pytype": six.text_type},
+    "string": {"native_type": "str", "base_type": True, "quote_arg": True, "pytype": str},
     "decimal64": {"native_type": "Decimal", "base_type": True, "pytype": decimal.Decimal},
     "empty": {
         "native_type": "YANGBool",
@@ -331,17 +331,12 @@ def build_pybind(ctx, modules, fd):
     ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
     ctx.pybind_common_hdr += "from collections import OrderedDict\n"
     ctx.pybind_common_hdr += "from decimal import Decimal\n"
-    ctx.pybind_common_hdr += "import six\n"
+    # ctx.pybind_common_hdr += "import six\n"
 
     # Python3 support
     ctx.pybind_common_hdr += """
-# PY3 support of some PY2 keywords (needs improved)
-if six.PY3:
-  import builtins as __builtin__
-  long = int
-elif six.PY2:
-  import __builtin__
-
+import builtins as __builtin__
+long = int
 """
 
     if not ctx.opts.split_class_dir:
@@ -480,7 +475,7 @@ def build_identities(ctx, defnd):
     # elements that use this identity ref.
     for i in identity_dict:
         id_type = {
-            "native_type": """RestrictedClassType(base_type=six.text_type, """
+            "native_type": """RestrictedClassType(base_type=str, """
             + """restriction_type="dict_key", """
             + """restriction_arg=%s,)""" % identity_dict[i],
             "restriction_argument": identity_dict[i],
@@ -1300,7 +1295,7 @@ def build_elemtype(ctx, et, prefix=False):
                 if val is not None:
                     enumeration_dict[six.text_type(enum.arg)]["value"] = int(val.arg)
             elemtype = {
-                "native_type": """RestrictedClassType(base_type=six.text_type, \
+                "native_type": """RestrictedClassType(base_type=str, \
                                     restriction_type="dict_key", \
                                     restriction_arg=%s,)"""
                 % (enumeration_dict),
@@ -1354,7 +1349,7 @@ def build_elemtype(ctx, et, prefix=False):
                 }
                 cls = "leafref"
             else:
-                elemtype = {"native_type": "six.text_type", "parent_type": "string", "base_type": False}
+                elemtype = {"native_type": "str", "parent_type": "string", "base_type": False}
         # Handle identityrefs, but check whether there is a valid base where this
         # has been specified.
         elif et.arg == "identityref":
