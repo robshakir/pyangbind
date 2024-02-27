@@ -3,5 +3,6 @@ build
 coverage
 pytest
 requests
+setuptools
 tox
 wheel
