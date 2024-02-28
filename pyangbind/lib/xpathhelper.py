@@ -306,7 +306,7 @@ class YANGPathHelper(PybindXpathHelper):
         return retr_obj
 
     def get(self, object_path, caller=False):
-        if isinstance(object_path, six.string_types + (six.text_type,)):
+        if isinstance(object_path, (str,)):
             object_path = self._path_parts(object_path)
 
         return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
@@ -320,7 +320,7 @@ class YANGPathHelper(PybindXpathHelper):
         return obj[0]
 
     def get_list(self, object_path, caller=False, exception_to_raise=YANGPathHelperException):
-        if isinstance(object_path, six.string_types + (six.text_type,)):
+        if isinstance(object_path, (str,)):
             object_path = self._path_parts(object_path)
 
         parent_obj = self.get_unique(object_path[:-1], caller=caller, exception_to_raise=exception_to_raise)
