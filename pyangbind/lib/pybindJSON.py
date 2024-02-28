@@ -24,8 +24,6 @@ import copy
 import json
 from collections import OrderedDict
 
-import six
-
 from pyangbind.lib.serialise import pybindIETFJSONEncoder, pybindJSONDecoder, pybindJSONEncoder, pybindJSONIOError
 
 

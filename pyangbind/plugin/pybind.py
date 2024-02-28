@@ -30,7 +30,6 @@ import os
 import sys
 from collections import OrderedDict
 
-import six
 from pyang import plugin, statements, util
 
 import pyangbind.helpers.misc as misc_help
@@ -326,10 +325,9 @@ def build_pybind(ctx, modules, fd):
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
     ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
     ctx.pybind_common_hdr += "from collections import OrderedDict\n"
-    ctx.pybind_common_hdr += "from decimal import Decimal\n"
-    # ctx.pybind_common_hdr += "import six\n"
+    ctx.pybind_common_hdr += "from decimal import Decimal\n"   
 
-    # Python3 support
+
     ctx.pybind_common_hdr += """
 import builtins as __builtin__
 long = int

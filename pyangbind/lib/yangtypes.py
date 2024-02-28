@@ -30,7 +30,6 @@ import uuid
 from decimal import Decimal
 
 import regex
-import six
 
 # Words that could turn up in YANG definition files that are actually
 # reserved names in Python, such as being builtin types. This list is

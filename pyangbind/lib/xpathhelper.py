@@ -30,7 +30,6 @@ import uuid
 from collections import OrderedDict
 
 import regex
-import six
 from lxml import etree
 
 from .base import PybindBase
