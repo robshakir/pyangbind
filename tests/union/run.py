@@ -51,10 +51,10 @@ class UnionTests(PyangBindTestCase):
         self.assertEqual(self.instance.container.u3._default, "set from u3")
 
     def test_union_of_int_over_string_with_int_default_is_int_type(self):
-        self.assertIsInstance(self.instance.container.u4._default, six.integer_types)
+        self.assertIsInstance(self.instance.container.u4._default, int)
 
     def test_default_value_gets_set_from_typedef(self):
-        self.assertIsInstance(self.instance.container.u6._default, six.text_type)
+        self.assertIsInstance(self.instance.container.u6._default, str)
 
     def test_set_typedef_union_of_int_over_string_to_a_string_value(self):
         self.instance.container.u7 = "hello"
@@ -98,7 +98,7 @@ class UnionTests(PyangBindTestCase):
                 self.assertEqual(allowed, valid)
 
     def test_union_of_unions_from_typedefs_with_local_default_gets_proper_default(self):
-        self.assertIsInstance(self.instance.container.u11._default, six.text_type)
+        self.assertIsInstance(self.instance.container.u11._default, str)
 
     def test_union_of_restricted_class_types(self):
         for value, valid in [("unlimited", True), (1, True), (0, True), ("fish", False), (2**64, False)]:
