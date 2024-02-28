@@ -31,7 +31,6 @@ from collections import OrderedDict
 from decimal import Decimal
 import base64
 
-import six
 from enum import IntEnum
 from lxml import objectify, etree
 
