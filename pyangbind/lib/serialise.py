@@ -159,9 +159,9 @@ class YangDataSerialiser(object):
             for k, v in obj.items():
                 ndict[k] = self.default(v)
             return ndict
-        elif isinstance(obj, six.string_types + (six.text_type,)):
+        elif isinstance(obj, (str,)):
             return str(obj)
-        elif isinstance(obj, six.integer_types):
+        elif isinstance(obj, (int,)):
             return int(obj)
         elif isinstance(obj, (YANGBool, bool)):
             return bool(obj)
