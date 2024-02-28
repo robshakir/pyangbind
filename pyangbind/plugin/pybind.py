@@ -325,8 +325,7 @@ def build_pybind(ctx, modules, fd):
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
     ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
     ctx.pybind_common_hdr += "from collections import OrderedDict\n"
-    ctx.pybind_common_hdr += "from decimal import Decimal\n"   
-
+    ctx.pybind_common_hdr += "from decimal import Decimal\n"
 
     ctx.pybind_common_hdr += """
 import builtins as __builtin__
