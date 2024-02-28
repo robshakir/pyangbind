@@ -133,13 +133,13 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="defa
         for t in tree:
             keep = True
             for k, v in six.iteritems(select):
-                v = six.text_type(v)
+                v = str(v)
                 if mode == "default" or isinstance(tree, dict):
-                    if keep and not six.text_type(lookup_subdict(tree[t], k.split("."))) == v:
+                    if keep and not str(lookup_subdict(tree[t], k.split("."))) == v:
                         keep = False
                 else:
                     # handle ietf case where we have a list and might have namespaces
-                    if keep and not six.text_type(lookup_subdict(t, k.split("."))) == v:
+                    if keep and not str(lookup_subdict(t, k.split("."))) == v:
                         keep = False
             if not keep:
                 key_del.append(t)

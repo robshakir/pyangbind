@@ -176,7 +176,7 @@ def RestrictedClassType(*args, **kwargs):
     type of restriction placed on the class, and the restriction_arg gives
     any input data that this function needs.
     """
-    base_type = kwargs.pop("base_type", six.text_type)
+    base_type = kwargs.pop("base_type", str)
     restriction_type = kwargs.pop("restriction_type", None)
     restriction_arg = kwargs.pop("restriction_arg", None)
     restriction_dict = kwargs.pop("restriction_dict", None)
@@ -185,7 +185,7 @@ def RestrictedClassType(*args, **kwargs):
     # this gives deserialisers some hints as to how to encode/decode this value
     # it must be a list since a restricted class can encapsulate a restricted
     # class
-    current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>", r"\g<class>", six.text_type(base_type))
+    current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>", r"\g<class>", str(base_type))
     if hasattr(base_type, "_restricted_class_base"):
         restricted_class_hint = getattr(base_type, "_restricted_class_base")
         restricted_class_hint.append(current_restricted_class_type)
@@ -304,7 +304,7 @@ def RestrictedClassType(*args, **kwargs):
                 return mp_check
 
             def in_dictionary_check(dictionary):
-                return lambda i: six.text_type(i) in dictionary
+                return lambda i: str(i) in dictionary
 
             val = False
             try:
@@ -404,7 +404,7 @@ def TypedListType(*args, **kwargs):
     certain types (specified by allowed_type kwarg to the function)
     can be added to the list.
     """
-    allowed_type = kwargs.pop("allowed_type", six.text_type)
+    allowed_type = kwargs.pop("allowed_type", str)
     if not isinstance(allowed_type, list):
         allowed_type = [allowed_type]
 
@@ -455,7 +455,7 @@ def TypedListType(*args, **kwargs):
                             passed = True
                             break
                     elif i == six.text_type and isinstance(v, six.string_types + (six.text_type,)):
-                        tmp = six.text_type(v)
+                        tmp = str(v)
                         passed = True
                         break
                     elif i not in six.string_types + (six.text_type,):
@@ -630,7 +630,7 @@ def YANGListType(*args, **kwargs):
                 # this is a list that does not have a key specified, and hence
                 # we generate a uuid that is used as the key, the method then
                 # returns the uuid for the upstream process to use
-                k = six.text_type(uuid.uuid1())
+                k = str(uuid.uuid1())
 
             update = False
             if v is not None:
@@ -777,7 +777,7 @@ def YANGListType(*args, **kwargs):
                     kv = getattr(obj, "_get_%s" % safe_name(k), None)
                     if kv is None:
                         raise KeyError("Invalid key attribute specified for object")
-                    ks += "%s " % six.text_type(kv())
+                    ks += "%s " % str(kv())
                 return ks.rstrip(" ")
             else:
                 kv = getattr(obj, "_get_%s" % safe_name(self._keyval), None)
@@ -1253,7 +1253,7 @@ def ReferenceType(*args, **kwargs):
             self._ptr = False
             self._require_instance = require_instance
             self._type = "unicode"
-            self._utype = six.text_type
+            self._utype = str
 
             if len(args):
                 value = args[0]
@@ -1301,7 +1301,7 @@ def ReferenceType(*args, **kwargs):
                         if len(path_chk) == 1 and is_yang_leaflist(path_chk[0]):
                             index = 0
                             for i in path_chk[0]:
-                                if six.text_type(i) == six.text_type(value):
+                                if str(i) == str(value):
                                     found = True
                                     self._referenced_object = path_chk[0][index]
                                     break
@@ -1309,7 +1309,7 @@ def ReferenceType(*args, **kwargs):
                         else:
                             found = False
                             for i in path_chk:
-                                if six.text_type(i) == six.text_type(value):
+                                if str(i) == str(value):
                                     found = True
                                     self._referenced_object = i
 
