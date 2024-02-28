@@ -593,7 +593,7 @@ def YANGListType(*args, **kwargs):
             return self._members.items()
 
         def itervalues(self):
-            return six.itervalues(self._members)
+            return self._members.values()
 
         def _key_to_native_key_type(self, k):
             if self._keyval is False:
