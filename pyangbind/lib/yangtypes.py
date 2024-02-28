@@ -454,11 +454,11 @@ def TypedListType(*args, **kwargs):
                             tmp = i(v)
                             passed = True
                             break
-                    elif i == six.text_type and isinstance(v, six.string_types + (six.text_type,)):
+                    elif i == str and isinstance(v, (str,)):
                         tmp = str(v)
                         passed = True
                         break
-                    elif i not in six.string_types + (six.text_type,):
+                    elif i not in (str,):
                         # for anything other than string we try
                         # and cast. Using things for string or
                         # unicode gives us strange results because we get
