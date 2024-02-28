@@ -107,7 +107,7 @@ class YangDataSerialiser(object):
             return [self.default(i) for i in obj]
         # Expand dictionaries
         elif isinstance(obj, dict):
-            return {k: self.default(v) for k, v in six.iteritems(obj)}
+            return {k: self.default(v) for k, v in obj.items()}
 
         if pybc is not None:
             # Special cases where the wrapper has an underlying class
@@ -156,7 +156,7 @@ class YangDataSerialiser(object):
             return nlist
         elif isinstance(obj, dict):
             ndict = {}
-            for k, v in six.iteritems(obj):
+            for k, v in obj.items():
                 ndict[k] = self.default(v)
             return ndict
         elif isinstance(obj, six.string_types + (six.text_type,)):
@@ -639,7 +639,7 @@ class pybindJSONDecoder(object):
                     # Put keys in order:
                     okeys = []
                     kdict = {}
-                    for k, v in six.iteritems(d[key]):
+                    for k, v in d[key].items():
                         if "__yang_order" not in v:
                             # Element is not specified in terms of order, so
                             # push to a list that keeps this order
@@ -712,7 +712,7 @@ class pybindJSONDecoder(object):
     def check_metadata_add(key, data, obj):
         keys = [str(k) for k in data]
         if ("@" + key) in keys:
-            for k, v in six.iteritems(data["@" + key]):
+            for k, v in data["@" + key].items():
                 obj._add_metadata(k, v)
 
     @staticmethod
@@ -754,7 +754,7 @@ class pybindJSONDecoder(object):
 
             if key == "@":
                 # Handle whole container metadata object
-                for k, v in six.iteritems(d[key]):
+                for k, v in d[key].items():
                     obj._add_metadata(k, v)
                 continue
             elif "@" in key:

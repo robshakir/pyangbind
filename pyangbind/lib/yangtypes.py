@@ -590,7 +590,7 @@ def YANGListType(*args, **kwargs):
             return True
 
         def iteritems(self):
-            return six.iteritems(self._members)
+            return self._members.items()
 
         def itervalues(self):
             return six.itervalues(self._members)

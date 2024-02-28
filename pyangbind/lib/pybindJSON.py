@@ -90,7 +90,7 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="defa
         if not isinstance(key, list):
             raise AttributeError("keys should be a list")
         unresolved_dict = {}
-        for k, v in six.iteritems(dictionary):
+        for k, v in dictionary.items():
             if ":" in k:
                 k = k.split(":")[1]
             unresolved_dict[k] = v
@@ -132,7 +132,7 @@ def dumps(obj, indent=4, filter=True, skip_subtrees=[], select=False, mode="defa
         key_del = []
         for t in tree:
             keep = True
-            for k, v in six.iteritems(select):
+            for k, v in select.items():
                 v = str(v)
                 if mode == "default" or isinstance(tree, dict):
                     if keep and not str(lookup_subdict(tree[t], k.split("."))) == v:
