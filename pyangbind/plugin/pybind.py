@@ -37,11 +37,7 @@ import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
 from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary, YANGBitsType
 
-# Python3 support
-if six.PY3:
-    long = int
-else:
-    import codecs
+long = int
 
 DEBUG = True
 if DEBUG:
@@ -744,19 +740,13 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
             fpath = bpath + "/__init__.py"
         if not os.path.exists(fpath):
             try:
-                if six.PY3:
-                    nfd = open(fpath, "w", encoding="utf-8")
-                else:
-                    nfd = codecs.open(fpath, "w", encoding="utf-8")
+                nfd = open(fpath, "w", encoding="utf-8")
             except IOError as m:
                 raise IOError("could not open pyangbind output file (%s)" % m)
             nfd.write(ctx.pybind_common_hdr)
         else:
             try:
-                if six.PY3:
-                    nfd = open(fpath, "a", encoding="utf-8")
-                else:
-                    nfd = codecs.open(fpath, "a", encoding="utf-8")
+                nfd = open(fpath, "a", encoding="utf-8")
             except IOError as w:
                 raise IOError("could not open pyangbind output file (%s)" % w)
     else:
@@ -1290,10 +1280,10 @@ def build_elemtype(ctx, et, prefix=False):
         if et.arg == "enumeration":
             enumeration_dict = {}
             for enum in et.search("enum"):
-                enumeration_dict[six.text_type(enum.arg)] = {}
+                enumeration_dict[str(enum.arg)] = {}
                 val = enum.search_one("value")
                 if val is not None:
-                    enumeration_dict[six.text_type(enum.arg)]["value"] = int(val.arg)
+                    enumeration_dict[str(enum.arg)]["value"] = int(val.arg)
             elemtype = {
                 "native_type": """RestrictedClassType(base_type=str, \
                                     restriction_type="dict_key", \
