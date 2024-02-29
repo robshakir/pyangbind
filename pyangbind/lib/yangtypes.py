@@ -1287,7 +1287,9 @@ def ReferenceType(*args, **kwargs):
 
                     if value is not None:
                         set_method(value)
-                    self._type = regex.sub(r"<(type|class) '(?P<class>.*)'>", r"\g<class>", str(get_method()._base_type))
+                    self._type = regex.sub(
+                        r"<(type|class) '(?P<class>.*)'>", r"\g<class>", str(get_method()._base_type)
+                    )
 
                     self._utype = get_method()._base_type
                     self._ptr = True
