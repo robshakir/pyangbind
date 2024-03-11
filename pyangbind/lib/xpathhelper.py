@@ -106,13 +106,13 @@ class FakeRoot(PybindBase):
 
 
 class YANGPathHelper(PybindXpathHelper):
-    _attr_re = regex.compile("^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
+    _attr_re = regex.compile(r"^(?P<tagname>[^\[]+)(?P<args>(\[[^\]]+\])+)$")
     _arg_re = regex.compile(
-        "^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?"
-        + "=([ ]+)?['\"]?(?P<arg>[^ ^'^\"]+)(['\"])?([ ]+)?"
+        r"^((and|or) )?[@]?(?P<cmd>[a-zA-Z0-9\-\_:]+)([ ]+)?"
+        + r"=([ ]+)?['\"]?(?P<arg>[^ ^'^\"]+)(['\"])?([ ]+)?"
         + "(?P<remainder>.*)"
     )
-    _relative_path_re = regex.compile("^(\.|\.\.)")
+    _relative_path_re = regex.compile(r"^(\.|\.\.)")
 
     def __init__(self):
         # Initialise an empty library and a new FakeRoot class to act as the
@@ -175,7 +175,7 @@ class YANGPathHelper(PybindXpathHelper):
                 for k, v in six.iteritems(attributes):
                     # handling for rfc6020 current() specification
                     if "current()" in v:
-                        remaining_path = regex.sub("current\(\)(?P<remaining>.*)", "\g<remaining>", v).split("/")
+                        remaining_path = regex.sub("current\(\)(?P<remaining>.*)", r"\g<remaining>", v).split("/")
                         # since the calling leaf may not exist, we need to do a
                         # lookup on a path that will do, which is the parent
                         if remaining_path[1] == "..":
@@ -203,7 +203,7 @@ class YANGPathHelper(PybindXpathHelper):
     def _tagname_attributes(self, tag, normalise_namespace=True):
         tagname, attributes = tag, None
         if self._attr_re.match(tag):
-            tagname, args = self._attr_re.sub("\g<tagname>||\g<args>", tag).split("||")
+            tagname, args = self._attr_re.sub(r"\g<tagname>||\g<args>", tag).split("||")
             arg_parts = [i.strip("[") for i in args.split("]")]
 
             attributes = {}
@@ -211,7 +211,7 @@ class YANGPathHelper(PybindXpathHelper):
                 tmp_arg = arg
                 while len(tmp_arg):
                     if self._arg_re.match(tmp_arg):
-                        c, a, r = self._arg_re.sub("\g<cmd>||\g<arg>||\g<remainder>", tmp_arg).split("||")
+                        c, a, r = self._arg_re.sub(r"\g<cmd>||\g<arg>||\g<remainder>", tmp_arg).split("||")
                         if ":" in c and normalise_namespace:
                             c = c.split(":")[1]
                         attributes[c] = a
@@ -228,7 +228,7 @@ class YANGPathHelper(PybindXpathHelper):
         if isinstance(object_path, str):
             raise XPathError("not meant to receive strings as input to register()")
 
-        if regex.match("^\.\.", object_path[0]):
+        if regex.match(r"^\.\.", object_path[0]):
             raise XPathError("unhandled relative path in register()")
 
         # This is a hack to register anything that is a top-level object,
@@ -281,7 +281,7 @@ class YANGPathHelper(PybindXpathHelper):
     def unregister(self, object_path, caller=False):
         if isinstance(object_path, str):
             raise XPathError("should not receive paths as a str in unregister()")
-        if regex.match("^(\.|\.\.|\/)", object_path[0]):
+        if regex.match(r"^(\.|\.\.|\/)", object_path[0]):
             raise XPathError("unhandled relative path in unregister()")
 
         existing_objs = self._get_etree(object_path)

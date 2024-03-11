@@ -185,7 +185,7 @@ def RestrictedClassType(*args, **kwargs):
     # this gives deserialisers some hints as to how to encode/decode this value
     # it must be a list since a restricted class can encapsulate a restricted
     # class
-    current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", six.text_type(base_type))
+    current_restricted_class_type = regex.sub("<(type|class) '(?P<class>.*)'>", r"\g<class>", six.text_type(base_type))
     if hasattr(base_type, "_restricted_class_base"):
         restricted_class_hint = getattr(base_type, "_restricted_class_base")
         restricted_class_hint.append(current_restricted_class_type)
@@ -228,8 +228,8 @@ def RestrictedClassType(*args, **kwargs):
         _restriction_test method so that it can be called by other functions.
       """
 
-            range_regex = regex.compile("(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" + "(?P<high>(\-?[0-9\.]+|max))")
-            range_single_value_regex = regex.compile("(?P<value>\-?[0-9\.]+)")
+            range_regex = regex.compile(r"(?P<low>\-?[0-9\.]+|min)([ ]+)?\.\.([ ]+)?" + r"(?P<high>(\-?[0-9\.]+|max))")
+            range_single_value_regex = regex.compile(r"(?P<value>\-?[0-9\.]+)")
 
             def convert_regexp(pattern):
                 # Some patterns include a $ character in them in some IANA modules, this
@@ -241,7 +241,7 @@ def RestrictedClassType(*args, **kwargs):
                     trimmed = True
                 else:
                     tmp_pattern = pattern
-                tmp_pattern = tmp_pattern.replace("$", "\$")
+                tmp_pattern = tmp_pattern.replace("$", r"\$")
                 pattern = tmp_pattern
                 if trimmed:
                     pattern += "$"
@@ -255,7 +255,7 @@ def RestrictedClassType(*args, **kwargs):
 
             def build_length_range_tuples(range, length=False, multiplier=1):
                 if range_regex.match(range_spec):
-                    low, high = range_regex.sub("\g<low>,\g<high>", range_spec).split(",")
+                    low, high = range_regex.sub(r"\g<low>,\g<high>", range_spec).split(",")
                     if not length:
                         high = base_type(high) if not high == "max" else None
                         low = base_type(low) if not low == "min" else None
@@ -264,7 +264,7 @@ def RestrictedClassType(*args, **kwargs):
                         low = int(low) * multiplier if not low == "min" else None
                     return (low, high)
                 elif range_single_value_regex.match(range_spec):
-                    eqval = range_single_value_regex.sub("\g<value>", range_spec)
+                    eqval = range_single_value_regex.sub(r"\g<value>", range_spec)
                     if not length:
                         eqval = base_type(eqval) if eqval not in ["max", "min"] else None
                     else:
@@ -1021,7 +1021,7 @@ def YANGDynClass(*args, **kwargs):
         if yang_type in ["container", "list"] or is_container == "container":
             __slots__ = tuple(clsslots)
 
-        _pybind_base_class = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(base_type))
+        _pybind_base_class = regex.sub("<(type|class) '(?P<class>.*)'>", r"\g<class>", str(base_type))
 
         def __new__(self, *args, **kwargs):
             try:
@@ -1287,7 +1287,9 @@ def ReferenceType(*args, **kwargs):
 
                     if value is not None:
                         set_method(value)
-                    self._type = regex.sub("<(type|class) '(?P<class>.*)'>", "\g<class>", str(get_method()._base_type))
+                    self._type = regex.sub(
+                        r"<(type|class) '(?P<class>.*)'>", r"\g<class>", str(get_method()._base_type)
+                    )
 
                     self._utype = get_method()._base_type
                     self._ptr = True
