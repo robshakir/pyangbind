@@ -297,9 +297,7 @@ def RestrictedClassType(*args, **kwargs):
 
             def match_pattern_check(regexp):
                 def mp_check(value):
-                    if not isinstance(value, six.string_types + (six.text_type,)):
-                        return False
-                    if regex.match(convert_regexp(regexp), value):
+                    if regex.match(convert_regexp(regexp), str(value)):
                         return True
                     return False
 
@@ -723,7 +721,7 @@ def YANGListType(*args, **kwargs):
                     self._members[k] = tmp
 
                 except ValueError as m:
-                    raise KeyError("key value must be valid, %s" % m)
+                    raise KeyError("key value %s must be valid, %s" % (self._keyval, m))
             else:
                 self._members[k] = YANGDynClass(
                     base=self._contained_class,
