@@ -1,5 +1,4 @@
 pyang
 lxml
 regex
-six
 enum34
