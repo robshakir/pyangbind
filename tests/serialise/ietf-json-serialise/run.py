@@ -5,8 +5,6 @@ import os.path
 import unittest
 from decimal import Decimal
 
-import six
-
 from pyangbind.lib.serialise import pybindIETFJSONEncoder
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from tests.base import PyangBindTestCase

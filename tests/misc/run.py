@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-import six
-
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from tests.base import PyangBindTestCase
 
