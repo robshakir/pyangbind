@@ -296,6 +296,22 @@ module ietf-xml-deserialise {
         type int8;
       }
     }
+
+    list patternkey {
+      key "name";
+
+      leaf name {
+        type string {
+          pattern 'n.*';
+        }
+      }
+
+      leaf uid {
+        type string {
+          length 5..10;
+        }
+      }
+    }
   }
 
   container augtarget {
