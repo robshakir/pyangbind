@@ -30,7 +30,6 @@ import uuid
 from collections import OrderedDict
 
 import regex
-import six
 from lxml import etree
 
 from .base import PybindBase
@@ -172,7 +171,7 @@ class YANGPathHelper(PybindXpathHelper):
 
             if attributes is not None:
                 epath += tagname + "["
-                for k, v in six.iteritems(attributes):
+                for k, v in attributes.items():
                     # handling for rfc6020 current() specification
                     if "current()" in v:
                         remaining_path = regex.sub("current\(\)(?P<remaining>.*)", r"\g<remaining>", v).split("/")
@@ -275,7 +274,7 @@ class YANGPathHelper(PybindXpathHelper):
 
         added_item = etree.SubElement(parent_o, tagname, obj_ptr=this_obj_id)
         if attributes is not None:
-            for k, v in six.iteritems(attributes):
+            for k, v in attributes.items():
                 added_item.set(k, v)
 
     def unregister(self, object_path, caller=False):
@@ -306,7 +305,7 @@ class YANGPathHelper(PybindXpathHelper):
         return retr_obj
 
     def get(self, object_path, caller=False):
-        if isinstance(object_path, six.string_types + (six.text_type,)):
+        if isinstance(object_path, (str,)):
             object_path = self._path_parts(object_path)
 
         return [self._library[i.get("obj_ptr")] for i in self._get_etree(object_path, caller=caller)]
@@ -320,7 +319,7 @@ class YANGPathHelper(PybindXpathHelper):
         return obj[0]
 
     def get_list(self, object_path, caller=False, exception_to_raise=YANGPathHelperException):
-        if isinstance(object_path, six.string_types + (six.text_type,)):
+        if isinstance(object_path, (str,)):
             object_path = self._path_parts(object_path)
 
         parent_obj = self.get_unique(object_path[:-1], caller=caller, exception_to_raise=exception_to_raise)
