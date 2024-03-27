@@ -4,7 +4,6 @@ import os.path
 import unittest
 from decimal import Decimal
 
-import six
 from lxml import objectify
 
 from pyangbind.lib.serialise import pybindIETFXMLEncoder
