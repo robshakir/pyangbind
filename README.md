@@ -159,7 +159,7 @@ print(ocni.network_instances.network_instance['a'].protocols.protocol['STATIC DE
 
 The `filter` keyword allows only the elements within the class that have changed (are not empty or their default) to be output - rather than all possible elements.
 
-The `next-hops` element in this model is another list. This keyed data structure acts like a Python dictionary, and has the special method `add` to add items to it. YANG `leaf-list` types use the standard Python list `append` method to add items to it. Equally, a `list` can be iterated through using the same methods as a dictionary, for example, using `items()`:
+The `next-hop` element in this model is another list. This keyed data structure acts like a Python dictionary, and has the special method `add` to add items to it. YANG `leaf-list` types use the standard Python list `append` method to add items to it. Equally, a `list` can be iterated through using the same methods as a dictionary, for example, using `items()`:
 
 ```python
 # Add a set of next_hops
