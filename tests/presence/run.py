@@ -97,28 +97,35 @@ class PresenceTests(PyangBindTestCase):
 
     def test_010_presence_serialise(self):
         self.instance.parent.child._set_present()
+        self.instance.p_container._set_present()
         expectedJ = """
                 {
                     "parent": {
                         "child": {}
-                    }
+                    },
+                    "p-container": {}
                 }"""
         self.assertEqual(json.loads(pbJ.dumps(self.instance)), json.loads(expectedJ))
         self.instance.parent.child._set_present(False)
-        expectedJ = "{}"
+        expectedJ = """
+        {
+            "p-container": {}
+        }"""
         self.assertEqual(json.loads(pbJ.dumps(self.instance)), json.loads(expectedJ))
 
     def test_011_presence_serialise_ietf(self):
         self.instance.parent.child._set_present()
+        self.instance.p_container._set_present()
         expectedJ = """
                 {
                     "presence:parent": {
                         "child": {}
-                    }
+                    },
+                    "presence:p-container": {}
                 }"""
         self.assertEqual(json.loads(pbJ.dumps(self.instance, mode="ietf")), json.loads(expectedJ))
         self.instance.parent.child._set_present(False)
-        expectedJ = "{}"
+        expectedJ = """{"presence:p-container": {}}"""
         self.assertEqual(json.loads(pbJ.dumps(self.instance, mode="ietf")), json.loads(expectedJ))
 
     def test_012_presence_deserialise(self):
@@ -126,20 +133,24 @@ class PresenceTests(PyangBindTestCase):
               {
                 "parent": {
                   "child": {}
-                }
+                },
+                "p-container": {}
               }"""
         x = pbJ.loads(inputJ, self.bindings, "presence")
         self.assertIs(x.parent.child._present(), True)
+        self.assertIs(x.p_container._present(), True)
 
     def test_013_presence_deserialise(self):
         inputJ = """
               {
                 "presence:parent": {
                   "child": {}
-                }
+                },
+                "presence:p-container": {}
               }"""
         x = pbJ.loads_ietf(inputJ, self.bindings, "presence")
         self.assertIs(x.parent.child._present(), True)
+        self.assertIs(x.p_container._present(), True)
 
 
 class SplitClassesPresenceTests(PresenceTests):
