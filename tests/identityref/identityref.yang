@@ -37,6 +37,7 @@ module identityref {
 
     identity son {
         base father;
+        base mother;
     }
 
     identity greatgrandmother;
@@ -59,6 +60,7 @@ module identityref {
 
     identity daughter {
         base mother;
+        base father;
     }
 
     identity local-base;
@@ -97,6 +99,13 @@ module identityref {
         leaf id5 {
             type identityref {
                 base grandmother;
+            }
+        }
+
+        leaf id6 {
+            type identityref {
+                base son;
+                base daughter;
             }
         }
     }
