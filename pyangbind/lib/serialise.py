@@ -429,7 +429,8 @@ def make_generate_ietf_tree(yname_ns_func):
                 d[yname] = generate_ietf_tree(
                     element, parent_namespace=element._namespace, flt=flt, with_defaults=with_defaults
                 )
-                if not len(d[yname]):
+                present = getattr(element, "_cpresent", False)
+                if not len(d[yname]) and not present:
                     del d[yname]
             elif generated_by == "YANGListType":
                 d[yname] = [
