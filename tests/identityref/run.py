@@ -15,16 +15,16 @@ class IdentityRefTests(PyangBindTestCase):
         self.instance = self.bindings.identityref()
 
     def test_identityref_leafs_get_created(self):
-        for leaf in ["id1", "idr1"]:
+        for leaf in ["id_base", "id_remote"]:
             with self.subTest(leaf=leaf):
                 self.assertTrue(hasattr(self.instance.test_container, leaf))
 
     def test_cant_assign_invalid_string_to_identityref(self):
         with self.assertRaises(ValueError):
-            self.instance.test_container.id1 = "hello"
+            self.instance.test_container.grandfather = "hello"
 
     def test_identityref_leafs_are_blank_by_default(self):
-        for leaf in ["id1", "idr1"]:
+        for leaf in ["id_base", "id_remote"]:
             with self.subTest(leaf=leaf):
                 self.assertEqual(getattr(self.instance.test_container, leaf), "")
 
@@ -33,7 +33,7 @@ class IdentityRefTests(PyangBindTestCase):
             with self.subTest(identity=identity):
                 allowed = True
                 try:
-                    self.instance.test_container.id1 = identity
+                    self.instance.test_container.id_base = identity
                 except ValueError:
                     allowed = False
                 self.assertTrue(allowed)
@@ -43,7 +43,7 @@ class IdentityRefTests(PyangBindTestCase):
             with self.subTest(identity=identity):
                 allowed = True
                 try:
-                    self.instance.test_container.idr1 = identity
+                    self.instance.test_container.id_remote = identity
                 except ValueError:
                     allowed = False
                 self.assertTrue(allowed)
@@ -52,6 +52,8 @@ class IdentityRefTests(PyangBindTestCase):
         for identity, valid in [
             ("father", True),
             ("son", True),
+            ("daughter", True),
+            ("mother", False),
             ("foo:father", True),
             ("foo:son", True),
             ("elephant", False),
@@ -60,10 +62,10 @@ class IdentityRefTests(PyangBindTestCase):
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
-                    self.instance.test_container.id2 = identity
+                    self.instance.test_container.grandfather = identity
                 except ValueError:
                     allowed = False
-                self.assertEqual(allowed, valid)
+                self.assertEqual(allowed, valid, identity)
 
     def test_set_ancestral_identities_two(self):
         for identity, valid in [
@@ -73,43 +75,60 @@ class IdentityRefTests(PyangBindTestCase):
             ("aunt", True),
             ("cousin", True),
             ("daughter", True),
-            ("son", False),
+            ("son", True),
             ("father", False),
             ("grandfather", False),
         ]:
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
-                    self.instance.test_container.id3 = identity
+                    self.instance.test_container.greatgrandmother = identity
                 except ValueError:
                     allowed = False
-                self.assertEqual(allowed, valid)
+                self.assertEqual(allowed, valid, identity)
 
     def test_set_ancestral_identities_three(self):
-        for identity, valid in [("daughter", True), ("cousin", False), ("aunt", False)]:
+        for identity, valid in [("daughter", True), ("son", True), ("cousin", False), ("aunt", False)]:
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
-                    self.instance.test_container.id4 = identity
+                    self.instance.test_container.mother = identity
                 except ValueError:
                     allowed = False
-                self.assertEqual(allowed, valid)
+                self.assertEqual(allowed, valid, identity)
 
     def test_set_ancestral_identities_four(self):
         for identity, valid in [
             ("daughter", True),
+            ("son", True),
             ("cousin", True),
             ("mother", True),
+            ("father", False),
             ("aunt", True),
             ("greatgrandmother", False),
         ]:
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
-                    self.instance.test_container.id5 = identity
+                    self.instance.test_container.grandmother = identity
                 except ValueError:
                     allowed = False
-                self.assertEqual(allowed, valid)
+                self.assertEqual(allowed, valid, identity)
+
+    def test_set_ancestral_identities_five(self):
+        for identity, valid in [
+            ("mother", False),
+            ("father", True),
+            ("cousin", False),
+            ("son", True),
+        ]:
+            with self.subTest(identity=identity, valid=valid):
+                allowed = True
+                try:
+                    self.instance.test_container.grandparent = identity
+                except ValueError:
+                    allowed = False
+                self.assertEqual(allowed, valid, identity)
 
     def test_grouping_identity_inheritance(self):
         for address_type, valid in [
@@ -135,7 +154,7 @@ class IdentityRefTests(PyangBindTestCase):
             with self.subTest(identity=identity, valid=valid):
                 allowed = True
                 try:
-                    self.instance.test_container.idr1 = identity
+                    self.instance.test_container.id_remote = identity
                 except ValueError:
                     allowed = False
                 self.assertEqual(allowed, valid)
