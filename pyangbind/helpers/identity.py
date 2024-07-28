@@ -89,7 +89,6 @@ class IdentityStore(object):
 
             defining_module = defmod.arg
 
-
             # Check we don't already have this identity defined
             if self.find_identity_by_source_name(defining_module, iddef.arg) is not None:
                 continue
@@ -123,7 +122,7 @@ class IdentityStore(object):
                     #     sys.stderr.write("could not find a match for %s base: %s\n" %
                     #       (iddef.arg, base_name))
                     #     error_ids.append(ident)
-                
+
                 base_ids.append(base_id)
 
             else:
