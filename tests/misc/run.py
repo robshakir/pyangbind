@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-import six
-
 from pyangbind.lib.xpathhelper import YANGPathHelper
 from tests.base import PyangBindTestCase
 
@@ -27,7 +25,7 @@ class MiscTests(PyangBindTestCase):
         a.foo = "stringval"
 
         self.instance.a.append(a)
-        self.assertEqual(six.text_type(self.instance.a["stringval"].foo), "stringval")
+        self.assertEqual(str(self.instance.a["stringval"].foo), "stringval")
         self.assertEqual(self.instance.a["stringval"].config.foo, "stringval")
 
     def test_002_checklistkeytype(self):
@@ -38,7 +36,7 @@ class MiscTests(PyangBindTestCase):
         b.bar = "stringvaltwo"
 
         self.instance.b.append(b)
-        self.assertIsInstance(list(self.instance.b.keys())[0], six.text_type)
+        self.assertIsInstance(list(self.instance.b.keys())[0], str)
 
     def test_003_checklistkeytype(self):
         import bindings.c as miscc

@@ -31,15 +31,13 @@ from collections import OrderedDict
 from decimal import Decimal
 import base64
 
-import six
 from enum import IntEnum
 from lxml import objectify, etree
 
 from pyangbind.lib.yangtypes import YANGBool, safe_name
 
 
-if six.PY3:
-    long = int
+long = int
 
 
 class WithDefaults(IntEnum):
@@ -108,7 +106,7 @@ class YangDataSerialiser(object):
             return [self.default(i) for i in obj]
         # Expand dictionaries
         elif isinstance(obj, dict):
-            return {k: self.default(v) for k, v in six.iteritems(obj)}
+            return {k: self.default(v) for k, v in obj.items()}
 
         if pybc is not None:
             # Special cases where the wrapper has an underlying class
@@ -119,7 +117,7 @@ class YangDataSerialiser(object):
 
         # Map based on YANG type
         if orig_yangt in ["leafref"]:
-            return self.default(obj._get()) if hasattr(obj, "_get") else six.text_type(obj)
+            return self.default(obj._get()) if hasattr(obj, "_get") else str(obj)
         elif orig_yangt in ["int64", "uint64"]:
             return self.yangt_long(obj)
         elif orig_yangt in ["identityref"]:
@@ -130,9 +128,9 @@ class YangDataSerialiser(object):
         elif orig_yangt in ["int8", "int16", "int32", "uint8", "uint16", "uint32"]:
             return self.yangt_int(obj)
         elif orig_yangt in ["string", "enumeration"]:
-            return six.text_type(obj)
+            return str(obj)
         elif orig_yangt in ["binary"]:
-            return six.text_type(base64.b64encode(obj), "ascii")
+            return str(base64.b64encode(obj), "ascii")
         elif orig_yangt in ["decimal64"]:
             return self.yangt_decimal(obj)
         elif orig_yangt in ["bool"]:
@@ -157,12 +155,12 @@ class YangDataSerialiser(object):
             return nlist
         elif isinstance(obj, dict):
             ndict = {}
-            for k, v in six.iteritems(obj):
+            for k, v in obj.items():
                 ndict[k] = self.default(v)
             return ndict
-        elif isinstance(obj, six.string_types + (six.text_type,)):
-            return six.text_type(obj)
-        elif isinstance(obj, six.integer_types):
+        elif isinstance(obj, (str,)):
+            return str(obj)
+        elif isinstance(obj, (int,)):
             return int(obj)
         elif isinstance(obj, (YANGBool, bool)):
             return bool(obj)
@@ -183,9 +181,9 @@ class YangDataSerialiser(object):
             # NOTE: this doesn't seem like it needs to be a special case?
             return self.yangt_decimal(obj)
         elif map_val in ["pyangbind.lib.yangtypes.YANGBinary", "YANGBinary"]:
-            return six.text_type(base64.b64encode(obj), "ascii")
+            return str(base64.b64encode(obj), "ascii")
         elif map_val in ["unicode"]:
-            return six.text_type(obj)
+            return str(obj)
         elif map_val in ["pyangbind.lib.yangtypes.YANGBool"]:
             if original_yang_type == "empty":
                 # NOTE: previously with IETF mode the code would fall-through if obj was falsey
@@ -202,7 +200,7 @@ class YangDataSerialiser(object):
         elif map_val in ["decimal.Decimal"]:
             return self.yangt_decimal(obj)
         elif map_val in ["YANGBits"]:
-            return six.text_type(obj)
+            return str(obj)
 
     def yangt_int(self, obj):
         # for values that are 32-bits and under..
@@ -232,7 +230,7 @@ class IETFYangDataSerialiser(YangDataSerialiser):
     """
 
     def yangt_long(self, obj):
-        return six.text_type(obj)
+        return str(obj)
 
     def yangt_identityref(self, obj):
         try:
@@ -243,10 +241,10 @@ class IETFYangDataSerialiser(YangDataSerialiser):
                     return "%s:%s" % (emod, obj)
         except KeyError:
             pass
-        return six.text_type(obj)
+        return str(obj)
 
     def yangt_decimal(self, obj):
-        return six.text_type(obj)
+        return str(obj)
 
     def yangt_empty(self, obj):
         return [None] if obj else False
@@ -541,7 +539,7 @@ class pybindIETFXMLDecoder(object):
                 try:
                     chobj.append(child.pyval)
                 except ValueError:
-                    if six.text_type in chobj._allowed_type:
+                    if str in chobj._allowed_type:
                         chobj.append(str(child.pyval))
                     else:
                         raise
@@ -640,7 +638,7 @@ class pybindJSONDecoder(object):
                     # Put keys in order:
                     okeys = []
                     kdict = {}
-                    for k, v in six.iteritems(d[key]):
+                    for k, v in d[key].items():
                         if "__yang_order" not in v:
                             # Element is not specified in terms of order, so
                             # push to a list that keeps this order
@@ -711,9 +709,9 @@ class pybindJSONDecoder(object):
 
     @staticmethod
     def check_metadata_add(key, data, obj):
-        keys = [six.text_type(k) for k in data]
+        keys = [str(k) for k in data]
         if ("@" + key) in keys:
-            for k, v in six.iteritems(data["@" + key]):
+            for k, v in data["@" + key].items():
                 obj._add_metadata(k, v)
 
     @staticmethod
@@ -755,7 +753,7 @@ class pybindJSONDecoder(object):
 
             if key == "@":
                 # Handle whole container metadata object
-                for k, v in six.iteritems(d[key]):
+                for k, v in d[key].items():
                     obj._add_metadata(k, v)
                 continue
             elif "@" in key:
