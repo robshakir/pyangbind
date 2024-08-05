@@ -1,5 +1,5 @@
 module identityref {
-    yang-version "1";
+    yang-version "1.1";
     namespace "http://rob.sh/yang/test/identityref";
     prefix "foo";
 
@@ -37,6 +37,7 @@ module identityref {
 
     identity son {
         base father;
+        base mother;
     }
 
     identity greatgrandmother;
@@ -59,43 +60,51 @@ module identityref {
 
     identity daughter {
         base mother;
+        base father;
     }
 
     identity local-base;
 
     container test-container {
-        leaf id1 {
+        leaf id_base {
             type identityref {
                 base base-identity;
             }
         }
 
-        leaf idr1 {
+        leaf id_remote {
             type identityref {
                 base defn:remote-base;
             }
         }
 
-        leaf id2 {
+        leaf grandfather {
             type identityref {
                 base grandfather;
             }
         }
 
-        leaf id3 {
+        leaf greatgrandmother {
             type identityref {
                 base greatgrandmother;
             }
         }
 
-        leaf id4 {
+        leaf mother {
             type identityref {
                 base mother;
             }
         }
 
-        leaf id5 {
+        leaf grandmother {
             type identityref {
+                base grandmother;
+            }
+        }
+
+        leaf grandparent {
+            type identityref {
+                base grandfather;
                 base grandmother;
             }
         }

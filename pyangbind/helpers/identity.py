@@ -80,7 +80,6 @@ class IdentityStore(object):
             this_id = unresolved_identities.pop(0)
             iddef = defnd[this_id]
 
-            base = iddef.search_one("base")
             try:
                 mainmod = iddef.main_module()
             except AttributeError:
@@ -89,22 +88,17 @@ class IdentityStore(object):
                 defmod = mainmod
 
             defining_module = defmod.arg
+
+            # Check we don't already have this identity defined
+            if self.find_identity_by_source_name(defining_module, iddef.arg) is not None:
+                continue
+
             namespace = defmod.search_one("namespace").arg
             prefix = defmod.search_one("prefix").arg
 
-            if base is None:
-                # Add a new identity which can be a base
-                tid = Identity(iddef.arg)
-                tid.source_module = defining_module
-                tid.source_namespace = namespace
-                tid.add_prefix(prefix)
-                self.add_identity(tid)
-
-                if defining_module in mod_ref_prefixes:
-                    for i in mod_ref_prefixes[defining_module]:
-                        tid.add_prefix(i)
-
-            else:
+            base_ids = []
+            bases = iddef.search("base")
+            for base in bases:
                 # Determine what the name of the base and the prefix for
                 # the base should be
                 if ":" in base.arg:
@@ -121,26 +115,30 @@ class IdentityStore(object):
                     # and if not, then push this identity back onto the stack
                     unresolved_identities.append(this_id)
                     unresolved_identity_count[this_id] += 1
+                    break
                     # FIXME(Joey Wilhelm): `unresolved_idc` and `ident` are both undefined. What is the intent of this code?
                     # if unresolved_identity_count[this_id] > 1000:
                     #   if unresolved_idc[ident] > 1000:
                     #     sys.stderr.write("could not find a match for %s base: %s\n" %
                     #       (iddef.arg, base_name))
                     #     error_ids.append(ident)
-                else:
-                    # Check we don't already have this identity defined
-                    if self.find_identity_by_source_name(defining_module, iddef.arg) is None:
-                        # otherwise, create a new identity that reflects this one
-                        tid = Identity(iddef.arg)
-                        tid.source_module = defining_module
-                        tid.source_namespace = namespace
-                        tid.add_prefix(prefix)
-                        base_id.add_child(tid)
-                        self.add_identity(tid)
 
-                        if defining_module in mod_ref_prefixes:
-                            for i in mod_ref_prefixes[defining_module]:
-                                tid.add_prefix(i)
+                base_ids.append(base_id)
+
+            else:
+                # We found all the bases (of which there may be none).
+                # Create a new identity that reflects this one.
+                tid = Identity(iddef.arg)
+                tid.source_module = defining_module
+                tid.source_namespace = namespace
+                tid.add_prefix(prefix)
+                self.add_identity(tid)
+                for base_id in base_ids:
+                    base_id.add_child(tid)
+
+                if defining_module in mod_ref_prefixes:
+                    for i in mod_ref_prefixes[defining_module]:
+                        tid.add_prefix(i)
 
             if error_ids:
                 raise TypeError("could not resolve identities %s" % error_ids)
