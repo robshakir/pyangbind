@@ -323,15 +323,15 @@ def build_pybind(ctx, modules, fd):
     ]
     for library in yangtypes_imports:
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)
-    ctx.pybind_common_hdr += "from pyangbind.lib.base import PybindBase\n"
-    ctx.pybind_common_hdr += "from collections import OrderedDict\n"
-    ctx.pybind_common_hdr += "from decimal import Decimal\n"
+    ctx.pybind_common_hdr += """from pyangbind.lib.base import PybindBase
+from collections import OrderedDict
+from decimal import Decimal
 
-    ctx.pybind_common_hdr += """
 import builtins as __builtin__
-long = int
-"""
 
+long = int
+
+"""
     if not ctx.opts.split_class_dir:
         fd.write(ctx.pybind_common_hdr)
     else:
