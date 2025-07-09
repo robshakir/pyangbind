@@ -32,7 +32,6 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip' # caching pip dependencies
     - name: Install testing dependencies
       run: pip install tox
     - name: Run tox for ${{ matrix.python-version }}
