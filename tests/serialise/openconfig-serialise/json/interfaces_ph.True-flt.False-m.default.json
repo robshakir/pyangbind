@@ -13,7 +13,7 @@
                     }
                 }, 
                 "config": {
-                    "enabled": true, 
+                    "enabled": 1, 
                     "loopback-mode": "NONE",
                     "type": "", 
                     "description": "", 
@@ -40,7 +40,7 @@
                     "name": "", 
                     "type": "", 
                     "description": "", 
-                    "enabled": true, 
+                    "enabled": 1, 
                     "loopback-mode": "NONE",
                     "logical": false,
                     "management": false,
@@ -64,7 +64,9 @@
                         "out-unicast-pkts": 0, 
                         "out-discards": 0, 
                         "in-broadcast-pkts": 0, 
-                        "carrier-transitions": 0, 
+                        "carrier-transitions": 0,
+                        "interface-transitions": 0,
+                        "link-transitions": 0,
                         "in-unknown-protos": 0, 
                         "in-octets": 0,
                         "in-pkts":0,
