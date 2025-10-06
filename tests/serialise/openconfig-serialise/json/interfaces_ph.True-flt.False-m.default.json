@@ -13,7 +13,7 @@
                     }
                 }, 
                 "config": {
-                    "enabled": 1, 
+                    "enabled": true, 
                     "loopback-mode": "NONE",
                     "type": "", 
                     "description": "", 
@@ -40,7 +40,7 @@
                     "name": "", 
                     "type": "", 
                     "description": "", 
-                    "enabled": 1, 
+                    "enabled": true, 
                     "loopback-mode": "NONE",
                     "logical": false,
                     "management": false,
