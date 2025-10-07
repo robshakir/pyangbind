@@ -9,8 +9,7 @@ from tests.base import PyangBindTestCase
 
 class OpenconfigInterfacesTests(PyangBindTestCase):
     yang_files = [
-        os.path.join("openconfig", "%s.yang" % fname)
-        for fname in ["openconfig-interfaces", "openconfig-if-aggregate"]
+        os.path.join("openconfig", "%s.yang" % fname) for fname in ["openconfig-interfaces", "openconfig-if-aggregate"]
     ]
     pyang_flags = [
         "-p %s" % os.path.join(os.path.dirname(__file__), "include"),
