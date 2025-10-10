@@ -9,8 +9,7 @@ from tests.base import PyangBindTestCase
 
 class OpenconfigInterfacesTests(PyangBindTestCase):
     yang_files = [
-        os.path.join("openconfig", "%s.yang" % fname)
-        for fname in ["openconfig-interfaces", "openconfig-if-aggregate", "openconfig-if-ip"]
+        os.path.join("openconfig", "%s.yang" % fname) for fname in ["openconfig-interfaces", "openconfig-if-aggregate"]
     ]
     pyang_flags = [
         "-p %s" % os.path.join(os.path.dirname(__file__), "include"),
@@ -32,9 +31,6 @@ class OpenconfigInterfacesTests(PyangBindTestCase):
             "files": [
                 "openconfig-extensions.yang",
                 "types/openconfig-types.yang",
-                "vlan/openconfig-vlan.yang",
-                "vlan/openconfig-vlan-types.yang",
-                "types/openconfig-inet-types.yang",
                 "types/openconfig-yang-types.yang",
                 "optical-transport/openconfig-transport-types.yang",
                 "platform/openconfig-platform-types.yang",
@@ -44,7 +40,6 @@ class OpenconfigInterfacesTests(PyangBindTestCase):
             "local_path": "openconfig",
             "remote_prefix": "https://raw.githubusercontent.com/openconfig/public/master/release/models/",
             "files": [
-                "interfaces/openconfig-if-ip.yang",
                 "interfaces/openconfig-if-ethernet.yang",
                 "interfaces/openconfig-if-aggregate.yang",
                 "interfaces/openconfig-interfaces.yang",
