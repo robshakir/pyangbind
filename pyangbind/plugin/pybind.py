@@ -1359,7 +1359,9 @@ def build_elemtype(ctx, et, prefix=False):
                 if position is not None:
                     pos = position.arg
                 else:
-                    pos = 1 + max(allowed_bits)
+                    pos = 1 + max(allowed_bits.values(), default=-1)
+                    if pos < 0 or 4294967295 < pos:
+                        raise ValueError("position out of bounds")
                 allowed_bits[bit.arg] = pos
             cls = "restricted-bits"
             elemtype = {

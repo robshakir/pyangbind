@@ -56,6 +56,9 @@ class BitsTests(PyangBindTestCase):
         self.instance.bits2.add("foo")
         self.assertEqual(str(self.instance.bits2), "foo bar baz")
 
+    def test_bits_no_position(self):
+        self.assertEqual(self.instance.bits3._allowed_bits["position0"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

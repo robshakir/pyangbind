@@ -46,4 +46,11 @@ module bits {
     }
     default "flag1 flag3";
   }
+
+  // a leaf containing the bits type definition without position statement
+  leaf bits3 {
+    type bits {
+      bit position0;
+    }
+  }
 }
