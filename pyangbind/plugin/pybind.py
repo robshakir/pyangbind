@@ -794,7 +794,7 @@ def get_children(ctx, fd, i_children, module, parent, path=str(), parent_cfg=Tru
 
     # 'container', 'module', 'list' and 'submodule' all have their own classes
     # generated.
-    if parent.keyword in ["container", "module", "list", "submodule", "input", "output", "rpc", "notification"]:
+    if parent.keyword in ["container", "module", "list", "submodule", "input", "output", "rpc", "notification", "action"]:
         if ctx.opts.split_class_dir:
             nfd.write("class %s(PybindBase):\n" % safe_name(parent.arg))
         else:
@@ -1467,7 +1467,7 @@ def get_element(ctx, fd, element, module, parent, path, parent_cfg=True, choice=
     # leaf-list or choice. Alternatively, it can be the 'input' or 'output'
     # substmts of an RPC or a notification
     if hasattr(element, "i_children"):
-        if element.keyword in ["container", "list", "input", "output", "notification"]:
+        if element.keyword in ["container", "list", "input", "output", "notification", "action"]:
             has_children = True
         elif element.keyword in ["leaf-list"]:
             create_list = True
