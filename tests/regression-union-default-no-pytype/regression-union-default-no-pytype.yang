@@ -1,0 +1,28 @@
+module regression-union-default-no-pytype {
+  yang-version 1.1;
+  namespace "urn:pyangbind:regression-union-default-no-pytype";
+  prefix runp;
+
+  typedef bounded-int {
+    type int32 {
+      range "0..100";
+    }
+  }
+
+  typedef burst-like {
+    type union {
+      type bounded-int;
+      type enumeration {
+        enum auto { value -1; }
+      }
+    }
+    default "auto";
+  }
+
+  container configure {
+    leaf burst-limit {
+      type burst-like;
+      default "auto";
+    }
+  }
+}

@@ -1407,13 +1407,31 @@ def find_absolute_default_type(default_type, default_value, elemname):
     if not isinstance(default_type, list):
         return default_type
 
+    def _resolve_test_type(candidate):
+        # Some derived typedef entries do not carry a direct `pytype` key.
+        # Walk the parent typedef chain until a concrete type is found.
+        seen = set()
+        current = candidate
+        while isinstance(current, dict) and "pytype" not in current:
+            parent_type = current.get("parent_type")
+            if parent_type is None or isinstance(parent_type, list):
+                break
+            if parent_type in seen or parent_type not in class_map:
+                break
+            seen.add(parent_type)
+            current = class_map[parent_type]
+        return current
+
     for i in default_type:
         if not i[1]["base_type"]:
             test_type = class_map[i[1]["parent_type"]]
         else:
             test_type = i[1]
+        test_type_eval = _resolve_test_type(test_type)
+        if "pytype" not in test_type_eval:
+            continue
         try:
-            test_type["pytype"](default_value)
+            test_type_eval["pytype"](default_value)
             default_type = test_type
             break
         except (ValueError, TypeError):
