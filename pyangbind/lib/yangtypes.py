@@ -796,7 +796,7 @@ def YANGListType(*args, **kwargs):
 
             value = kwargs.pop("_v", None)
 
-            (k, keyargs) = self._generate_key(*args, **kwargs)
+            k, keyargs = self._generate_key(*args, **kwargs)
 
             if k in self._members:
                 raise KeyError("%s is already defined as a list entry" % k)
@@ -817,7 +817,7 @@ def YANGListType(*args, **kwargs):
                 return k
 
         def delete(self, *args, **kwargs):
-            (k, _) = self._generate_key(*args, **kwargs)
+            k, _ = self._generate_key(*args, **kwargs)
 
             if self._path_helper:
                 current_item = self._members[k]

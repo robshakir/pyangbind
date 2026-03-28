@@ -36,7 +36,6 @@ from lxml import objectify, etree
 
 from pyangbind.lib.yangtypes import YANGBool, safe_name
 
-
 long = int
 
 

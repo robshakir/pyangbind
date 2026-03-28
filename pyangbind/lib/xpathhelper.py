@@ -165,7 +165,7 @@ class YANGPathHelper(PybindXpathHelper):
         else:
             epath = "/"
         for i in range(startelem, lastelem):
-            (tagname, attributes) = self._tagname_attributes(parts[i], normalise_namespace=normalise_namespace)
+            tagname, attributes = self._tagname_attributes(parts[i], normalise_namespace=normalise_namespace)
             if ":" in tagname and normalise_namespace:
                 tagname = tagname.split(":")[1]
 
@@ -256,7 +256,7 @@ class YANGPathHelper(PybindXpathHelper):
         this_obj_id = str(uuid.uuid1())
         self._library[this_obj_id] = object_ptr
         parent = object_path[:-1]
-        (tagname, attributes) = self._tagname_attributes(object_path[-1])
+        tagname, attributes = self._tagname_attributes(object_path[-1])
 
         if parent == []:
             parent_o = self._root
