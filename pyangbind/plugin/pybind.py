@@ -35,6 +35,8 @@ from pyang import plugin, statements, util
 import pyangbind.helpers.misc as misc_help
 from pyangbind.helpers.identity import IdentityStore
 from pyangbind.lib.yangtypes import RestrictedClassType, YANGBool, safe_name, YANGBinary, YANGBitsType
+from pyangbind.lib.yangtypes import (RestrictedClassType, YANGBinary, YANGBitsType, YANGBool, YANGInstanceIdentifier,
+                                     safe_name)
 
 long = int
 
@@ -177,6 +179,12 @@ class_map = {
             base_type=long, restriction_dict={"range": ["-9223372036854775808..9223372036854775807"]}, int_size=64
         ),
     },
+    "instance-identifier": {
+        "native_type": "YANGInstanceIdentifier",
+        "base_type": True,
+        "quote_arg": True,
+        "pytype": YANGInstanceIdentifier
+    }
 }
 
 # We have a set of types which support "range" statements in RFC6020. This
@@ -320,6 +328,7 @@ def build_pybind(ctx, modules, fd):
         "ReferenceType",
         "YANGBinary",
         "YANGBitsType",
+        "YANGInstanceIdentifier"
     ]
     for library in yangtypes_imports:
         ctx.pybind_common_hdr += "from pyangbind.lib.yangtypes import {}\n".format(library)

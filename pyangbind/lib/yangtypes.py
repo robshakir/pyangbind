@@ -1445,3 +1445,71 @@ def YANGBitsType(allowed_bits):
             return " ".join(sorted(self, key=sort_key))
 
     return YANGBits
+def YANGInstanceIdentifier(*args, **kwargs):
+
+    path_helper = kwargs.pop("path_helper", None)
+    caller = kwargs.pop("caller", False)
+    require_instance = kwargs.pop("require_instance", False)
+
+    class YANGInstanceIdentifier:
+
+        __slots__ = (
+            "_path_helper",
+            "_caller",
+            "_referenced_object",
+            "_ptr",
+            "_require_instance",
+            "_type",
+            "_utype",
+        )
+
+        _pybind_generated_by = "YANGInstanceIdentifier"
+
+        def __init__(self, *args, **kwargs):
+            self._referenced_path = ref_path
+            self._path_helper = path_helper
+            self._caller = caller
+            self._require_instance = require_instance
+
+            if len(args):
+                value = args[0]
+                if hasattr(self, "_set"):
+                    self._set()
+            else:
+                value = None
+
+            if self._path_helper and value is not None:
+                path_chk = self._path_helper.get(value, caller=self._caller)
+
+                # THis lookup must return an instance object. If it does not, then we should atleast
+                # check for the leaf object. If this is a leaf object then allow setting the value else don't.
+                if self._require_instance:
+
+                    if len(path_chk) < 1:
+
+                        raise ValueError("If require-instance is set to true, the xpath needs to exist. In other words
+                            it must exist.")
+
+                self.set(value=value)
+
+
+        def _get_ptr(self):
+            if self._ptr:
+                ptr = self._path_helper.get(self.value, caller=self._caller)
+                if len(ptr) == 1:
+                    return ptr[0]
+            raise ValueError("Invalid pointer specified")
+
+
+        def _get(self):
+            return self.value
+
+        def __str__(self):
+            return str(self.value)
+
+
+        def set(self, value):
+            self.value = value
+
+
+    return type(YANGInstanceIdentifier(*args, **kwargs))
