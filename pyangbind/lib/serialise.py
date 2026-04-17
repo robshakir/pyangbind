@@ -159,10 +159,10 @@ class YangDataSerialiser(object):
             return ndict
         elif isinstance(obj, (str,)):
             return str(obj)
-        elif isinstance(obj, (int,)):
-            return int(obj)
         elif isinstance(obj, (YANGBool, bool)):
             return bool(obj)
+        elif isinstance(obj, (int,)):
+            return int(obj)
         elif isinstance(obj, Decimal):
             return self.yangt_decimal(obj)
 

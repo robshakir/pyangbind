@@ -72,6 +72,14 @@ class JSONSerialiseTests(PyangBindTestCase):
             external_json = json.load(fp)
         self.assertEqual(pybind_json, external_json, "JSON did not match expected output.")
 
+    def test_boolean_before_int_serialize(self):
+        self.serialise_obj.c2.ll0 = [True, False]
+
+        pybind_json = json.loads(dumps(self.serialise_obj))
+
+        self.assertIs(pybind_json["c2"]["ll0"][0], True, "JSON did not match expected output.")
+        self.assertIs(pybind_json["c2"]["ll0"][1], False, "JSON did not match expected output.")
+
 
 if __name__ == "__main__":
     unittest.main()

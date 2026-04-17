@@ -244,6 +244,12 @@ module json-serialise {
     }
   }
 
+  container c2 {
+    leaf-list ll0 {
+      type boolean;
+    }
+  }
+
   container two {
     leaf string-test {
       type string;
